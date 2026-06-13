@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ResumesPage from './pages/ResumesPage';
 import DSAPage from './pages/DSAPage';
 import InterviewsPage from './pages/InterviewsPage';
+import NetworkPage from './pages/NetworkPage';
 
 function App() {
   return (
