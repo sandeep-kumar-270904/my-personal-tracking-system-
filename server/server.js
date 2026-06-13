@@ -8,6 +8,7 @@ const resumeRoutes = require('./routes/resumeRoutes');
 const dsaRoutes = require('./routes/dsaRoutes');
 const interviewRoutes = require('./routes/interviewRoutes');
 const networkRoutes = require('./routes/networkRoutes');
+const goalRoutes = require('./routes/goalRoutes');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/resumes', resumeRoutes);
 app.use('/api/dsa', dsaRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/network', networkRoutes);
+app.use('/api/goals', goalRoutes);
 
 app.get('/', (req, res) => {
   res.send('Smart Internship & Career Tracker API is running...');

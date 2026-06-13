@@ -23,6 +23,10 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 - Visual timeline of all your applications and upcoming interviews.
 - Never miss a deadline with a unified view of your placement journey.
 
+### 🎯 Goal Setting Engine
+- Gamify your placement process by setting weekly targets for applications, DSA practice, and networking.
+- Visual progress bars and a dashboard widget keep you accountable and motivated.
+
 ### 📄 Resume Manager
 - Version control for your resumes. Track which resume is tailored for which specific industry or role.
 - Add drive links and descriptions for quick access during applications.

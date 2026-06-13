@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, CheckCircle2, XCircle, Clock, FileText, Code, Calendar, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Briefcase, CheckCircle2, XCircle, Clock, FileText, Code, Calendar, AlertCircle, Target } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -27,17 +28,19 @@ const DashboardPage = () => {
     resumes: [],
     dsa: [],
     interviews: [],
+    goalsData: null,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        const [appRes, resRes, dsaRes, intRes] = await Promise.all([
+        const [appRes, resRes, dsaRes, intRes, goalsRes] = await Promise.all([
           api.get('/api/applications').catch(() => ({ data: [] })),
           api.get('/api/resumes').catch(() => ({ data: [] })),
           api.get('/api/dsa').catch(() => ({ data: [] })),
-          api.get('/api/interviews').catch(() => ({ data: [] }))
+          api.get('/api/interviews').catch(() => ({ data: [] })),
+          api.get('/api/goals').catch(() => ({ data: null }))
         ]);
 
         setData({
@@ -45,6 +48,7 @@ const DashboardPage = () => {
           resumes: resRes.data,
           dsa: dsaRes.data,
           interviews: intRes.data,
+          goalsData: goalsRes.data
         });
       } catch (error) {
         console.error('Failed to fetch dashboard data', error);
@@ -56,7 +60,7 @@ const DashboardPage = () => {
     fetchAllData();
   }, []);
 
-  const { applications, resumes, dsa, interviews } = data;
+  const { applications, resumes, dsa, interviews, goalsData } = data;
 
   // Stats calculation
   const totalApps = applications.length;
@@ -210,6 +214,49 @@ const DashboardPage = () => {
                   </motion.div>
                 ))}
               </div>
+
+              {/* Weekly Goals Widget */}
+              {goalsData && goalsData.goal && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-white">Weekly Goals Progress</h3>
+                    <Link to="/goals" className="text-sm text-blue-400 hover:text-blue-300 flex items-center">
+                      View details
+                    </Link>
+                  </div>
+                  <div className="glass p-6 rounded-2xl border border-slate-700/50">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-300">Applications ({goalsData.progress.applications}/{goalsData.goal.targetApplications})</span>
+                          <span className="text-blue-400 font-medium">{Math.min(100, Math.round((goalsData.progress.applications / goalsData.goal.targetApplications) * 100)) || 0}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.applications / goalsData.goal.targetApplications) * 100) || 0}%` }} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-300">DSA Practice ({goalsData.progress.dsa}/{goalsData.goal.targetDSA})</span>
+                          <span className="text-violet-400 font-medium">{Math.min(100, Math.round((goalsData.progress.dsa / goalsData.goal.targetDSA) * 100)) || 0}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-violet-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.dsa / goalsData.goal.targetDSA) * 100) || 0}%` }} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-300">Networking ({goalsData.progress.networking}/{goalsData.goal.targetNetworking})</span>
+                          <span className="text-amber-400 font-medium">{Math.min(100, Math.round((goalsData.progress.networking / goalsData.goal.targetNetworking) * 100)) || 0}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.networking / goalsData.goal.targetNetworking) * 100) || 0}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

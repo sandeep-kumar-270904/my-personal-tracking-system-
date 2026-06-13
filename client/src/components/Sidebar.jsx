@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, LogOut, Settings, BarChart2, FileText, Code, Calendar, Users, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Briefcase, LogOut, Settings, BarChart2, FileText, Code, Calendar, Users, CalendarDays, Target } from 'lucide-react';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
@@ -16,6 +16,7 @@ const Sidebar = () => {
     { name: 'Interviews', path: '/interviews', icon: Calendar },
     { name: 'Networking', path: '/network', icon: Users },
     { name: 'Calendar', path: '/calendar', icon: CalendarDays },
+    { name: 'Goals', path: '/goals', icon: Target },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
