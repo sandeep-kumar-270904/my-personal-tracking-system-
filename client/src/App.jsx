@@ -13,6 +13,7 @@ import InterviewsPage from './pages/InterviewsPage';
 import NetworkPage from './pages/NetworkPage';
 import CalendarPage from './pages/CalendarPage';
 import GoalsPage from './pages/GoalsPage';
+import OffersPage from './pages/OffersPage';
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -85,6 +86,14 @@ function App() {
           element={
             <ProtectedRoute>
               <GoalsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/offers" 
+          element={
+            <ProtectedRoute>
+              <OffersPage />
             </ProtectedRoute>
           } 
         />

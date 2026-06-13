@@ -27,6 +27,11 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 - Gamify your placement process by setting weekly targets for applications, DSA practice, and networking.
 - Visual progress bars and a dashboard widget keep you accountable and motivated.
 
+### 💰 Offer & Compensation Tracker
+- Compare job offers side-by-side to make the best career decisions.
+- Automatically calculates total CTC from Base Salary, Sign-On Bonus, and RSUs.
+- Visual stacked bar charts breakdown your compensation structure.
+
 ### 📄 Resume Manager
 - Version control for your resumes. Track which resume is tailored for which specific industry or role.
 - Add drive links and descriptions for quick access during applications.
