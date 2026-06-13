@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, X, MessageSquare, Briefcase, Mail, Twitter, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, MessageSquare, Briefcase, Mail, Globe, Users } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 
@@ -90,7 +90,7 @@ const NetworkPage = () => {
     switch(platform) {
       case 'LinkedIn': return <Briefcase className="w-4 h-4" />;
       case 'Email': return <Mail className="w-4 h-4" />;
-      case 'Twitter': return <Twitter className="w-4 h-4" />;
+      case 'Twitter': return <Globe className="w-4 h-4" />;
       default: return <MessageSquare className="w-4 h-4" />;
     }
   };
