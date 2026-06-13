@@ -19,6 +19,10 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 - Monitor communication statuses from "Reached Out" to "Referral Given".
 - Save important notes, email templates, and profile links directly.
 
+### 📅 Interactive Calendar
+- Visual timeline of all your applications and upcoming interviews.
+- Never miss a deadline with a unified view of your placement journey.
+
 ### 📄 Resume Manager
 - Version control for your resumes. Track which resume is tailored for which specific industry or role.
 - Add drive links and descriptions for quick access during applications.
