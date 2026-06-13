@@ -14,6 +14,11 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 - Comprehensive CRUD interface to track job applications.
 - Log companies, roles, application statuses (Applied, OA, Interview, Selected, Rejected), dates, and specific notes.
 
+### 🤝 Networking & Cold Email Tracker
+- Keep track of all your outreach efforts across platforms (LinkedIn, Email, Twitter).
+- Monitor communication statuses from "Reached Out" to "Referral Given".
+- Save important notes, email templates, and profile links directly.
+
 ### 📄 Resume Manager
 - Version control for your resumes. Track which resume is tailored for which specific industry or role.
 - Add drive links and descriptions for quick access during applications.
