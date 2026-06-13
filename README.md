@@ -1,71 +1,91 @@
-# Smart Internship & Career Tracker
+# 🚀 Smart Internship & Career Tracker
 
-A production-quality full-stack web application designed for students and job seekers to manage internship/job applications, track interviews, and visualize career growth.
+A comprehensive, full-stack application designed to be the ultimate productivity platform for students and job seekers. Track your internship applications, manage multiple resumes, monitor your Data Structures & Algorithms (DSA) preparation, and organize interviews all in one unified, beautifully designed dashboard.
 
-## Tech Stack
+![Dashboard Preview](client/public/vite.svg) <!-- Replace with actual screenshot later -->
 
-- **Frontend:** React + Vite, TailwindCSS (v4), Framer Motion, Recharts, React Router v6, Axios
-- **Backend:** Node.js, Express.js, MongoDB + Mongoose, JWT Authentication
-- **Security:** bcrypt password hashing, CORS, protected routes
+## ✨ Features (MVP 2)
 
-## Folder Structure
+### 📊 Advanced Analytics Dashboard
+- Visualize your application success rates with dynamic, interactive charts (`Recharts`).
+- Get actionable productivity insights based on your recent activity and upcoming interviews.
 
-```
-placement tracker/
-├── client/          # React frontend (Vite)
-│   ├── src/
-│   │   ├── components/  # Reusable UI elements (Navbar, Sidebar, etc.)
-│   │   ├── pages/       # Route components (Dashboard, Applications, Auth, etc.)
-│   │   ├── context/     # React Context for state management (AuthContext)
-│   │   ├── services/    # API calls using Axios
-│   │   ├── App.jsx      # Main routing
-│   │   └── index.css    # Tailwind config and global styles
-│   └── package.json
-└── server/          # Node.js backend
-    ├── config/      # Database connection
-    ├── controllers/ # API logic
-    ├── middleware/  # JWT Auth and Error handling
-    ├── models/      # Mongoose schemas (User, Application)
-    ├── routes/      # Express routes
-    ├── server.js    # Entry point
-    ├── .env         # Environment variables
-    └── package.json
-```
+### 💼 Application Tracker
+- Comprehensive CRUD interface to track job applications.
+- Log companies, roles, application statuses (Applied, OA, Interview, Selected, Rejected), dates, and specific notes.
 
-## Getting Started
+### 📄 Resume Manager
+- Version control for your resumes. Track which resume is tailored for which specific industry or role.
+- Add drive links and descriptions for quick access during applications.
+
+### 🧠 DSA Tracker
+- Stay consistent with your technical preparation.
+- Log problems solved across platforms (LeetCode, Codeforces, etc.), categorize by difficulty (Easy, Medium, Hard), and track completion status.
+
+### 📅 Interview Planner
+- Never miss a schedule. Track upcoming interview dates, types (Technical, HR, OA), and prep notes.
+
+## 🛠️ Tech Stack
+
+**Frontend:**
+- React (Vite)
+- TailwindCSS (Utility-first styling, glassmorphism UI)
+- Framer Motion (Micro-animations and layout transitions)
+- React Router DOM (Client-side routing)
+- Recharts (Data visualization)
+
+**Backend:**
+- Node.js & Express.js
+- MongoDB & Mongoose (NoSQL Database)
+- JSON Web Tokens (JWT) for secure authentication
+- bcryptjs for password hashing
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher recommended)
-- MongoDB running locally (default: `mongodb://127.0.0.1:27017/placement-tracker`) OR a MongoDB Atlas connection string.
+- Node.js (v16+)
+- MongoDB Atlas account (or local MongoDB server)
 
-### Backend Setup
-1. Open a terminal and navigate to the `server` directory:
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/sandeep-kumar-270904/Student-Placement-Tracker-.git
+   cd Student-Placement-Tracker-
+   ```
+
+2. **Setup the Backend**
    ```bash
    cd server
+   npm install
    ```
-2. Make sure your `.env` file is set up correctly (already generated for you). If you are using MongoDB Atlas, replace the `MONGODB_URI` in `server/.env`.
-3. Start the backend development server:
+   Create a `.env` file in the `server` directory:
+   ```env
+   PORT=5000
+   MONGODB_URI=your_mongodb_connection_string
+   JWT_SECRET=your_super_secret_key
+   NODE_ENV=development
+   ```
+   Start the backend server:
+   ```bash
+   npm start
+   ```
+
+3. **Setup the Frontend**
+   ```bash
+   cd ../client
+   npm install
+   ```
+   Start the frontend development server:
    ```bash
    npm run dev
-   # or node server.js if nodemon is not installed
    ```
 
-### Frontend Setup
-1. Open a new terminal and navigate to the `client` directory:
-   ```bash
-   cd client
-   ```
-2. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
-3. Open your browser and navigate to `http://localhost:5173`.
+4. **Access the App**
+   Open your browser and navigate to `http://localhost:5173`.
 
-## Features
-- **User Authentication:** Secure JWT-based login and registration.
-- **Interactive Dashboard:** Dynamic charts rendering application statuses and timelines using Recharts.
-- **Application Tracker:** Full CRUD capabilities with a sleek glassmorphism UI and Framer Motion animations.
-- **Responsive Design:** Fully tailored for mobile, tablet, and desktop viewing.
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome!
 
-## Future Enhancements
-This structure has been set up with clean, modular architecture, making it ready for potential AI integrations (e.g., AI resume analysis, automated interview generation).
+---
+*Built with ❤️ for students striving for their dream placements.*
