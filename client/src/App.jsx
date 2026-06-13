@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -9,14 +11,18 @@ import ResumesPage from './pages/ResumesPage';
 import DSAPage from './pages/DSAPage';
 import InterviewsPage from './pages/InterviewsPage';
 import NetworkPage from './pages/NetworkPage';
+import CalendarPage from './pages/CalendarPage';
 
 function App() {
+  const { user } = useContext(AuthContext);
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
+        <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
+        <Route path="/signup" element={user ? <Navigate to="/dashboard" /> : <SignupPage />} />
+        
         <Route 
           path="/dashboard" 
           element={
@@ -54,6 +60,22 @@ function App() {
           element={
             <ProtectedRoute>
               <InterviewsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/network" 
+          element={
+            <ProtectedRoute>
+              <NetworkPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/calendar" 
+          element={
+            <ProtectedRoute>
+              <CalendarPage />
             </ProtectedRoute>
           } 
         />
