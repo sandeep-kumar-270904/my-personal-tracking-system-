@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, CheckCircle2, TrendingUp, Users, Target, Rocket, Shield, Code2, Play } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
@@ -13,91 +13,150 @@ const LandingPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Decorative background blurs */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-600/20 rounded-full blur-[100px] -z-10" />
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-violet-600/20 rounded-full blur-[120px] -z-10" />
-
+    <div className="min-h-screen bg-[#0a0a0f] text-white selection:bg-[#ff6b00] selection:text-white overflow-hidden font-['Plus_Jakarta_Sans']">
       <Navbar />
-      
-      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 sm:px-6 lg:px-8 mt-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="max-w-4xl space-y-8"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/80 border border-slate-700 text-sm text-blue-400 mb-4">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-            </span>
-            The Ultimate Career Hub
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
-            Track your career <br />
-            <span className="text-gradient">with precision.</span>
-          </h1>
-          
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Manage your internship and job applications, track interview stages, and land your dream role with our smart dashboard designed for modern job seekers.
-          </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-            <Link to="/signup">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-primary px-8 py-4 text-lg"
-              >
-                Start Tracking Free
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </motion.button>
-            </Link>
-            <Link to="/login">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-secondary px-8 py-4 text-lg"
-              >
-                Login
-              </motion.button>
-            </Link>
-          </div>
-        </motion.div>
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Animated Background Blobs */}
+        <div className="absolute top-0 right-0 -z-10 translate-x-1/3 -translate-y-1/4">
+          <div className="w-[500px] h-[500px] bg-[#ff6b00]/20 blur-[120px] rounded-full mix-blend-screen animate-pulse" />
+        </div>
+        <div className="absolute bottom-0 left-0 -z-10 -translate-x-1/3 translate-y-1/4">
+          <div className="w-[600px] h-[600px] bg-[#00f0ff]/20 blur-[150px] rounded-full mix-blend-screen animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+        <div className="absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2">
+          <div className="w-[800px] h-[800px] bg-[#ff007b]/10 blur-[150px] rounded-full mix-blend-screen" />
+        </div>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full px-4 mb-20"
-        >
-          <div className="glass-card flex flex-col items-center text-center">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
-              <CheckCircle2 className="w-6 h-6" />
+        <div className="text-center max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-300 mb-8 backdrop-blur-md shadow-[0_0_20px_rgba(255,107,0,0.15)]">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff6b00] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff6b00]"></span>
+              </span>
+              The Ultimate Career Hub for Students
             </div>
-            <h3 className="text-xl font-bold mb-2">Application Tracking</h3>
-            <p className="text-slate-400">Keep all your job applications organized in one beautiful dashboard with status updates.</p>
-          </div>
-          
-          <div className="glass-card flex flex-col items-center text-center">
-            <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center text-violet-400 mb-4">
-              <TrendingUp className="w-6 h-6" />
+
+            <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight mb-8 leading-[1.1]">
+              Dominate your <br className="hidden md:block" />
+              <span className="text-gradient drop-shadow-2xl">placement season.</span>
+            </h1>
+
+            <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-12 font-medium">
+              A professional-grade toolkit to track applications, conquer DSA, crush interviews, and land your dream role with zero friction.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              <Link to="/signup" className="w-full sm:w-auto">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full sm:w-auto btn-primary px-10 py-5 text-lg"
+                >
+                  Start Tracking Free
+                  <ArrowRight className="w-6 h-6 ml-2" />
+                </motion.button>
+              </Link>
+              <Link to="/login" className="w-full sm:w-auto">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full sm:w-auto btn-secondary px-10 py-5 text-lg group"
+                >
+                  <Play className="w-5 h-5 mr-2 text-slate-400 group-hover:text-white transition-colors" fill="currentColor" />
+                  View Demo
+                </motion.button>
+              </Link>
             </div>
-            <h3 className="text-xl font-bold mb-2">Insightful Analytics</h3>
-            <p className="text-slate-400">Visualize your success rate and track your progress over time with rich interactive charts.</p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Grid Section */}
+      <section className="py-24 relative z-10 border-t border-white/5 bg-black/50 backdrop-blur-3xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Everything you need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] to-[#0080ff]">succeed</span></h2>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">Stop using messy spreadsheets. Use a platform designed specifically for the modern job hunt.</p>
           </div>
-          
-          <div className="glass-card flex flex-col items-center text-center">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
-              <Users className="w-6 h-6" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Feature Card 1 */}
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="glass-card p-8 neon-border group"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#ff6b00]/20 to-[#ff007b]/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Target className="w-7 h-7 text-[#ff6b00]" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-white">Application Tracker</h3>
+              <p className="text-slate-400 leading-relaxed text-lg">Visual Kanban boards to track your applications from 'Applied' to 'Offer'. Never lose track of a recruiter email again.</p>
+            </motion.div>
+
+            {/* Feature Card 2 */}
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="glass-card p-8 neon-border group"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00f0ff]/20 to-blue-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Code2 className="w-7 h-7 text-[#00f0ff]" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-white">DSA & Contests</h3>
+              <p className="text-slate-400 leading-relaxed text-lg">Track your LeetCode progress and get live updates on upcoming coding contests from Codeforces and CodeChef.</p>
+            </motion.div>
+
+            {/* Feature Card 3 */}
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="glass-card p-8 neon-border group"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="w-7 h-7 text-emerald-400" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-white">Offer Analytics</h3>
+              <p className="text-slate-400 leading-relaxed text-lg">Compare job offers side-by-side with smart CTC breakdowns and visually analyze your total compensation.</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#ff007b]/10" />
+        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+          <h2 className="text-5xl md:text-6xl font-bold mb-8">Ready to land your <span className="text-[#ff6b00]">dream job?</span></h2>
+          <p className="text-2xl text-slate-400 mb-12">Join thousands of students optimizing their career trajectory today.</p>
+          <Link to="/signup">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="btn-primary px-12 py-6 text-xl shadow-[0_0_40px_rgba(255,107,0,0.5)]"
+            >
+              <Rocket className="w-6 h-6 mr-3 inline-block" />
+              Launch Your Career
+            </motion.button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Minimal Footer */}
+      <footer className="border-t border-white/10 bg-[#050508] py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg shadow-[#ff6b00]/20">
+              <span className="font-bold text-white text-xl">S</span>
             </div>
-            <h3 className="text-xl font-bold mb-2">Interview Prep</h3>
-            <p className="text-slate-400">Never miss an interview. Track upcoming rounds, take notes, and stay prepared for success.</p>
+            <span className="text-xl font-bold tracking-tight text-white">SmartTracker</span>
           </div>
-        </motion.div>
-      </main>
+          <p className="text-slate-500 font-medium">© {new Date().getFullYear()} SmartTracker. Built for students.</p>
+        </div>
+      </footer>
     </div>
   );
 };

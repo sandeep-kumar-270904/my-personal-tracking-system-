@@ -14,37 +14,77 @@
   }
 
   body {
-    @apply bg-slate-900 text-slate-100 font-sans antialiased min-h-screen;
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-      radial-gradient(at 50% 0%, hsla(225,39%,30%,0.2) 0, transparent 50%), 
-      radial-gradient(at 100% 0%, hsla(339,49%,30%,0.2) 0, transparent 50%);
-    background-attachment: fixed;
+    @apply bg-[#0a0a0f] text-slate-200 antialiased selection:bg-[#ff6b00] selection:text-white;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  /* Custom scrollbar for modern feel */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f111a; 
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2d3e; 
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3f445e; 
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+  }
+
+  .neon-border {
+    @apply relative before:absolute before:-inset-[1px] before:rounded-[inherit] before:p-[1px] before:bg-gradient-to-r before:from-[#ff6b00] before:to-[#ff007b] before:-z-10 before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500;
+  }
+
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center font-bold text-white rounded-xl bg-gradient-to-r from-[#ff6b00] to-[#ff007b] shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)] transition-all duration-300 overflow-hidden z-10;
+  }
+  .btn-primary::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-[#ff007b] to-[#ff6b00] opacity-0 hover:opacity-100 transition-opacity duration-500 -z-10;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center font-bold text-slate-300 rounded-xl bg-white/[0.05] border border-white/10 hover:bg-white/[0.1] hover:text-white transition-all duration-300 backdrop-blur-md;
+  }
+
+  .input-field {
+    @apply w-full bg-[#13141f] border border-white/10 rounded-xl px-5 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#ff6b00]/50 focus:border-[#ff6b00] transition-all;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#ff6b00] via-[#ff007b] to-[#00f0ff] animate-gradient-x;
   }
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl;
-  }
-  
-  .glass-card {
-    @apply bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:border-slate-600/50;
+  .animate-gradient-x {
+    background-size: 200% 200%;
+    animation: gradientX 5s ease infinite;
   }
 
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400;
+  @keyframes gradientX {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 
-  .btn-primary {
-    @apply px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200 active:scale-95 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2;
+  .blob-shape {
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    animation: morph 8s ease-in-out infinite;
   }
 
-  .btn-secondary {
-    @apply px-6 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-all duration-200 active:scale-95 flex items-center justify-center gap-2;
-  }
-
-  .input-field {
-    @apply w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all;
+  @keyframes morph {
+    0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+    34% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }
+    67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }
   }
 }
