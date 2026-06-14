@@ -21,7 +21,7 @@ const InterviewsPage = () => {
 
   const fetchInterviews = async () => {
     try {
-      const { data } = await api.get('/api/interviews');
+      const { data } = await api.get('/interviews');
       setInterviews(data);
     } catch (error) {
       console.error('Failed to fetch interviews:', error);
@@ -33,7 +33,7 @@ const InterviewsPage = () => {
   const handleAddInterview = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.post('/api/interviews', formData);
+      const { data } = await api.post('/interviews', formData);
       setInterviews([...interviews, data].sort((a, b) => new Date(a.interviewDate) - new Date(b.interviewDate)));
       setShowModal(false);
       setFormData({ company: '', interviewDate: '', round: '', notes: '', status: 'Scheduled' });

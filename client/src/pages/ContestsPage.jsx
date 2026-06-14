@@ -15,17 +15,26 @@ const ContestsPage = () => {
 
   const fetchContests = async () => {
     try {
-      // Kontests API provides free live upcoming coding contests
-      const response = await fetch('https://kontests.net/api/v1/all');
+      // Fetch from Codeforces API as it is highly reliable
+      const response = await fetch('https://codeforces.com/api/contest.list');
       if (!response.ok) {
         throw new Error('Failed to fetch contests');
       }
       const data = await response.json();
       
+      if (data.status !== 'OK') throw new Error('API Error');
+
       // Filter out completed contests and sort by start time
-      const upcoming = data
-        .filter(contest => new Date(contest.start_time) > new Date())
-        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+      const upcoming = data.result
+        .filter(contest => contest.phase === 'BEFORE')
+        .sort((a, b) => a.startTimeSeconds - b.startTimeSeconds)
+        .map(contest => ({
+          name: contest.name,
+          site: 'Codeforces',
+          start_time: new Date(contest.startTimeSeconds * 1000).toISOString(),
+          duration: contest.durationSeconds,
+          url: `https://codeforces.com/contest/${contest.id}`
+        }));
       
       setContests(upcoming);
     } catch (err) {

@@ -21,7 +21,7 @@ const DSAPage = () => {
 
   const fetchTopics = async () => {
     try {
-      const { data } = await api.get('/api/dsa');
+      const { data } = await api.get('/dsa');
       setTopics(data);
     } catch (error) {
       console.error('Failed to fetch DSA topics:', error);
@@ -33,7 +33,7 @@ const DSAPage = () => {
   const handleAddTopic = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.post('/api/dsa', formData);
+      const { data } = await api.post('/dsa', formData);
       setTopics([data, ...topics]);
       setShowModal(false);
       setFormData({ topic: '', problemsSolved: 0, difficulty: 'Medium', status: 'Not Started', notes: '' });

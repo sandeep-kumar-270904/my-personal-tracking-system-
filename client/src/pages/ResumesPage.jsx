@@ -20,7 +20,7 @@ const ResumesPage = () => {
 
   const fetchResumes = async () => {
     try {
-      const { data } = await api.get('/api/resumes');
+      const { data } = await api.get('/resumes');
       setResumes(data);
     } catch (error) {
       console.error('Failed to fetch resumes:', error);
@@ -32,7 +32,7 @@ const ResumesPage = () => {
   const handleAddResume = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.post('/api/resumes', formData);
+      const { data } = await api.post('/resumes', formData);
       if (data.isPrimary) {
         setResumes(resumes.map(r => ({ ...r, isPrimary: false })).concat(data));
       } else {

@@ -36,11 +36,11 @@ const DashboardPage = () => {
     const fetchAllData = async () => {
       try {
         const [appRes, resRes, dsaRes, intRes, goalsRes] = await Promise.all([
-          api.get('/api/applications').catch(() => ({ data: [] })),
-          api.get('/api/resumes').catch(() => ({ data: [] })),
-          api.get('/api/dsa').catch(() => ({ data: [] })),
-          api.get('/api/interviews').catch(() => ({ data: [] })),
-          api.get('/api/goals').catch(() => ({ data: null }))
+          api.get('/applications').catch(() => ({ data: [] })),
+          api.get('/resumes').catch(() => ({ data: [] })),
+          api.get('/dsa').catch(() => ({ data: [] })),
+          api.get('/interviews').catch(() => ({ data: [] })),
+          api.get('/goals').catch(() => ({ data: null }))
         ]);
 
         setData({
