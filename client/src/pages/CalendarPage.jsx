@@ -74,14 +74,14 @@ const CalendarPage = () => {
     return (
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <CalendarIcon className="text-blue-500 w-6 h-6" />
+          <CalendarIcon className="text-[#ff6b00] w-6 h-6" />
           {format(currentDate, 'MMMM yyyy')}
         </h2>
         <div className="flex space-x-2">
-          <button onClick={prevMonth} className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+          <button onClick={prevMonth} className="p-2 rounded-lg bg-[#13141f] hover:bg-white/[0.05] text-slate-300 transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <button onClick={nextMonth} className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+          <button onClick={nextMonth} className="p-2 rounded-lg bg-[#13141f] hover:bg-white/[0.05] text-slate-300 transition-colors">
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
@@ -100,7 +100,7 @@ const CalendarPage = () => {
         </div>
       );
     }
-    return <div className="grid grid-cols-7 border-b border-slate-700/50 mb-2">{days}</div>;
+    return <div className="grid grid-cols-7 border-b border-white/5 mb-2">{days}</div>;
   };
 
   const getEventsForDay = (day) => {
@@ -136,8 +136,8 @@ const CalendarPage = () => {
         days.push(
           <div
             key={day}
-            className={`min-h-[120px] p-2 border border-slate-800/50 transition-colors hover:bg-slate-800/30 ${
-              !isSameMonth(day, monthStart) ? 'text-slate-600 bg-slate-900/50' : 'text-slate-300 bg-slate-800/10'
+            className={`min-h-[120px] p-2 border border-slate-800/50 transition-colors hover:bg-[#13141f]/30 ${
+              !isSameMonth(day, monthStart) ? 'text-slate-600 bg-[#0a0a0f]/50' : 'text-slate-300 bg-[#13141f]/10'
             } ${isSameDay(day, new Date()) ? 'ring-2 ring-blue-500 ring-inset bg-blue-500/5' : ''}`}
           >
             <div className="flex justify-between items-start">
@@ -173,10 +173,10 @@ const CalendarPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex">
+    <div className="min-h-screen bg-[#0a0a0f] flex">
       <Sidebar />
       
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
         <div className="max-w-6xl mx-auto">
           <header className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Interactive Calendar</h1>
@@ -186,7 +186,7 @@ const CalendarPage = () => {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-6 border border-slate-700/50 rounded-2xl"
+            className="glass-card-card p-6 border border-white/5 rounded-2xl"
           >
             {renderHeader()}
             {renderDays()}

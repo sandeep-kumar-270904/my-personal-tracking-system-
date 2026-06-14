@@ -90,7 +90,7 @@ const LandingPage = () => {
             {/* Feature Card 1 */}
             <motion.div 
               whileHover={{ y: -10 }}
-              className="glass-card p-8 neon-border group"
+              className="glass-card-card p-8 neon-border group"
             >
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#ff6b00]/20 to-[#ff007b]/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                 <Target className="w-7 h-7 text-[#ff6b00]" />
@@ -102,7 +102,7 @@ const LandingPage = () => {
             {/* Feature Card 2 */}
             <motion.div 
               whileHover={{ y: -10 }}
-              className="glass-card p-8 neon-border group"
+              className="glass-card-card p-8 neon-border group"
             >
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00f0ff]/20 to-blue-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                 <Code2 className="w-7 h-7 text-[#00f0ff]" />
@@ -114,7 +114,7 @@ const LandingPage = () => {
             {/* Feature Card 3 */}
             <motion.div 
               whileHover={{ y: -10 }}
-              className="glass-card p-8 neon-border group"
+              className="glass-card-card p-8 neon-border group"
             >
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                 <TrendingUp className="w-7 h-7 text-emerald-400" />

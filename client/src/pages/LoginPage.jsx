@@ -34,7 +34,7 @@ const LoginPage = () => {
         <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-[#ff6b00]/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" />
         <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-[#ff007b]/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDelay: '2s' }} />
         
-        <div className="relative z-10 max-w-lg p-12 glass-card neon-border">
+        <div className="relative z-10 max-w-lg p-12 glass-card-card neon-border">
           <h2 className="text-4xl font-bold mb-6 text-white leading-tight">
             Welcome back to <br/><span className="text-gradient">SmartTracker</span>
           </h2>

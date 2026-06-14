@@ -155,7 +155,7 @@ const SignupPage = () => {
         <div className="absolute top-1/4 -right-20 w-[500px] h-[500px] bg-[#00f0ff]/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" />
         <div className="absolute bottom-1/4 -left-20 w-[500px] h-[500px] bg-[#ff007b]/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDelay: '2s' }} />
         
-        <div className="relative z-10 max-w-lg p-12 glass-card neon-border before:from-[#00f0ff] before:to-[#ff007b]">
+        <div className="relative z-10 max-w-lg p-12 glass-card-card neon-border before:from-[#00f0ff] before:to-[#ff007b]">
           <div className="mb-8">
              <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-[#00f0ff]/20 to-[#ff007b]/20 mb-6">
                 <User className="w-10 h-10 text-[#00f0ff]" />

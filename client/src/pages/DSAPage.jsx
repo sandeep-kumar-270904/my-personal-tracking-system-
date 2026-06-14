@@ -73,7 +73,7 @@ const DSAPage = () => {
       case 'Hard': return 'text-red-400 bg-red-400/10 border-red-400/20';
       case 'Medium': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
       case 'Easy': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
-      default: return 'text-slate-400 bg-slate-800 border-slate-700';
+      default: return 'text-slate-400 bg-[#13141f] border-white/10';
     }
   };
 
@@ -83,21 +83,21 @@ const DSAPage = () => {
     <div className="p-8 w-full max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">DSA Tracker</h1>
+          <h1 className="text-3xl font-bold text-white">DSA Tracker</h1>
           <p className="text-slate-400 mt-1">Track your Data Structures and Algorithms progress</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
         >
           <Plus className="w-5 h-5 mr-2" /> Add Topic
         </button>
       </div>
 
-      <div className="glass rounded-2xl border border-slate-700/50 overflow-hidden">
+      <div className="glass-card rounded-2xl border border-white/5 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-800/50 text-xs uppercase text-slate-400 border-b border-slate-700/50">
+            <thead className="bg-white/[0.02] text-xs uppercase text-slate-400 border-b border-white/5">
               <tr>
                 <th className="px-6 py-4 font-medium">Topic</th>
                 <th className="px-6 py-4 font-medium">Difficulty</th>
@@ -108,7 +108,7 @@ const DSAPage = () => {
             </thead>
             <tbody className="divide-y divide-slate-700/50">
               {topics.map((topic) => (
-                <tr key={topic._id} className="hover:bg-slate-800/30 transition-colors">
+                <tr key={topic._id} className="hover:bg-[#13141f]/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-medium text-slate-200">{topic.topic}</div>
                     <div className="text-xs text-slate-500 mt-1">{topic.notes}</div>
@@ -127,9 +127,9 @@ const DSAPage = () => {
                         onChange={(e) => updateStatus(topic._id, e.target.value)}
                         className="bg-transparent border-none text-sm focus:ring-0 cursor-pointer hover:text-white transition-colors"
                       >
-                        <option value="Not Started" className="bg-slate-800">Not Started</option>
-                        <option value="In Progress" className="bg-slate-800">In Progress</option>
-                        <option value="Completed" className="bg-slate-800">Completed</option>
+                        <option value="Not Started" className="bg-[#13141f]">Not Started</option>
+                        <option value="In Progress" className="bg-[#13141f]">In Progress</option>
+                        <option value="Completed" className="bg-[#13141f]">Completed</option>
                       </select>
                     </div>
                   </td>
@@ -157,20 +157,20 @@ const DSAPage = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-[#0a0a0f]/80 backdrop-blur-sm flex justify-center items-center z-50">
           <motion.div 
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="glass w-full max-w-md p-8 rounded-2xl border border-slate-700/50"
+            className="glass-card w-full max-w-md p-8 rounded-2xl border border-white/5"
           >
-            <h2 className="text-2xl font-bold text-slate-100 mb-6">Add DSA Topic</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Add DSA Topic</h2>
             <form onSubmit={handleAddTopic} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">Topic Name</label>
                 <input
                   type="text"
                   required
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                   value={formData.topic}
                   onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
                   placeholder="e.g. Dynamic Programming"
@@ -182,7 +182,7 @@ const DSAPage = () => {
                   <input
                     type="number"
                     min="0"
-                    className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                     value={formData.problemsSolved}
                     onChange={(e) => setFormData({ ...formData, problemsSolved: e.target.value })}
                   />
@@ -190,7 +190,7 @@ const DSAPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1">Difficulty</label>
                   <select
-                    className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                     value={formData.difficulty}
                     onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                   >
@@ -203,7 +203,7 @@ const DSAPage = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">Notes</label>
                 <textarea
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                   rows="3"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -215,13 +215,13 @@ const DSAPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                  className="flex-1 py-2.5 px-4 bg-[#13141f] hover:bg-white/[0.05] text-slate-300 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  className="flex-1 py-2.5 px-4 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
                 >
                   Save Topic
                 </button>

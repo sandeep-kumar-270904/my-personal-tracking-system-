@@ -69,7 +69,7 @@ const DashboardPage = () => {
   const totalDSA = dsa.length;
   
   const statsCards = [
-    { title: 'Total Applications', value: totalApps, icon: Briefcase, color: 'text-blue-500', bg: 'bg-blue-500/20' },
+    { title: 'Total Applications', value: totalApps, icon: Briefcase, color: 'text-[#ff6b00]', bg: 'bg-blue-500/20' },
     { title: 'Active Interviews', value: interviewing, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/20' },
     { title: 'Offers Received', value: offers, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/20' },
     { title: 'DSA Topics Tracked', value: totalDSA, icon: Code, color: 'text-purple-500', bg: 'bg-purple-500/20' },
@@ -154,10 +154,10 @@ const DashboardPage = () => {
   const insights = getInsights();
 
   return (
-    <div className="min-h-screen bg-slate-900 flex">
+    <div className="min-h-screen bg-[#0a0a0f] flex">
       <Sidebar />
       
-      <main className="flex-1 ml-64 p-8 overflow-y-auto h-screen">
+      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8 overflow-y-auto h-screen">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -202,7 +202,7 @@ const DashboardPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="glass flex items-center p-6 rounded-2xl border border-slate-700/50"
+                    className="glass-card flex items-center p-6 rounded-2xl border border-white/5"
                   >
                     <div className={`w-14 h-14 rounded-xl ${stat.bg} flex items-center justify-center mr-4`}>
                       <stat.icon className={`w-7 h-7 ${stat.color}`} />
@@ -220,18 +220,18 @@ const DashboardPage = () => {
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-white">Weekly Goals Progress</h3>
-                    <Link to="/goals" className="text-sm text-blue-400 hover:text-blue-300 flex items-center">
+                    <Link to="/goals" className="text-sm text-[#00f0ff] hover:text-blue-300 flex items-center">
                       View details
                     </Link>
                   </div>
-                  <div className="glass p-6 rounded-2xl border border-slate-700/50">
+                  <div className="glass-card p-6 rounded-2xl border border-white/5">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
                         <div className="flex justify-between text-sm mb-2">
                           <span className="text-slate-300">Applications ({goalsData.progress.applications}/{goalsData.goal.targetApplications})</span>
-                          <span className="text-blue-400 font-medium">{Math.min(100, Math.round((goalsData.progress.applications / goalsData.goal.targetApplications) * 100)) || 0}%</span>
+                          <span className="text-[#00f0ff] font-medium">{Math.min(100, Math.round((goalsData.progress.applications / goalsData.goal.targetApplications) * 100)) || 0}%</span>
                         </div>
-                        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-[#13141f] rounded-full overflow-hidden">
                           <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.applications / goalsData.goal.targetApplications) * 100) || 0}%` }} />
                         </div>
                       </div>
@@ -240,7 +240,7 @@ const DashboardPage = () => {
                           <span className="text-slate-300">DSA Practice ({goalsData.progress.dsa}/{goalsData.goal.targetDSA})</span>
                           <span className="text-violet-400 font-medium">{Math.min(100, Math.round((goalsData.progress.dsa / goalsData.goal.targetDSA) * 100)) || 0}%</span>
                         </div>
-                        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-[#13141f] rounded-full overflow-hidden">
                           <div className="h-full bg-violet-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.dsa / goalsData.goal.targetDSA) * 100) || 0}%` }} />
                         </div>
                       </div>
@@ -249,7 +249,7 @@ const DashboardPage = () => {
                           <span className="text-slate-300">Networking ({goalsData.progress.networking}/{goalsData.goal.targetNetworking})</span>
                           <span className="text-amber-400 font-medium">{Math.min(100, Math.round((goalsData.progress.networking / goalsData.goal.targetNetworking) * 100)) || 0}%</span>
                         </div>
-                        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-[#13141f] rounded-full overflow-hidden">
                           <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.networking / goalsData.goal.targetNetworking) * 100) || 0}%` }} />
                         </div>
                       </div>
@@ -260,7 +260,7 @@ const DashboardPage = () => {
 
               {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div className="glass p-6 rounded-2xl border border-slate-700/50 h-96">
+                <div className="glass-card p-6 rounded-2xl border border-white/5 h-96">
                   <h3 className="text-lg font-bold text-white mb-6">Applications Overview</h3>
                   {totalApps > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -280,7 +280,7 @@ const DashboardPage = () => {
                   )}
                 </div>
 
-                <div className="glass p-6 rounded-2xl border border-slate-700/50 h-96">
+                <div className="glass-card p-6 rounded-2xl border border-white/5 h-96">
                   <h3 className="text-lg font-bold text-white mb-6">Application Status</h3>
                   {totalApps > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -309,7 +309,7 @@ const DashboardPage = () => {
                   )}
                 </div>
                 
-                <div className="glass p-6 rounded-2xl border border-slate-700/50 h-96 lg:col-span-2">
+                <div className="glass-card p-6 rounded-2xl border border-white/5 h-96 lg:col-span-2">
                   <h3 className="text-lg font-bold text-white mb-6">DSA Topic Completion by Difficulty</h3>
                   {totalDSA > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">

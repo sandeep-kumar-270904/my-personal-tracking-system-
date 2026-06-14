@@ -51,7 +51,7 @@ const ContestsPage = () => {
       case 'codeforces': return <Code2 className="text-red-500 w-6 h-6" />;
       case 'codechef': return <Code2 className="text-orange-500 w-6 h-6" />;
       case 'hackerrank': return <Code2 className="text-green-500 w-6 h-6" />;
-      case 'hackerearth': return <Code2 className="text-blue-500 w-6 h-6" />;
+      case 'hackerearth': return <Code2 className="text-[#ff6b00] w-6 h-6" />;
       default: return <Trophy className="text-emerald-500 w-6 h-6" />;
     }
   };
@@ -68,12 +68,12 @@ const ContestsPage = () => {
   const filteredContests = filter === 'All' ? contests : contests.filter(c => c.site === filter);
 
   return (
-    <div className="min-h-screen bg-slate-900 flex">
+    <div className="min-h-screen bg-[#0a0a0f] flex">
       <Sidebar />
       
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
         <div className="max-w-6xl mx-auto">
-          <header className="mb-8 border-b border-slate-700/50 pb-6">
+          <header className="mb-8 border-b border-white/5 pb-6">
             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
               <Trophy className="text-yellow-500 w-8 h-8" />
               Live Coding Contests
@@ -86,7 +86,7 @@ const ContestsPage = () => {
                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
              </div>
           ) : error ? (
-            <div className="text-center py-20 glass rounded-2xl border border-red-500/30 bg-red-500/10">
+            <div className="text-center py-20 glass-card rounded-2xl border border-red-500/30 bg-red-500/10">
               <Trophy className="w-16 h-16 text-red-400 mx-auto mb-4 opacity-50" />
               <h3 className="text-xl font-medium text-red-400 mb-2">{error}</h3>
             </div>
@@ -100,8 +100,8 @@ const ContestsPage = () => {
                     onClick={() => setFilter(platform)}
                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border ${
                       filter === platform 
-                        ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
-                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white'
+                        ? 'bg-blue-500/20 text-[#00f0ff] border-blue-500/50' 
+                        : 'bg-[#13141f] text-slate-400 border-white/10 hover:bg-white/[0.05] hover:text-white'
                     }`}
                   >
                     {platform}
@@ -120,11 +120,11 @@ const ContestsPage = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      className="glass p-6 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 transition-all group flex flex-col h-full"
+                      className="glass-card p-6 rounded-2xl border border-white/5 hover:bg-white/[0.02] transition-all group flex flex-col h-full"
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-slate-800 rounded-xl border border-slate-700/50">
+                          <div className="p-2 bg-[#13141f] rounded-xl border border-white/5">
                             {getPlatformIcon(contest.site)}
                           </div>
                           <div>
@@ -136,7 +136,7 @@ const ContestsPage = () => {
 
                       <div className="space-y-3 mb-6 flex-grow">
                         <div className="flex items-center gap-3 text-slate-300">
-                          <Calendar className="w-4 h-4 text-blue-400 shrink-0" />
+                          <Calendar className="w-4 h-4 text-[#00f0ff] shrink-0" />
                           <span className="text-sm">
                             {startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at {startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                           </span>
@@ -160,7 +160,7 @@ const ContestsPage = () => {
                         href={contest.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="w-full py-3 px-4 bg-slate-800 hover:bg-blue-600 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-700 hover:border-blue-500 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] mt-auto"
+                        className="w-full py-3 px-4 bg-[#13141f] hover:bg-[#ff6b00] text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2 border border-white/10 hover:border-blue-500 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] mt-auto"
                       >
                         Register Now <ExternalLink className="w-4 h-4" />
                       </a>

@@ -94,17 +94,17 @@ const OffersPage = () => {
       case 'Accepted': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'Declined': return 'bg-red-500/20 text-red-400 border-red-500/30';
       case 'Negotiating': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      default: return 'bg-blue-500/20 text-blue-400 border-blue-500/30'; // Pending
+      default: return 'bg-blue-500/20 text-[#00f0ff] border-blue-500/30'; // Pending
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex">
+    <div className="min-h-screen bg-[#0a0a0f] flex">
       <Sidebar />
       
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
         <div className="max-w-6xl mx-auto">
-          <header className="mb-8 flex justify-between items-end border-b border-slate-700/50 pb-6">
+          <header className="mb-8 flex justify-between items-end border-b border-white/5 pb-6">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
                 <BadgeDollarSign className="text-emerald-500 w-8 h-8" />
@@ -129,7 +129,7 @@ const OffersPage = () => {
                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
              </div>
           ) : offers.length === 0 ? (
-            <div className="text-center py-20 glass rounded-2xl border border-slate-700/50">
+            <div className="text-center py-20 glass-card rounded-2xl border border-white/5">
               <BadgeDollarSign className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <h3 className="text-xl font-medium text-white mb-2">No offers tracked yet</h3>
               <p className="text-slate-400 mb-6">Aced the interview? Add your job offer here to track compensation.</p>
@@ -147,7 +147,7 @@ const OffersPage = () => {
                     key={offer._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="glass p-6 rounded-2xl border border-slate-700/50 hover:bg-slate-800/30 transition-colors"
+                    className="glass-card p-6 rounded-2xl border border-white/5 hover:bg-[#13141f]/30 transition-colors"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div>
@@ -161,13 +161,13 @@ const OffersPage = () => {
                       </span>
                     </div>
 
-                    <div className="mb-6 flex items-center gap-2 text-sm text-slate-300 bg-slate-800/50 w-fit px-3 py-1.5 rounded-lg border border-slate-700/50">
+                    <div className="mb-6 flex items-center gap-2 text-sm text-slate-300 bg-white/[0.02] w-fit px-3 py-1.5 rounded-lg border border-white/5">
                       <Calendar className="w-4 h-4 text-red-400" />
                       <span className="font-medium text-slate-200">Deadline:</span> 
                       {new Date(offer.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </div>
 
-                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 mb-4">
+                    <div className="bg-[#0a0a0f]/50 p-4 rounded-xl border border-white/5 mb-4">
                       <div className="flex justify-between items-end mb-4">
                         <span className="text-slate-400 font-medium uppercase tracking-wider text-xs">Total CTC (Year 1)</span>
                         <span className="text-3xl font-bold text-emerald-400">{formatCurrency(offer.totalCTC)}</span>
@@ -176,13 +176,13 @@ const OffersPage = () => {
                       {/* Stacked Bar Chart for CTC Breakdown */}
                       <div className="w-full h-4 rounded-full flex overflow-hidden mb-3">
                         <div style={{ width: `${basePct}%` }} className="bg-blue-500 h-full relative group">
-                          <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Base: {formatCurrency(offer.baseSalary)}</div>
+                          <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Base: {formatCurrency(offer.baseSalary)}</div>
                         </div>
                         <div style={{ width: `${bonusPct}%` }} className="bg-amber-500 h-full relative group">
-                           <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Bonus: {formatCurrency(offer.signOnBonus)}</div>
+                           <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Bonus: {formatCurrency(offer.signOnBonus)}</div>
                         </div>
                         <div style={{ width: `${rsuPct}%` }} className="bg-purple-500 h-full relative group">
-                           <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">RSU: {formatCurrency(offer.rsu)}</div>
+                           <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">RSU: {formatCurrency(offer.rsu)}</div>
                         </div>
                       </div>
 
@@ -194,16 +194,16 @@ const OffersPage = () => {
                     </div>
 
                     {offer.notes && (
-                      <p className="text-sm text-slate-400 mb-4 bg-slate-800/30 p-3 rounded-lg border border-slate-700/30 italic">
+                      <p className="text-sm text-slate-400 mb-4 bg-[#13141f]/30 p-3 rounded-lg border border-white/10/30 italic">
                         "{offer.notes}"
                       </p>
                     )}
 
-                    <div className="flex justify-end gap-2 pt-4 border-t border-slate-700/50">
-                      <button onClick={() => openEditModal(offer)} className="p-2 text-slate-400 hover:text-blue-400 transition-colors bg-slate-800 hover:bg-slate-700 rounded-lg">
+                    <div className="flex justify-end gap-2 pt-4 border-t border-white/5">
+                      <button onClick={() => openEditModal(offer)} className="p-2 text-slate-400 hover:text-[#00f0ff] transition-colors bg-[#13141f] hover:bg-white/[0.05] rounded-lg">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(offer._id)} className="p-2 text-slate-400 hover:text-red-400 transition-colors bg-slate-800 hover:bg-slate-700 rounded-lg">
+                      <button onClick={() => handleDelete(offer._id)} className="p-2 text-slate-400 hover:text-red-400 transition-colors bg-[#13141f] hover:bg-white/[0.05] rounded-lg">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -223,7 +223,7 @@ const OffersPage = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-2xl my-8 relative"
+              className="bg-[#0a0a0f] border border-white/10 p-6 rounded-2xl w-full max-w-2xl my-8 relative"
             >
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -263,7 +263,7 @@ const OffersPage = () => {
                   </div>
                 </div>
 
-                <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 space-y-4">
+                <div className="bg-[#13141f]/30 p-4 rounded-xl border border-white/5 space-y-4">
                   <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Compensation (Year 1)</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -322,7 +322,7 @@ const OffersPage = () => {
                     <select 
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="input-field bg-slate-800"
+                      className="input-field bg-[#13141f]"
                     >
                       <option value="Pending">Pending / Exploring</option>
                       <option value="Negotiating">Negotiating</option>

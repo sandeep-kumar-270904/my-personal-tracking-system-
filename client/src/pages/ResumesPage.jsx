@@ -70,12 +70,12 @@ const ResumesPage = () => {
     <div className="p-8 w-full max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Resume Manager</h1>
+          <h1 className="text-3xl font-bold text-white">Resume Manager</h1>
           <p className="text-slate-400 mt-1">Manage and track your resume versions</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
         >
           <Plus className="w-5 h-5 mr-2" /> Add Resume
         </button>
@@ -87,7 +87,7 @@ const ResumesPage = () => {
             key={resume._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass p-6 rounded-2xl border border-slate-700/50 hover:border-slate-600/50 transition-all group relative"
+            className="glass-card p-6 rounded-2xl border border-white/5 hover:border-white/20/50 transition-all group relative"
           >
             {resume.isPrimary && (
               <div className="absolute -top-3 -right-3 bg-yellow-500 text-white p-1.5 rounded-full shadow-lg">
@@ -96,7 +96,7 @@ const ResumesPage = () => {
             )}
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 bg-blue-500/10 rounded-xl">
-                <FileText className="w-8 h-8 text-blue-400" />
+                <FileText className="w-8 h-8 text-[#00f0ff]" />
               </div>
               <button
                 onClick={() => handleDelete(resume._id)}
@@ -109,19 +109,19 @@ const ResumesPage = () => {
             <h3 className="text-lg font-semibold text-slate-200 mb-1">{resume.title}</h3>
             <p className="text-sm text-slate-400 mb-4 line-clamp-2">{resume.notes || 'No notes provided.'}</p>
             
-            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-700/50">
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
               <a
                 href={resume.fileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                className="text-[#00f0ff] hover:text-blue-300 text-sm font-medium"
               >
                 View File
               </a>
               {!resume.isPrimary && (
                 <button
                   onClick={() => setPrimary(resume._id)}
-                  className="text-xs px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full transition-colors"
+                  className="text-xs px-3 py-1 bg-[#13141f] hover:bg-white/[0.05] text-slate-300 rounded-full transition-colors"
                 >
                   Set Primary
                 </button>
@@ -132,7 +132,7 @@ const ResumesPage = () => {
       </div>
 
       {resumes.length === 0 && (
-        <div className="text-center py-20 glass rounded-2xl border border-slate-700/50">
+        <div className="text-center py-20 glass-card rounded-2xl border border-white/5">
           <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
           <h3 className="text-xl font-medium text-slate-300 mb-2">No resumes yet</h3>
           <p className="text-slate-500">Upload your first resume version to get started.</p>
@@ -140,20 +140,20 @@ const ResumesPage = () => {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-[#0a0a0f]/80 backdrop-blur-sm flex justify-center items-center z-50">
           <motion.div 
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="glass w-full max-w-md p-8 rounded-2xl border border-slate-700/50"
+            className="glass-card w-full max-w-md p-8 rounded-2xl border border-white/5"
           >
-            <h2 className="text-2xl font-bold text-slate-100 mb-6">Add Resume Version</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Add Resume Version</h2>
             <form onSubmit={handleAddResume} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">Version Title</label>
                 <input
                   type="text"
                   required
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Frontend Dev 2024"
@@ -164,7 +164,7 @@ const ResumesPage = () => {
                 <input
                   type="url"
                   required
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                   value={formData.fileUrl}
                   onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
                   placeholder="https://drive.google.com/..."
@@ -173,7 +173,7 @@ const ResumesPage = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">Notes</label>
                 <textarea
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                   rows="3"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -184,7 +184,7 @@ const ResumesPage = () => {
                 <input
                   type="checkbox"
                   id="isPrimary"
-                  className="w-4 h-4 rounded border-slate-700 bg-slate-900/50 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                  className="w-4 h-4 rounded border-white/10 bg-[#0a0a0f]/50 text-[#ff6b00] focus:ring-blue-500 focus:ring-offset-slate-900"
                   checked={formData.isPrimary}
                   onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
                 />
@@ -195,13 +195,13 @@ const ResumesPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                  className="flex-1 py-2.5 px-4 bg-[#13141f] hover:bg-white/[0.05] text-slate-300 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  className="flex-1 py-2.5 px-4 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
                 >
                   Save Resume
                 </button>

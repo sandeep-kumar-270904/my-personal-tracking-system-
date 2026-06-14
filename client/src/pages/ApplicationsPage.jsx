@@ -84,10 +84,10 @@ const ApplicationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex">
+    <div className="min-h-screen bg-[#0a0a0f] flex">
       <Sidebar />
       
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
         <div className="max-w-7xl mx-auto">
           <header className="mb-8 flex justify-between items-center">
             <div>
@@ -111,7 +111,7 @@ const ApplicationsPage = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="glass-card flex flex-col h-full relative group"
+                  className="glass-card-card flex flex-col h-full relative group"
                 >
                   <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openEditModal(app)} className="p-1.5 bg-slate-700/50 hover:bg-slate-600 rounded-md text-slate-300">
@@ -124,12 +124,12 @@ const ApplicationsPage = () => {
 
                   <div className="mb-4">
                     <h3 className="text-xl font-bold text-white mb-1 pr-16">{app.company}</h3>
-                    <p className="text-blue-400 font-medium">{app.role}</p>
+                    <p className="text-[#00f0ff] font-medium">{app.role}</p>
                   </div>
 
                   <div className="flex items-center justify-between mb-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border
-                      ${app.status === 'Applied' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : ''}
+                      ${app.status === 'Applied' ? 'bg-blue-500/10 text-[#00f0ff] border-blue-500/20' : ''}
                       ${app.status === 'OA' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : ''}
                       ${app.status === 'Interview' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : ''}
                       ${app.status === 'Rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' : ''}
@@ -142,7 +142,7 @@ const ApplicationsPage = () => {
                     </span>
                   </div>
 
-                  <div className="mt-auto pt-4 border-t border-slate-700/50">
+                  <div className="mt-auto pt-4 border-t border-white/5">
                     <p className="text-sm text-slate-400 line-clamp-2 mb-3">
                       {app.notes || 'No notes added.'}
                     </p>
@@ -151,7 +151,7 @@ const ApplicationsPage = () => {
                         href={app.link} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center text-xs text-blue-400 hover:text-blue-300"
+                        className="inline-flex items-center text-xs text-[#00f0ff] hover:text-blue-300"
                       >
                         <ExternalLink className="w-3 h-3 mr-1" />
                         View Posting
@@ -165,7 +165,7 @@ const ApplicationsPage = () => {
 
           {applications.length === 0 && (
             <div className="text-center py-20">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800 mb-4 text-slate-400">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#13141f] mb-4 text-slate-400">
                 <Briefcase className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-medium text-white mb-2">No applications found</h3>
@@ -189,9 +189,9 @@ const ApplicationsPage = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="glass border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl"
+              className="glass-card border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl"
             >
-              <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
+              <div className="flex justify-between items-center p-6 border-b border-white/5">
                 <h2 className="text-xl font-bold text-white">
                   {editingId ? 'Edit Application' : 'New Application'}
                 </h2>
@@ -275,11 +275,11 @@ const ApplicationsPage = () => {
                   ></textarea>
                 </div>
 
-                <div className="flex justify-end pt-4 border-t border-slate-700/50 gap-3">
+                <div className="flex justify-end pt-4 border-t border-white/5 gap-3">
                   <button 
                     type="button" 
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors"
+                    className="px-4 py-2 rounded-lg text-slate-300 hover:bg-[#13141f] transition-colors"
                   >
                     Cancel
                   </button>

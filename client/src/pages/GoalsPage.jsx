@@ -66,7 +66,7 @@ const GoalsPage = () => {
     const isComplete = progress >= target;
 
     return (
-      <div className="glass p-6 rounded-2xl border border-slate-700/50 relative overflow-hidden">
+      <div className="glass-card p-6 rounded-2xl border border-white/5 relative overflow-hidden">
         {isComplete && (
           <div className="absolute top-0 right-0 p-4">
             <span className="flex items-center text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">
@@ -90,7 +90,7 @@ const GoalsPage = () => {
             <span className="text-3xl font-bold text-white">{progress} <span className="text-sm font-normal text-slate-400">completed</span></span>
             <span className="text-sm font-medium text-slate-400">{Math.round(percentage)}%</span>
           </div>
-          <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
+          <div className="w-full h-3 bg-[#13141f] rounded-full overflow-hidden">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${percentage}%` }}
@@ -104,15 +104,15 @@ const GoalsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex">
+    <div className="min-h-screen bg-[#0a0a0f] flex">
       <Sidebar />
       
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
         <div className="max-w-5xl mx-auto">
-          <header className="mb-8 flex justify-between items-end border-b border-slate-700/50 pb-6">
+          <header className="mb-8 flex justify-between items-end border-b border-white/5 pb-6">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-                <Target className="text-blue-500 w-8 h-8" />
+                <Target className="text-[#ff6b00] w-8 h-8" />
                 Goal Setting Engine
               </h1>
               <p className="text-slate-400">Track your weekly progress and build unstoppable momentum.</p>
@@ -148,7 +148,7 @@ const GoalsPage = () => {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass p-6 rounded-2xl border border-slate-700/50 mb-8 grid grid-cols-1 md:grid-cols-3 gap-6"
+              className="glass-card p-6 rounded-2xl border border-white/5 mb-8 grid grid-cols-1 md:grid-cols-3 gap-6"
             >
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Weekly Applications</label>
@@ -189,7 +189,7 @@ const GoalsPage = () => {
               progress={data.progress.applications}
               target={data.goal.targetApplications}
               icon={Briefcase}
-              color={{ bg: 'bg-blue-500/20', text: 'text-blue-400', fill: 'bg-blue-500' }}
+              color={{ bg: 'bg-blue-500/20', text: 'text-[#00f0ff]', fill: 'bg-blue-500' }}
             />
             <ProgressBar 
               title="DSA Practice"
@@ -207,8 +207,8 @@ const GoalsPage = () => {
             />
           </div>
 
-          <div className="mt-8 glass p-8 rounded-2xl border border-slate-700/50 flex flex-col md:flex-row items-center gap-8">
-            <div className="w-20 h-20 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border-4 border-slate-700">
+          <div className="mt-8 glass-card p-8 rounded-2xl border border-white/5 flex flex-col md:flex-row items-center gap-8">
+            <div className="w-20 h-20 rounded-full bg-[#13141f] flex items-center justify-center shrink-0 border-4 border-white/10">
               <TrendingUp className="w-10 h-10 text-emerald-400" />
             </div>
             <div>
