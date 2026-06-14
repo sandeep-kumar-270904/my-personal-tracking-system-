@@ -40,6 +40,10 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 - Stay consistent with your technical preparation.
 - Log problems solved across platforms (LeetCode, Codeforces, etc.), categorize by difficulty (Easy, Medium, Hard), and track completion status.
 
+### 🏆 Live Coding Contests
+- Automatically fetches upcoming coding contests from platforms like LeetCode, Codeforces, and CodeChef.
+- Filter contests by platform and view start times, durations, and direct registration links.
+
 ### 📅 Interview Planner
 - Never miss a schedule. Track upcoming interview dates, types (Technical, HR, OA), and prep notes.
 

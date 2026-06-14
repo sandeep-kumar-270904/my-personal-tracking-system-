@@ -14,6 +14,7 @@ import NetworkPage from './pages/NetworkPage';
 import CalendarPage from './pages/CalendarPage';
 import GoalsPage from './pages/GoalsPage';
 import OffersPage from './pages/OffersPage';
+import ContestsPage from './pages/ContestsPage';
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -94,6 +95,14 @@ function App() {
           element={
             <ProtectedRoute>
               <OffersPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/contests" 
+          element={
+            <ProtectedRoute>
+              <ContestsPage />
             </ProtectedRoute>
           } 
         />
