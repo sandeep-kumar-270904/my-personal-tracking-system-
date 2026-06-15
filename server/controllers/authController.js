@@ -7,6 +7,8 @@ const generateToken = (id) => {
   });
 };
 
+const { sendEmail } = require('../utils/email');
+
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -24,6 +26,26 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
+      // Send Welcome Email
+      await sendEmail({
+        to: user.email,
+        subject: 'Welcome to StudentTracker!',
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #ff6b00;">Welcome to StudentTracker, ${user.name}! 🚀</h2>
+            <p>We're thrilled to have you on board. Your placement preparation just leveled up!</p>
+            <p>Here is what you can do right now:</p>
+            <ul>
+              <li><strong>Track Applications:</strong> Keep all your job applications organized in one place.</li>
+              <li><strong>DSA Tracker:</strong> Monitor your problem-solving progress and hit your weekly goals.</li>
+              <li><strong>Network & Interviews:</strong> Never miss a follow-up date or an interview schedule.</li>
+            </ul>
+            <p>Ready to get placed? Head over to your dashboard and start tracking!</p>
+            <br>
+            <p>Cheers,<br>The StudentTracker Team</p>
+          </div>
+        `
+      });
       res.status(201).json({
         _id: user._id,
         name: user.name,

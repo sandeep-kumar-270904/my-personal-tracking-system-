@@ -1,17 +1,9 @@
 const cron = require('node-cron');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('./email');
 const Event = require('../models/Event');
 const Interview = require('../models/Interview');
 const Network = require('../models/Network');
 const User = require('../models/User');
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // Use a real service in production, or test account
-  auth: {
-    user: process.env.EMAIL_USER || 'test@gmail.com',
-    pass: process.env.EMAIL_PASS || 'password',
-  },
-});
 
 const startCronJobs = () => {
   // Run everyday at 8:00 AM
@@ -67,17 +59,11 @@ const startCronJobs = () => {
         if (user && user.email) {
           const reminders = userReminders[userId];
           
-          if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-            await transporter.sendMail({
-              from: process.env.EMAIL_USER,
-              to: user.email,
-              subject: 'StudentTracker - Your Daily Reminders',
-              text: `Hello ${user.name},\n\nHere are your reminders for today and tomorrow:\n\n${reminders.join('\n')}\n\nGood luck!`,
-            });
-            console.log(`Sent reminder email to ${user.email}`);
-          } else {
-            console.log(`(Simulation) Sent reminder email to ${user.email}: \n${reminders.join('\n')}`);
-          }
+          await sendEmail({
+            to: user.email,
+            subject: 'StudentTracker - Your Daily Reminders',
+            text: `Hello ${user.name},\n\nHere are your reminders for today and tomorrow:\n\n${reminders.join('\n')}\n\nGood luck!`,
+          });
         }
       }
 

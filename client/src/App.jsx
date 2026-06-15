@@ -16,6 +16,7 @@ import CalendarPage from './pages/CalendarPage';
 import GoalsPage from './pages/GoalsPage';
 import OffersPage from './pages/OffersPage';
 import ContestsPage from './pages/ContestsPage';
+import ResourcesPage from './pages/ResourcesPage';
 import SettingsPage from './pages/SettingsPage';
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/offers" element={<OffersPage />} />
           <Route path="/contests" element={<ContestsPage />} />
+          <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 

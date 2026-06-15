@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, LogOut, Settings, FileText, Code, Calendar, Users, CalendarDays, Target, BadgeDollarSign, Trophy, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Briefcase, LogOut, Settings, FileText, Code, Calendar, Users, CalendarDays, Target, BadgeDollarSign, Trophy, Menu, X, BookOpen } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,6 +20,7 @@ const Sidebar = () => {
     { name: 'Goals', path: '/goals', icon: Target },
     { name: 'Offers', path: '/offers', icon: BadgeDollarSign },
     { name: 'Contests', path: '/contests', icon: Trophy },
+    { name: 'PrepHub', path: '/resources', icon: BookOpen },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
