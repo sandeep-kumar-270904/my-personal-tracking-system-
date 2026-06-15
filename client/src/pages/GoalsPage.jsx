@@ -103,145 +103,123 @@ const GoalsPage = () => {
   };
 
   return (
-    <>
-        <div className="max-w-5xl mx-auto">
-          <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-white/5 pb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-                <Target className="text-[#ff6b00] w-8 h-8" />
-                Goal Setting Engine
-              </h1>
-              <p className="text-slate-400">Track your weekly progress and build unstoppable momentum.</p>
-            </div>
-            
-            {isEditing ? (
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditForm({
-                      targetApplications: data.goal.targetApplications,
-                      targetDSA: data.goal.targetDSA,
-                      targetNetworking: data.goal.targetNetworking
-                    });
-                  }}
-                  className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button onClick={handleSave} className="btn-primary">
-                  <Check className="w-4 h-4 mr-2" /> Save Goals
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setIsEditing(true)} className="btn-primary">
-                <Edit2 className="w-4 h-4 mr-2" /> Edit Targets
-              </button>
-            )}
-          </header>
-
-          {isEditing ? (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass-card p-6 rounded-2xl border border-white/5 mb-8 grid grid-cols-1 md:grid-cols-3 gap-6"
+    <div className="p-8 w-full max-w-6xl mx-auto">
+      <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-white/5 pb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <Target className="text-[#ff6b00] w-8 h-8" />
+            Goal Setting Engine
+          </h1>
+          <p className="text-slate-400">Track your weekly progress and build unstoppable momentum.</p>
+        </div>
+        
+        {isEditing ? (
+          <div className="flex gap-3">
+            <button 
+              onClick={() => {
+                setIsEditing(false);
+                setEditForm({
+                  targetApplications: data.goal.targetApplications,
+                  targetDSA: data.goal.targetDSA,
+                  targetNetworking: data.goal.targetNetworking
+                });
+              }}
+              className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
             >
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Weekly Applications</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editForm.targetApplications}
-                  onChange={(e) => setEditForm({...editForm, targetApplications: Number(e.target.value)})}
-                  className="input-field text-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Weekly DSA Problems</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editForm.targetDSA}
-                  onChange={(e) => setEditForm({...editForm, targetDSA: Number(e.target.value)})}
-                  className="input-field text-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Weekly Networking</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editForm.targetNetworking}
-                  onChange={(e) => setEditForm({...editForm, targetNetworking: Number(e.target.value)})}
-                  className="input-field text-lg"
-                />
-              </div>
-            </motion.div>
-          ) : null}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <ProgressBar 
-              title="Job Applications"
-              progress={data.progress.applications}
-              target={data.goal.targetApplications}
-              icon={Briefcase}
-              color={{ bg: 'bg-blue-500/20', text: 'text-[#00f0ff]', fill: 'bg-blue-500' }}
-            />
-            <ProgressBar 
-              title="DSA Practice"
-              progress={data.progress.dsa}
-              target={data.goal.targetDSA}
-              icon={Code}
-              color={{ bg: 'bg-violet-500/20', text: 'text-violet-400', fill: 'bg-violet-500' }}
-            />
-            <ProgressBar 
-              title="Cold Outreach"
-              progress={data.progress.networking}
-              target={data.goal.targetNetworking}
-              icon={Users}
-              color={{ bg: 'bg-amber-500/20', text: 'text-amber-400', fill: 'bg-amber-500' }}
-            />
+              Cancel
+            </button>
+            <button onClick={handleSave} className="btn-primary">
+              <Check className="w-4 h-4 mr-2" /> Save Goals
+            </button>
           </div>
+        ) : (
+          <button onClick={() => setIsEditing(true)} className="btn-primary">
+            <Edit2 className="w-4 h-4 mr-2" /> Edit Targets
+          </button>
+        )}
+      </header>
 
-          <div className="mt-8 glass-card p-8 rounded-2xl border border-white/5 flex flex-col md:flex-row items-center gap-8">
-            <div className="w-20 h-20 rounded-full bg-[#13141f] flex items-center justify-center shrink-0 border-4 border-white/10">
-              <TrendingUp className="w-10 h-10 text-emerald-400" />
+      {isEditing && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="glass-card p-6 rounded-2xl border border-[#ff6b00]/30 mb-8 bg-[#ff6b00]/5"
+        >
+          <h3 className="text-lg font-bold text-white mb-4">Set Your Weekly Targets</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Weekly Applications</label>
+              <input 
+                type="number" 
+                min="0"
+                value={editForm.targetApplications}
+                onChange={(e) => setEditForm({...editForm, targetApplications: Number(e.target.value)})}
+                className="input-field text-lg"
+              />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-2">Keep up the momentum!</h3>
-              <p className="text-slate-400">
-                Small consistent steps every week lead to massive results over time. You are currently hitting 
-                <strong className="text-white"> {Math.round(((data.progress.applications / (data.goal.targetApplications || 1)) + (data.progress.dsa / (data.goal.targetDSA || 1)) + (data.progress.networking / (data.goal.targetNetworking || 1))) / 3 * 100)}% </strong> 
-                of your total goals this week.
-              </p>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Weekly DSA Problems</label>
+              <input 
+                type="number" 
+                min="0"
+                value={editForm.targetDSA}
+                onChange={(e) => setEditForm({...editForm, targetDSA: Number(e.target.value)})}
+                className="input-field text-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Weekly Networking</label>
+              <input 
+                type="number" 
+                min="0"
+                value={editForm.targetNetworking}
+                onChange={(e) => setEditForm({...editForm, targetNetworking: Number(e.target.value)})}
+                className="input-field text-lg"
+              />
             </div>
           </div>
+        </motion.div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <ProgressBar 
           title="Job Applications"
           progress={data.progress.applications}
           target={data.goal.targetApplications}
           icon={Briefcase}
-          color={{ bg: 'bg-blue-500/20', text: 'text-blue-400', fill: 'bg-blue-500' }}
+          color={{ bg: 'bg-blue-500/20', text: 'text-[#00f0ff]', fill: 'bg-blue-500' }}
         />
         <ProgressBar 
-          title="DSA Problems"
+          title="DSA Practice"
           progress={data.progress.dsa}
           target={data.goal.targetDSA}
           icon={Code}
-          color={{ bg: 'bg-amber-500/20', text: 'text-amber-400', fill: 'bg-amber-500' }}
+          color={{ bg: 'bg-violet-500/20', text: 'text-violet-400', fill: 'bg-violet-500' }}
         />
         <ProgressBar 
-          title="Networking"
+          title="Cold Outreach"
           progress={data.progress.networking}
           target={data.goal.targetNetworking}
           icon={Users}
-          color={{ bg: 'bg-purple-500/20', text: 'text-purple-400', fill: 'bg-purple-500' }}
+          color={{ bg: 'bg-amber-500/20', text: 'text-amber-400', fill: 'bg-amber-500' }}
         />
       </div>
 
-      <div className="glass-card p-6 rounded-2xl border border-white/5 relative overflow-hidden">
+      <div className="mt-8 glass-card p-8 rounded-2xl border border-white/5 flex flex-col md:flex-row items-center gap-8">
+        <div className="w-20 h-20 rounded-full bg-[#13141f] flex items-center justify-center shrink-0 border-4 border-white/10">
+          <TrendingUp className="w-10 h-10 text-emerald-400" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-white mb-2">Keep up the momentum!</h3>
+          <p className="text-slate-400">
+            Small consistent steps every week lead to massive results over time. You are currently hitting 
+            <strong className="text-white"> {Math.round(((data.progress.applications / (data.goal.targetApplications || 1)) + (data.progress.dsa / (data.goal.targetDSA || 1)) + (data.progress.networking / (data.goal.targetNetworking || 1))) / 3 * 100)}% </strong> 
+            of your total goals this week.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-8 glass-card p-6 rounded-2xl border border-white/5 relative overflow-hidden">
         <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
           <TrendingUp className="w-64 h-64 text-[#ff6b00]" />
         </div>
@@ -256,7 +234,6 @@ const GoalsPage = () => {
           "Small disciplines repeated with consistency every day lead to great achievements gained slowly over time."
         </div>
       </div>
-
     </div>
   );
 };

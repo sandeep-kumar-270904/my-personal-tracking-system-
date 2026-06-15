@@ -348,7 +348,7 @@ const OffersPage = () => {
           </div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };
 

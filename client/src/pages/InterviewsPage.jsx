@@ -7,6 +7,7 @@ const InterviewsPage = () => {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
     company: '',
     interviewDate: '',
     round: '',
