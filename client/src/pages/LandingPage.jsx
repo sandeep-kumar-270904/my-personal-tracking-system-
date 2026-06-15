@@ -48,13 +48,15 @@ const CustomVideoPlayer = ({ src }) => {
       {/* Video Element */}
       <video 
         ref={videoRef}
-        src={src} 
         autoPlay 
         loop 
         muted={isMuted} 
         playsInline 
         className="w-full h-full object-cover pt-8"
-      />
+      >
+        <source src="/demo.mp4" type="video/mp4" />
+        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4" />
+      </video>
 
       {/* Play/Pause Overlay */}
       <div className={`absolute inset-0 pt-8 flex items-center justify-center z-10 transition-all duration-300 ${!isPlaying || isHovered ? 'bg-black/40 backdrop-blur-[2px]' : 'bg-transparent pointer-events-none'}`}>
