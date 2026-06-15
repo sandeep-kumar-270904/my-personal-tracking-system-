@@ -86,7 +86,7 @@ const LandingPage = () => {
                 <div className="ml-4 text-xs text-slate-400 font-mono">smart-tracker-demo.mp4</div>
               </div>
               <video 
-                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
+                src="https://drive.google.com/uc?export=download&id=18dGMWdVbYhvC-mwR2Sr1fAESe5M4djW-" 
                 autoPlay 
                 loop 
                 muted 
