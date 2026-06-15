@@ -71,39 +71,31 @@ const LandingPage = () => {
             </div>
           </motion.div>
 
-          {/* Floating UI Mockup */}
+          {/* Platform Video Showcase */}
           <motion.div 
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
             className="mt-24 relative mx-auto max-w-5xl perspective-1000"
           >
-            <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(255,0,123,0.15)] transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out bg-[#050508]/80 backdrop-blur-xl">
-              <div className="h-8 bg-white/5 border-b border-white/10 flex items-center px-4 gap-2">
+            <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(255,0,123,0.15)] transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out bg-[#050508] aspect-[16/9] group">
+              <div className="absolute top-0 inset-x-0 h-8 bg-white/5 border-b border-white/10 flex items-center px-4 gap-2 z-10 backdrop-blur-md">
                 <div className="w-3 h-3 rounded-full bg-red-500/80" />
                 <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                 <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                <div className="ml-4 text-xs text-slate-400 font-mono">smart-tracker-demo.mp4</div>
               </div>
-              <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-80">
-                <div className="h-40 rounded-xl bg-gradient-to-br from-white/5 to-transparent border border-white/5 p-6">
-                  <div className="h-4 w-1/2 bg-white/10 rounded mb-4" />
-                  <div className="h-8 w-3/4 bg-gradient-to-r from-[#ff6b00]/20 to-transparent rounded mb-2" />
-                  <div className="h-2 w-full bg-white/5 rounded" />
-                </div>
-                <div className="h-40 rounded-xl bg-gradient-to-br from-white/5 to-transparent border border-white/5 p-6">
-                  <div className="h-4 w-1/2 bg-white/10 rounded mb-4" />
-                  <div className="h-8 w-3/4 bg-gradient-to-r from-[#ff007b]/20 to-transparent rounded mb-2" />
-                  <div className="h-2 w-full bg-white/5 rounded" />
-                </div>
-                <div className="h-40 rounded-xl bg-gradient-to-br from-white/5 to-transparent border border-white/5 p-6">
-                  <div className="h-4 w-1/2 bg-white/10 rounded mb-4" />
-                  <div className="h-8 w-3/4 bg-gradient-to-r from-[#00f0ff]/20 to-transparent rounded mb-2" />
-                  <div className="h-2 w-full bg-white/5 rounded" />
-                </div>
-              </div>
+              <video 
+                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500 pt-8"
+              />
             </div>
             {/* Ambient shadow for mockup */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-[#ff6b00]/20 via-[#ff007b]/20 to-[#00f0ff]/20 blur-3xl -z-10 opacity-50" />
+            <div className="absolute -inset-4 bg-gradient-to-r from-[#ff6b00]/20 via-[#ff007b]/20 to-[#00f0ff]/20 blur-3xl -z-10 opacity-50 pointer-events-none" />
           </motion.div>
         </div>
       </section>

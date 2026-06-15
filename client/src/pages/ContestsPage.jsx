@@ -67,10 +67,17 @@ const ContestsPage = () => {
   const fetchAllContests = async () => {
     setLoading(true);
     try {
-      // 1. Fetch Codeforces
+      // 1. Fetch Codeforces with a 3-second timeout
       let cfContests = [];
       try {
-        const response = await fetch('https://codeforces.com/api/contest.list');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch('https://codeforces.com/api/contest.list', {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         const data = await response.json();
         if (data.status === 'OK') {
           cfContests = data.result
@@ -84,7 +91,7 @@ const ContestsPage = () => {
             }));
         }
       } catch (err) {
-        console.error('Codeforces fetch failed:', err);
+        console.warn('Codeforces fetch failed or timed out:', err);
       }
 
       // 2. Combine with Predictable Contests
