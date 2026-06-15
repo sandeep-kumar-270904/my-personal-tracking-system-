@@ -59,7 +59,7 @@ const CustomVideoPlayer = ({ src }) => {
       </video>
 
       {/* Play/Pause Overlay */}
-      <div className={`absolute inset-0 pt-8 flex items-center justify-center z-10 transition-all duration-300 ${!isPlaying || isHovered ? 'bg-black/40 backdrop-blur-[2px]' : 'bg-transparent pointer-events-none'}`}>
+      <div className={`absolute inset-0 pt-8 flex items-center justify-center z-10 transition-all duration-300 ${!isPlaying ? 'bg-black/40 backdrop-blur-sm' : isHovered ? 'bg-black/10' : 'bg-transparent pointer-events-none'}`}>
         <button 
           onClick={togglePlay}
           className={`w-20 h-20 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:bg-[#ff007b]/40 hover:border-[#ff007b] ${!isPlaying || isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}
