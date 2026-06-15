@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, TrendingUp, Users, Target, Rocket, Shield, Code2, Play } from 'lucide-react';
+import { ArrowRight, CheckCircle2, TrendingUp, Users, Target, Rocket, Shield, Code2, Play, Star, ChevronRight } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
@@ -42,8 +42,6 @@ const LandingPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-300 mb-8 backdrop-blur-md shadow-[0_0_20px_rgba(255,107,0,0.15)]">
-              <span className="relative flex h-2.5 w-2.5">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-8 text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer">
               <span className="flex h-2 w-2 rounded-full bg-[#00f0ff] animate-pulse"></span>
               Placement Tracker v2.0 is live
@@ -287,7 +285,14 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Minimal Footer */}
+      {/* Footer */}
+      <footer className="border-t border-white/10 bg-[#050508] py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg shadow-[#ff6b00]/20">
+              <span className="font-bold text-white text-xl">S</span>
+            </div>
+            <span className="text-xl font-bold tracking-tight text-white">SmartTracker</span>
           </div>
           <p className="text-slate-500 font-medium">© {new Date().getFullYear()} SmartTracker. Built for students.</p>
         </div>
