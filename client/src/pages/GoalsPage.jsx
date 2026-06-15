@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Edit2, Check, TrendingUp, Briefcase, Code, Users } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 
 const GoalsPage = () => {
@@ -104,12 +103,9 @@ const GoalsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex">
-      <Sidebar />
-      
-      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
+    <>
         <div className="max-w-5xl mx-auto">
-          <header className="mb-8 flex justify-between items-end border-b border-white/5 pb-6">
+          <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-white/5 pb-6">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
                 <Target className="text-[#ff6b00] w-8 h-8" />
@@ -221,8 +217,46 @@ const GoalsPage = () => {
             </div>
           </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <ProgressBar 
+          title="Job Applications"
+          progress={data.progress.applications}
+          target={data.goal.targetApplications}
+          icon={Briefcase}
+          color={{ bg: 'bg-blue-500/20', text: 'text-blue-400', fill: 'bg-blue-500' }}
+        />
+        <ProgressBar 
+          title="DSA Problems"
+          progress={data.progress.dsa}
+          target={data.goal.targetDSA}
+          icon={Code}
+          color={{ bg: 'bg-amber-500/20', text: 'text-amber-400', fill: 'bg-amber-500' }}
+        />
+        <ProgressBar 
+          title="Networking"
+          progress={data.progress.networking}
+          target={data.goal.targetNetworking}
+          icon={Users}
+          color={{ bg: 'bg-purple-500/20', text: 'text-purple-400', fill: 'bg-purple-500' }}
+        />
+      </div>
+
+      <div className="glass-card p-6 rounded-2xl border border-white/5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+          <TrendingUp className="w-64 h-64 text-[#ff6b00]" />
         </div>
-      </main>
+        
+        <h3 className="text-xl font-bold text-white mb-2 relative z-10">Why Weekly Goals?</h3>
+        <p className="text-slate-400 max-w-3xl relative z-10 leading-relaxed">
+          Consistency is the secret weapon in job hunting. Instead of cramming 50 applications in one day and burning out, 
+          aim for a steady pace. Hitting small daily or weekly targets compounds over time, leading to better interview 
+          performance and higher quality applications. 
+        </p>
+        <div className="mt-6 inline-flex items-center text-[#00f0ff] font-medium bg-[#00f0ff]/10 px-4 py-2 rounded-lg relative z-10 border border-[#00f0ff]/20">
+          "Small disciplines repeated with consistency every day lead to great achievements gained slowly over time."
+        </div>
+      </div>
+
     </div>
   );
 };

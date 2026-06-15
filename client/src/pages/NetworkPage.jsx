@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, X, MessageSquare, Briefcase, Mail, Globe, Users } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import { Plus, Edit2, Trash2, X, MessageSquare, Briefcase, Mail, Globe, Users, Clock } from 'lucide-react';
 import api from '../services/api';
 
 const NetworkPage = () => {
@@ -16,7 +15,8 @@ const NetworkPage = () => {
     platform: 'LinkedIn',
     status: 'To Contact',
     lastContactDate: new Date().toISOString().split('T')[0],
-    notes: ''
+    notes: '',
+    followUpDate: ''
   });
 
   useEffect(() => {
@@ -67,8 +67,9 @@ const NetworkPage = () => {
       role: contact.role,
       platform: contact.platform,
       status: contact.status,
-      lastContactDate: new Date(contact.lastContactDate).toISOString().split('T')[0],
-      notes: contact.notes
+      lastContactDate: contact.lastContactDate ? new Date(contact.lastContactDate).toISOString().split('T')[0] : '',
+      notes: contact.notes,
+      followUpDate: contact.followUpDate ? new Date(contact.followUpDate).toISOString().split('T')[0] : ''
     });
     setEditingId(contact._id);
     setIsModalOpen(true);
@@ -82,7 +83,8 @@ const NetworkPage = () => {
       platform: 'LinkedIn',
       status: 'To Contact',
       lastContactDate: new Date().toISOString().split('T')[0],
-      notes: ''
+      notes: '',
+      followUpDate: ''
     });
   };
 
@@ -107,12 +109,9 @@ const NetworkPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex">
-      <Sidebar />
-      
-      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
+    <>
         <div className="max-w-7xl mx-auto">
-          <header className="mb-8 flex justify-between items-center">
+          <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-white/5 pb-6">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Network Tracker</h1>
               <p className="text-slate-400">Manage your cold outreach and track referrals.</p>
@@ -155,13 +154,21 @@ const NetworkPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mb-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(contact.status)}`}>
-                      {contact.status}
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      Last: {new Date(contact.lastContactDate).toLocaleDateString()}
-                    </span>
+                  <div className="flex flex-col gap-2 mb-4">
+                    <div className="flex items-center justify-between">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(contact.status)}`}>
+                        {contact.status}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        Last: {new Date(contact.lastContactDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {contact.followUpDate && (
+                      <div className="flex items-center text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1.5 rounded-lg w-fit">
+                        <Clock className="w-3.5 h-3.5 mr-1.5" />
+                        Follow-up: {new Date(contact.followUpDate).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-white/5">
@@ -183,14 +190,13 @@ const NetworkPage = () => {
               <p className="text-slate-400 mb-6">Start building your network for referrals.</p>
               <button 
                 onClick={() => { resetForm(); setEditingId(null); setIsModalOpen(true); }}
-                className="btn-primary mx-auto"
+                className="btn-primary mx-auto mt-6"
               >
                 Add Your First Contact
               </button>
             </div>
           )}
         </div>
-      </main>
 
       {/* Modal */}
       <AnimatePresence>
@@ -292,6 +298,18 @@ const NetworkPage = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Follow-up Date (Optional)</label>
+                    <input 
+                      type="date" 
+                      value={formData.followUpDate}
+                      onChange={(e) => setFormData({...formData, followUpDate: e.target.value})}
+                      className="input-field" 
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Notes (Email templates, responses, links)</label>
                   <textarea 
@@ -319,7 +337,7 @@ const NetworkPage = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
 

@@ -10,11 +10,16 @@ const interviewRoutes = require('./routes/interviewRoutes');
 const networkRoutes = require('./routes/networkRoutes');
 const goalRoutes = require('./routes/goalRoutes');
 const offerRoutes = require('./routes/offerRoutes');
+const eventRoutes = require('./routes/eventRoutes');
+const startCronJobs = require('./utils/cron');
 
 const app = express();
 
 // Connect to Database
 connectDB();
+
+// Start Cron Jobs for Reminders
+startCronJobs();
 
 // Middleware
 app.use(cors());
@@ -29,6 +34,7 @@ app.use('/api/interviews', interviewRoutes);
 app.use('/api/network', networkRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/offers', offerRoutes);
+app.use('/api/events', eventRoutes);
 
 app.get('/', (req, res) => {
   res.send('Smart Internship & Career Tracker API is running...');

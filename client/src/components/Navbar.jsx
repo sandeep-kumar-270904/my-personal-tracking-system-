@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Briefcase } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -12,7 +11,7 @@ const Navbar = () => {
               <span className="font-bold text-white text-xl">S</span>
             </div>
             <span className="text-2xl font-bold tracking-tight text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#ff6b00] group-hover:to-[#ff007b] transition-all">
-              SmartTracker
+              StudentTracker
             </span>
           </Link>
           <div className="flex items-center gap-6">
@@ -20,13 +19,12 @@ const Navbar = () => {
               Log In
             </Link>
             <Link to="/signup">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-primary py-2.5 px-6 text-sm"
-              >
-                Get Started
-              </motion.button>
+              <button className="relative inline-flex h-10 overflow-hidden rounded-xl p-[1px] focus:outline-none group">
+                <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ff6b00_0%,#ff007b_50%,#00f0ff_100%)]" />
+                <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-xl bg-[#0a0a0f] hover:bg-slate-900 px-6 py-2.5 text-sm font-bold text-white backdrop-blur-3xl transition-colors">
+                  Get Started
+                </span>
+              </button>
             </Link>
           </div>
         </div>

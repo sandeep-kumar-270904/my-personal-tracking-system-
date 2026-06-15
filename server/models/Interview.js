@@ -22,6 +22,13 @@ const interviewSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  interviewer: {
+    type: String,
+    default: '',
+  },
+  followUpDate: {
+    type: Date,
+  },
   status: {
     type: String,
     enum: ['Scheduled', 'Preparing', 'Done', 'Cancelled'],

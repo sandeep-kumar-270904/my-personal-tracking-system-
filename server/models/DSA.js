@@ -19,6 +19,10 @@ const dsaSchema = new mongoose.Schema({
     enum: ['Easy', 'Medium', 'Hard'],
     default: 'Medium',
   },
+  url: {
+    type: String,
+    default: '',
+  },
   status: {
     type: String,
     enum: ['Not Started', 'In Progress', 'Completed'],

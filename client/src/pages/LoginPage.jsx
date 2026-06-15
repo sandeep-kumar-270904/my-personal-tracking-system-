@@ -38,9 +38,10 @@ const LoginPage = () => {
         <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-[#ff007b]/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative z-10 max-w-lg p-12 glass-card-card neon-border">
-          <h2 className="text-4xl font-bold mb-6 text-white leading-tight">
-            Welcome back to <br/><span className="text-gradient">SmartTracker</span>
-          </h2>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2 leading-tight">
+            Welcome back to <br/>
+            <span className="text-gradient">StudentTracker</span>
+          </h1>
           <p className="text-xl text-slate-400 leading-relaxed mb-8">
             Log in to continue managing your placement journey, track your latest applications, and analyze your mock interview performance.
           </p>
@@ -65,11 +66,11 @@ const LoginPage = () => {
           animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md relative z-10"
         >
-          <Link to="/" className="inline-flex items-center gap-2 mb-12 text-slate-400 hover:text-white transition-colors">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg">
+          <Link to="/" className="flex items-center gap-2 group cursor-pointer">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg group-hover:shadow-[0_0_20px_rgba(255,107,0,0.4)] transition-all">
               <span className="font-bold text-white text-sm">S</span>
             </div>
-            <span className="font-bold tracking-tight text-xl text-white">SmartTracker</span>
+            <span className="font-bold tracking-tight text-xl text-white">StudentTracker</span>
           </Link>
 
           <div className="mb-10">

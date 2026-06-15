@@ -35,6 +35,9 @@ const networkSchema = new mongoose.Schema({
   notes: {
     type: String,
     default: ''
+  },
+  followUpDate: {
+    type: Date
   }
 }, { timestamps: true });
 

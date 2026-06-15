@@ -14,6 +14,18 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true
+  },
+  college: {
+    type: String,
+    default: ''
+  },
+  branch: {
+    type: String,
+    default: ''
+  },
+  gradYear: {
+    type: String,
+    default: ''
   }
 }, { timestamps: true });
 

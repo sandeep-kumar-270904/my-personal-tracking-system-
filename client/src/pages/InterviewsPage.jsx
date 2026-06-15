@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Plus, Trash2, MapPin, Video, Phone } from 'lucide-react';
+import { Calendar, Plus, Trash2, MapPin, Video, Phone, User, Clock } from 'lucide-react';
 import api from '../services/api';
 import { motion } from 'framer-motion';
 
@@ -7,12 +7,13 @@ const InterviewsPage = () => {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
     company: '',
     interviewDate: '',
     round: '',
     notes: '',
     status: 'Scheduled',
+    interviewer: '',
+    followUpDate: '',
   });
 
   useEffect(() => {
@@ -36,7 +37,7 @@ const InterviewsPage = () => {
       const { data } = await api.post('/interviews', formData);
       setInterviews([...interviews, data].sort((a, b) => new Date(a.interviewDate) - new Date(b.interviewDate)));
       setShowModal(false);
-      setFormData({ company: '', interviewDate: '', round: '', notes: '', status: 'Scheduled' });
+      setFormData({ company: '', interviewDate: '', round: '', notes: '', status: 'Scheduled', interviewer: '', followUpDate: '' });
     } catch (error) {
       console.error('Failed to add interview:', error);
     }
@@ -44,7 +45,7 @@ const InterviewsPage = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      const { data } = await api.put(`/api/interviews/${id}`, { status });
+      const { data } = await api.put(`/interviews/${id}`, { status });
       setInterviews(interviews.map(i => i._id === id ? data : i));
     } catch (error) {
       console.error('Failed to update interview:', error);
@@ -53,7 +54,7 @@ const InterviewsPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/api/interviews/${id}`);
+      await api.delete(`/interviews/${id}`);
       setInterviews(interviews.filter((i) => i._id !== id));
     } catch (error) {
       console.error('Failed to delete interview:', error);
@@ -73,7 +74,7 @@ const InterviewsPage = () => {
 
   return (
     <div className="p-8 w-full max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 border-b border-white/5 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Interviews</h1>
           <p className="text-slate-400 mt-1">Track your upcoming interviews and prep notes</p>
@@ -92,7 +93,8 @@ const InterviewsPage = () => {
             key={interview._id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-card p-6 rounded-2xl border border-white/5 hover:border-white/20/50 transition-all group"
+            whileHover={{ y: -5 }}
+            className="glass-card p-6 rounded-2xl border border-white/5 hover:border-white/20 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 group relative"
           >
             <div className="flex justify-between items-start mb-4">
               <div>
@@ -107,13 +109,27 @@ const InterviewsPage = () => {
               </button>
             </div>
 
-            <div className="flex items-center text-slate-300 mb-4 bg-white/[0.02] p-3 rounded-xl border border-white/5">
-              <Calendar className="w-5 h-5 text-[#00f0ff] mr-3" />
-              <span className="font-medium">
-                {new Date(interview.interviewDate).toLocaleDateString('en-US', {
-                  weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                })}
-              </span>
+            <div className="flex flex-col gap-2 text-slate-300 mb-4 bg-white/[0.02] p-3 rounded-xl border border-white/5">
+              <div className="flex items-center">
+                <Calendar className="w-4 h-4 text-[#00f0ff] mr-3" />
+                <span className="font-medium text-sm">
+                  {new Date(interview.interviewDate).toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                  })}
+                </span>
+              </div>
+              {interview.interviewer && (
+                <div className="flex items-center text-sm mt-1">
+                  <User className="w-4 h-4 text-emerald-400 mr-3" />
+                  <span>{interview.interviewer}</span>
+                </div>
+              )}
+              {interview.followUpDate && (
+                <div className="flex items-center text-sm mt-1">
+                  <Clock className="w-4 h-4 text-amber-400 mr-3" />
+                  <span>Follow-up: {new Date(interview.followUpDate).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
 
             <p className="text-sm text-slate-400 mb-6 min-h-[40px] line-clamp-2">
@@ -187,6 +203,27 @@ const InterviewsPage = () => {
                     value={formData.round}
                     onChange={(e) => setFormData({ ...formData, round: e.target.value })}
                     placeholder="e.g. Technical 1"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Interviewer Name (Optional)</label>
+                  <input
+                    type="text"
+                    className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                    value={formData.interviewer}
+                    onChange={(e) => setFormData({ ...formData, interviewer: e.target.value })}
+                    placeholder="e.g. John Doe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Follow-up Date (Optional)</label>
+                  <input
+                    type="date"
+                    className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                    value={formData.followUpDate}
+                    onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
                   />
                 </div>
               </div>

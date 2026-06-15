@@ -68,7 +68,7 @@ const ResumesPage = () => {
 
   return (
     <div className="p-8 w-full max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 border-b border-white/5 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Resume Manager</h1>
           <p className="text-slate-400 mt-1">Manage and track your resume versions</p>
@@ -87,7 +87,8 @@ const ResumesPage = () => {
             key={resume._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-6 rounded-2xl border border-white/5 hover:border-white/20/50 transition-all group relative"
+            whileHover={{ y: -5 }}
+            className="glass-card flex flex-col h-full p-6 rounded-2xl border border-white/5 hover:border-white/20 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 group relative"
           >
             {resume.isPrimary && (
               <div className="absolute -top-3 -right-3 bg-yellow-500 text-white p-1.5 rounded-full shadow-lg">
@@ -160,10 +161,28 @@ const ResumesPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">File URL / Link</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Upload Resume (PDF)</label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-[#00f0ff] hover:file:bg-blue-500/20"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setFormData({ ...formData, fileUrl: URL.createObjectURL(file) });
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex-1 h-px bg-white/10"></div>
+                <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">OR</span>
+                <div className="flex-1 h-px bg-white/10"></div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Drive Link / URL</label>
                 <input
                   type="url"
-                  required
                   className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                   value={formData.fileUrl}
                   onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}

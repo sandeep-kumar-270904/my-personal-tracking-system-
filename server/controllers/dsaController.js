@@ -16,7 +16,7 @@ const getDSAs = async (req, res) => {
 // @route   POST /api/dsa
 // @access  Private
 const createDSA = async (req, res) => {
-  const { topic, problemsSolved, difficulty, status, notes } = req.body;
+  const { topic, problemsSolved, difficulty, status, url, notes } = req.body;
 
   try {
     const dsa = await DSA.create({
@@ -25,6 +25,7 @@ const createDSA = async (req, res) => {
       problemsSolved: problemsSolved || 0,
       difficulty: difficulty || 'Medium',
       status: status || 'Not Started',
+      url: url || '',
       notes,
     });
 

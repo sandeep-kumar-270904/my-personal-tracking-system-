@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BadgeDollarSign, Plus, X, Trash2, Edit2, MapPin, Building2, Calendar, TrendingUp } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 
 const OffersPage = () => {
@@ -99,123 +98,117 @@ const OffersPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex">
-      <Sidebar />
-      
-      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
-        <div className="max-w-6xl mx-auto">
-          <header className="mb-8 flex justify-between items-end border-b border-white/5 pb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-                <BadgeDollarSign className="text-emerald-500 w-8 h-8" />
-                Offer & Compensation Tracker
-              </h1>
-              <p className="text-slate-400">Compare your CTC breakdowns and never miss a negotiation deadline.</p>
-            </div>
-            <button 
-              onClick={() => {
-                setEditingId(null);
-                setFormData({ company: '', role: '', baseSalary: '', signOnBonus: '', rsu: '', deadline: '', status: 'Pending', notes: '' });
-                setIsModalOpen(true);
-              }} 
-              className="btn-primary"
-            >
-              <Plus className="w-5 h-5 mr-2" /> Add Offer
-            </button>
-          </header>
-
-          {loading ? (
-             <div className="flex justify-center items-center h-64">
-               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
-             </div>
-          ) : offers.length === 0 ? (
-            <div className="text-center py-20 glass-card rounded-2xl border border-white/5">
-              <BadgeDollarSign className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-white mb-2">No offers tracked yet</h3>
-              <p className="text-slate-400 mb-6">Aced the interview? Add your job offer here to track compensation.</p>
-              <button onClick={() => setIsModalOpen(true)} className="btn-primary">Add Your First Offer</button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {offers.map(offer => {
-                const basePct = (offer.baseSalary / offer.totalCTC) * 100 || 0;
-                const bonusPct = (offer.signOnBonus / offer.totalCTC) * 100 || 0;
-                const rsuPct = (offer.rsu / offer.totalCTC) * 100 || 0;
-
-                return (
-                  <motion.div 
-                    key={offer._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="glass-card p-6 rounded-2xl border border-white/5 hover:bg-[#13141f]/30 transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                          <Building2 className="w-5 h-5 text-slate-400" /> {offer.company}
-                        </h3>
-                        <p className="text-slate-400 font-medium">{offer.role}</p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(offer.status)}`}>
-                        {offer.status}
-                      </span>
-                    </div>
-
-                    <div className="mb-6 flex items-center gap-2 text-sm text-slate-300 bg-white/[0.02] w-fit px-3 py-1.5 rounded-lg border border-white/5">
-                      <Calendar className="w-4 h-4 text-red-400" />
-                      <span className="font-medium text-slate-200">Deadline:</span> 
-                      {new Date(offer.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                    </div>
-
-                    <div className="bg-[#0a0a0f]/50 p-4 rounded-xl border border-white/5 mb-4">
-                      <div className="flex justify-between items-end mb-4">
-                        <span className="text-slate-400 font-medium uppercase tracking-wider text-xs">Total CTC (Year 1)</span>
-                        <span className="text-3xl font-bold text-emerald-400">{formatCurrency(offer.totalCTC)}</span>
-                      </div>
-
-                      {/* Stacked Bar Chart for CTC Breakdown */}
-                      <div className="w-full h-4 rounded-full flex overflow-hidden mb-3">
-                        <div style={{ width: `${basePct}%` }} className="bg-blue-500 h-full relative group">
-                          <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Base: {formatCurrency(offer.baseSalary)}</div>
-                        </div>
-                        <div style={{ width: `${bonusPct}%` }} className="bg-amber-500 h-full relative group">
-                           <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Bonus: {formatCurrency(offer.signOnBonus)}</div>
-                        </div>
-                        <div style={{ width: `${rsuPct}%` }} className="bg-purple-500 h-full relative group">
-                           <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">RSU: {formatCurrency(offer.rsu)}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between text-xs font-medium">
-                        <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Base</div>
-                        <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Sign-On</div>
-                        <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-purple-500"></div> RSU</div>
-                      </div>
-                    </div>
-
-                    {offer.notes && (
-                      <p className="text-sm text-slate-400 mb-4 bg-[#13141f]/30 p-3 rounded-lg border border-white/10/30 italic">
-                        "{offer.notes}"
-                      </p>
-                    )}
-
-                    <div className="flex justify-end gap-2 pt-4 border-t border-white/5">
-                      <button onClick={() => openEditModal(offer)} className="p-2 text-slate-400 hover:text-[#00f0ff] transition-colors bg-[#13141f] hover:bg-white/[0.05] rounded-lg">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(offer._id)} className="p-2 text-slate-400 hover:text-red-400 transition-colors bg-[#13141f] hover:bg-white/[0.05] rounded-lg">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
+    <div className="p-8 w-full max-w-6xl mx-auto">
+      <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-white/5 pb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <BadgeDollarSign className="text-emerald-500 w-8 h-8" />
+            Offer & Compensation Tracker
+          </h1>
+          <p className="text-slate-400">Compare your CTC breakdowns and never miss a negotiation deadline.</p>
         </div>
-      </main>
+        <button 
+          onClick={() => {
+            setEditingId(null);
+            setFormData({ company: '', role: '', baseSalary: '', signOnBonus: '', rsu: '', deadline: '', status: 'Pending', notes: '' });
+            setIsModalOpen(true);
+          }} 
+          className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
+        >
+          <Plus className="w-5 h-5 mr-2" /> Add Offer
+        </button>
+      </header>
 
-      {/* Add/Edit Modal */}
+      {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+          </div>
+      ) : offers.length === 0 ? (
+        <div className="text-center py-20 glass-card rounded-2xl border border-white/5">
+          <BadgeDollarSign className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-white mb-2">No offers tracked yet</h3>
+          <p className="text-slate-400 mb-6">Aced the interview? Add your job offer here to track compensation.</p>
+          <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors mx-auto mt-6">Add Your First Offer</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {offers.map(offer => {
+            const basePct = (offer.baseSalary / offer.totalCTC) * 100 || 0;
+            const bonusPct = (offer.signOnBonus / offer.totalCTC) * 100 || 0;
+            const rsuPct = (offer.rsu / offer.totalCTC) * 100 || 0;
+
+            return (
+              <motion.div 
+                key={offer._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card p-6 rounded-2xl border border-white/5 hover:bg-[#13141f]/30 transition-colors"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-slate-400" /> {offer.company}
+                    </h3>
+                    <p className="text-slate-400 font-medium">{offer.role}</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(offer.status)}`}>
+                    {offer.status}
+                  </span>
+                </div>
+
+                <div className="mb-6 flex items-center gap-2 text-sm text-slate-300 bg-white/[0.02] w-fit px-3 py-1.5 rounded-lg border border-white/5">
+                  <Calendar className="w-4 h-4 text-red-400" />
+                  <span className="font-medium text-slate-200">Deadline:</span> 
+                  {new Date(offer.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </div>
+
+                <div className="bg-[#0a0a0f]/50 p-4 rounded-xl border border-white/5 mb-4">
+                  <div className="flex justify-between items-end mb-4">
+                    <span className="text-slate-400 font-medium uppercase tracking-wider text-xs">Total CTC (Year 1)</span>
+                    <span className="text-3xl font-bold text-emerald-400">{formatCurrency(offer.totalCTC)}</span>
+                  </div>
+
+                  {/* Stacked Bar Chart for CTC Breakdown */}
+                  <div className="w-full h-4 rounded-full flex overflow-hidden mb-3">
+                    <div style={{ width: `${basePct}%` }} className="bg-blue-500 h-full relative group">
+                      <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Base: {formatCurrency(offer.baseSalary)}</div>
+                    </div>
+                    <div style={{ width: `${bonusPct}%` }} className="bg-amber-500 h-full relative group">
+                       <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Bonus: {formatCurrency(offer.signOnBonus)}</div>
+                    </div>
+                    <div style={{ width: `${rsuPct}%` }} className="bg-purple-500 h-full relative group">
+                       <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">RSU: {formatCurrency(offer.rsu)}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between text-xs font-medium">
+                    <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Base</div>
+                    <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Sign-On</div>
+                    <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-purple-500"></div> RSU</div>
+                  </div>
+                </div>
+
+                {offer.notes && (
+                  <p className="text-sm text-slate-400 mb-4 bg-[#13141f]/30 p-3 rounded-lg border border-white/10/30 italic">
+                    "{offer.notes}"
+                  </p>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-white/5">
+                  <button onClick={() => openEditModal(offer)} className="p-2 text-slate-400 hover:text-[#00f0ff] transition-colors bg-[#13141f] hover:bg-white/[0.05] rounded-lg">
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleDelete(offer._id)} className="p-2 text-slate-400 hover:text-red-400 transition-colors bg-[#13141f] hover:bg-white/[0.05] rounded-lg">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Edit Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 overflow-y-auto">
@@ -355,7 +348,7 @@ const OffersPage = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
 

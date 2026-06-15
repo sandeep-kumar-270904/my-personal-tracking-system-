@@ -17,7 +17,7 @@ const getContacts = async (req, res) => {
 // @access  Private
 const addContact = async (req, res) => {
   try {
-    const { name, company, role, platform, status, lastContactDate, notes } = req.body;
+    const { name, company, role, platform, status, lastContactDate, notes, followUpDate } = req.body;
     
     const contact = new Network({
       user: req.user.id,
@@ -27,7 +27,8 @@ const addContact = async (req, res) => {
       platform,
       status,
       lastContactDate,
-      notes
+      notes,
+      followUpDate
     });
 
     const savedContact = await contact.save();

@@ -66,6 +66,41 @@ const getMe = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      college: user.college,
+      branch: user.branch,
+      gradYear: user.gradYear,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.name = req.body.name || user.name;
+    user.college = req.body.college || user.college;
+    user.branch = req.body.branch || user.branch;
+    user.gradYear = req.body.gradYear || user.gradYear;
+
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      college: updatedUser.college,
+      branch: updatedUser.branch,
+      gradYear: updatedUser.gradYear,
+      token: generateToken(updatedUser._id),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -76,4 +111,5 @@ module.exports = {
   registerUser,
   loginUser,
   getMe,
+  updateUser,
 };

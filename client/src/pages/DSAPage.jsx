@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Code, Plus, Trash2, CheckCircle, Clock, Circle } from 'lucide-react';
+import { Code, Plus, Trash2, CheckCircle, Clock, Circle, ExternalLink, Map } from 'lucide-react';
 import api from '../services/api';
 import { motion } from 'framer-motion';
 
@@ -13,7 +13,21 @@ const DSAPage = () => {
     difficulty: 'Medium',
     status: 'Not Started',
     notes: '',
+    url: '',
   });
+
+  const recommendedProblems = [
+    { title: 'Two Sum', url: 'https://leetcode.com/problems/two-sum/', difficulty: 'Easy' },
+    { title: 'Best Time to Buy and Sell Stock', url: 'https://leetcode.com/problems/best-time-to-buy-and-sell-stock/', difficulty: 'Easy' },
+    { title: 'Contains Duplicate', url: 'https://leetcode.com/problems/contains-duplicate/', difficulty: 'Easy' },
+    { title: 'Product of Array Except Self', url: 'https://leetcode.com/problems/product-of-array-except-self/', difficulty: 'Medium' },
+    { title: 'Maximum Subarray', url: 'https://leetcode.com/problems/maximum-subarray/', difficulty: 'Medium' },
+    { title: 'Maximum Product Subarray', url: 'https://leetcode.com/problems/maximum-product-subarray/', difficulty: 'Medium' },
+    { title: 'Find Minimum in Rotated Sorted Array', url: 'https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/', difficulty: 'Medium' },
+    { title: 'Search in Rotated Sorted Array', url: 'https://leetcode.com/problems/search-in-rotated-sorted-array/', difficulty: 'Medium' },
+    { title: '3Sum', url: 'https://leetcode.com/problems/3sum/', difficulty: 'Medium' },
+    { title: 'Container With Most Water', url: 'https://leetcode.com/problems/container-with-most-water/', difficulty: 'Medium' },
+  ];
 
   useEffect(() => {
     fetchTopics();
@@ -36,7 +50,7 @@ const DSAPage = () => {
       const { data } = await api.post('/dsa', formData);
       setTopics([data, ...topics]);
       setShowModal(false);
-      setFormData({ topic: '', problemsSolved: 0, difficulty: 'Medium', status: 'Not Started', notes: '' });
+      setFormData({ topic: '', problemsSolved: 0, difficulty: 'Medium', status: 'Not Started', notes: '', url: '' });
     } catch (error) {
       console.error('Failed to add topic:', error);
     }
@@ -44,7 +58,7 @@ const DSAPage = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      const { data } = await api.put(`/api/dsa/${id}`, { status });
+      const { data } = await api.put(`/dsa/${id}`, { status });
       setTopics(topics.map(t => t._id === id ? data : t));
     } catch (error) {
       console.error('Failed to update topic:', error);
@@ -53,7 +67,7 @@ const DSAPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/api/dsa/${id}`);
+      await api.delete(`/dsa/${id}`);
       setTopics(topics.filter((t) => t._id !== id));
     } catch (error) {
       console.error('Failed to delete topic:', error);
@@ -81,17 +95,27 @@ const DSAPage = () => {
 
   return (
     <div className="p-8 w-full max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 border-b border-white/5 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">DSA Tracker</h1>
           <p className="text-slate-400 mt-1">Track your Data Structures and Algorithms progress</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
-        >
-          <Plus className="w-5 h-5 mr-2" /> Add Topic
-        </button>
+        <div className="flex gap-4">
+          <a
+            href="https://roadmap.sh/ds"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg transition-colors"
+          >
+            <Map className="w-5 h-5 mr-2 text-[#00f0ff]" /> DSA Roadmap
+          </a>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
+          >
+            <Plus className="w-5 h-5 mr-2" /> Add Topic/Problem
+          </button>
+        </div>
       </div>
 
       <div className="glass-card rounded-2xl border border-white/5 overflow-hidden">
@@ -108,9 +132,15 @@ const DSAPage = () => {
             </thead>
             <tbody className="divide-y divide-slate-700/50">
               {topics.map((topic) => (
-                <tr key={topic._id} className="hover:bg-[#13141f]/30 transition-colors">
+                <tr key={topic._id} className="group hover:bg-white/[0.02] transition-all duration-300 relative cursor-pointer">
                   <td className="px-6 py-4">
-                    <div className="font-medium text-slate-200">{topic.topic}</div>
+                    {topic.url ? (
+                      <a href={topic.url} target="_blank" rel="noopener noreferrer" className="font-medium text-slate-200 hover:text-[#00f0ff] transition-colors flex items-center gap-2 group-hover:text-[#00f0ff]">
+                        {topic.topic} <ExternalLink className="w-3 h-3 opacity-50" />
+                      </a>
+                    ) : (
+                      <div className="font-medium text-slate-200 group-hover:text-[#00f0ff] transition-colors">{topic.topic}</div>
+                    )}
                     <div className="text-xs text-slate-500 mt-1">{topic.notes}</div>
                   </td>
                   <td className="px-6 py-4">
@@ -166,14 +196,43 @@ const DSAPage = () => {
             <h2 className="text-2xl font-bold text-white mb-6">Add DSA Topic</h2>
             <form onSubmit={handleAddTopic} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Topic Name</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Pick Recommended Problem (Optional)</label>
+                <select
+                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500 mb-4"
+                  onChange={(e) => {
+                    const prob = recommendedProblems.find(p => p.title === e.target.value);
+                    if (prob) {
+                      setFormData({ ...formData, topic: prob.title, url: prob.url, difficulty: prob.difficulty });
+                    }
+                  }}
+                >
+                  <option value="">-- Select a Problem --</option>
+                  {recommendedProblems.map((prob, idx) => (
+                    <option key={idx} value={prob.title}>{prob.title} ({prob.difficulty})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Topic / Problem Name</label>
                 <input
                   type="text"
                   required
                   className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
                   value={formData.topic}
                   onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                  placeholder="e.g. Dynamic Programming"
+                  placeholder="e.g. Dynamic Programming or Two Sum"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Problem URL (Optional)</label>
+                <input
+                  type="url"
+                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
+                  value={formData.url}
+                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  placeholder="https://leetcode.com/..."
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

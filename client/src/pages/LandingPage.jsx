@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, TrendingUp, Users, Target, Rocket, Shield, Code2, Play, Pause, Volume2, VolumeX, Star, ChevronRight } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { useContext, useState, useRef } from 'react';
+import { useContext, useState, useRef, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
 const CustomVideoPlayer = ({ src }) => {
@@ -69,11 +69,7 @@ const CustomVideoPlayer = ({ src }) => {
       </div>
 
       {/* Bottom Controls */}
-      <div className={`absolute bottom-0 inset-x-0 p-6 flex items-end justify-between z-20 transition-opacity duration-300 ${isHovered || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
-          <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-          <span className="text-sm font-semibold text-white">Live Demo</span>
-        </div>
+      <div className={`absolute bottom-0 inset-x-0 p-6 flex items-end justify-end z-20 transition-opacity duration-300 ${isHovered || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
         <button 
           onClick={toggleMute}
           className="w-12 h-12 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white transition-all duration-300 hover:bg-white/20 hover:scale-105"
@@ -91,6 +87,34 @@ const LandingPage = () => {
   if (!loading && user) {
     return <Navigate to="/dashboard" />;
   }
+
+  const typingTexts = ["Dominate Your", "Supercharge Your", "Accelerate Your"];
+  const [displayText, setDisplayText] = useState("");
+  const [textIndex, setTextIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  useEffect(() => {
+    let timer;
+    const currentText = typingTexts[textIndex];
+    
+    if (isDeleting) {
+      timer = setTimeout(() => {
+        setDisplayText(currentText.substring(0, displayText.length - 1));
+        if (displayText.length === 0) {
+          setIsDeleting(false);
+          setTextIndex((prev) => (prev + 1) % typingTexts.length);
+        }
+      }, 50);
+    } else {
+      timer = setTimeout(() => {
+        setDisplayText(currentText.substring(0, displayText.length + 1));
+        if (displayText.length === currentText.length) {
+          setTimeout(() => setIsDeleting(true), 2000);
+        }
+      }, 100);
+    }
+    return () => clearTimeout(timer);
+  }, [displayText, isDeleting, textIndex]);
 
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -129,8 +153,10 @@ const LandingPage = () => {
             </div>
             
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-8 leading-[1.1]">
-              Dominate Your <br className="hidden md:block"/>
-              <span className="text-gradient">Placement Season</span>
+              {displayText} <span className="animate-pulse font-light opacity-50">|</span> <br className="hidden md:block"/>
+              <span className="text-gradient">
+                {textIndex === 0 ? "Placement Season" : textIndex === 1 ? "Tech Career" : "Job Hunt"}
+              </span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-12 leading-relaxed font-light">
               The ultimate mission-control for your career. Track applications, crush DSA goals, and analyze offers in one beautifully crafted platform.
@@ -138,14 +164,17 @@ const LandingPage = () => {
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
               <Link to="/signup">
-                <button className="w-full sm:w-auto btn-primary px-8 py-4 text-lg group relative overflow-hidden">
-                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                  <span className="relative flex items-center justify-center gap-2">
+                <button className="w-full sm:w-auto relative inline-flex h-14 overflow-hidden rounded-xl p-[2px] focus:outline-none group">
+                  <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ff6b00_0%,#ff007b_50%,#00f0ff_100%)]" />
+                  <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-xl bg-slate-950/90 hover:bg-slate-950 px-8 py-4 text-lg font-bold text-white backdrop-blur-3xl transition-colors gap-2">
                     Start Tracking Free <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </button>
               </Link>
-              <button className="w-full sm:w-auto btn-secondary px-8 py-4 text-lg flex items-center justify-center gap-2 hover:border-white/30 transition-colors">
+              <button 
+                onClick={() => document.getElementById('video-showcase').scrollIntoView({ behavior: 'smooth' })}
+                className="w-full sm:w-auto btn-secondary px-8 py-4 text-lg flex items-center justify-center gap-2 hover:border-white/30 transition-colors"
+              >
                 <Play className="w-5 h-5" fill="currentColor" /> Watch Demo
               </button>
             </div>
@@ -153,10 +182,11 @@ const LandingPage = () => {
 
           {/* Platform Video Showcase */}
           <motion.div 
+            id="video-showcase"
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-            className="mt-24 relative mx-auto max-w-5xl perspective-1000"
+            className="mt-24 relative mx-auto max-w-5xl perspective-1000 scroll-mt-24"
           >
             <CustomVideoPlayer src="https://drive.google.com/uc?export=download&id=18dGMWdVbYhvC-mwR2Sr1fAESe5M4djW-" />
             {/* Ambient shadow for mockup */}
@@ -187,34 +217,34 @@ const LandingPage = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <motion.div {...fadeIn} className="glass-card neon-border group hover:-translate-y-2 transition-transform duration-300">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ff6b00] to-[#ff007b] p-[1px] mb-6">
+            <motion.div {...fadeIn} className="glass-card border border-white/5 p-8 rounded-3xl group hover:-translate-y-2 hover:bg-white/[0.05] hover:shadow-[0_8px_30px_rgba(255,107,0,0.15)] transition-all duration-300">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ff6b00] to-[#ff007b] p-[1px] mb-8">
                 <div className="w-full h-full bg-[#0a0a0f] rounded-xl flex items-center justify-center group-hover:bg-transparent transition-colors">
                   <Target className="w-7 h-7 text-[#ff6b00] group-hover:text-white transition-colors" />
                 </div>
               </div>
               <h3 className="text-2xl font-bold mb-4 text-white">Application Tracker</h3>
-              <p className="text-slate-400 leading-relaxed">Visualize your job hunt with a Kanban board. Move applications from 'Applied' to 'Offer' seamlessly.</p>
+              <p className="text-slate-400 leading-relaxed text-lg">Visualize your job hunt with a Kanban board. Move applications from 'Applied' to 'Offer' seamlessly.</p>
             </motion.div>
 
-            <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="glass-card neon-border group hover:-translate-y-2 transition-transform duration-300">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ff007b] to-[#00f0ff] p-[1px] mb-6">
+            <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="glass-card border border-white/5 p-8 rounded-3xl group hover:-translate-y-2 hover:bg-white/[0.05] hover:shadow-[0_8px_30px_rgba(255,0,123,0.15)] transition-all duration-300">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ff007b] to-[#00f0ff] p-[1px] mb-8">
                 <div className="w-full h-full bg-[#0a0a0f] rounded-xl flex items-center justify-center group-hover:bg-transparent transition-colors">
                   <Code2 className="w-7 h-7 text-[#ff007b] group-hover:text-white transition-colors" />
                 </div>
               </div>
               <h3 className="text-2xl font-bold mb-4 text-white">DSA & Contests</h3>
-              <p className="text-slate-400 leading-relaxed">Keep track of problems solved and upcoming coding contests on CodeChef, Codeforces, and LeetCode.</p>
+              <p className="text-slate-400 leading-relaxed text-lg">Keep track of problems solved and upcoming coding contests on CodeChef, Codeforces, and LeetCode.</p>
             </motion.div>
 
-            <motion.div {...fadeIn} transition={{ delay: 0.2 }} className="glass-card neon-border group hover:-translate-y-2 transition-transform duration-300 lg:col-span-1 md:col-span-2">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00f0ff] to-[#ff6b00] p-[1px] mb-6">
+            <motion.div {...fadeIn} transition={{ delay: 0.2 }} className="glass-card border border-white/5 p-8 rounded-3xl group hover:-translate-y-2 hover:bg-white/[0.05] hover:shadow-[0_8px_30px_rgba(0,240,255,0.15)] transition-all duration-300 lg:col-span-1 md:col-span-2">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00f0ff] to-[#ff6b00] p-[1px] mb-8">
                 <div className="w-full h-full bg-[#0a0a0f] rounded-xl flex items-center justify-center group-hover:bg-transparent transition-colors">
                   <TrendingUp className="w-7 h-7 text-[#00f0ff] group-hover:text-white transition-colors" />
                 </div>
               </div>
               <h3 className="text-2xl font-bold mb-4 text-white">Offer Analytics</h3>
-              <p className="text-slate-400 leading-relaxed">Compare CTCs, base pay, and stock options side-by-side to make the most informed career choices.</p>
+              <p className="text-slate-400 leading-relaxed text-lg">Compare CTCs, base pay, and stock options side-by-side to make the most informed career choices.</p>
             </motion.div>
           </div>
         </div>
@@ -283,7 +313,7 @@ const LandingPage = () => {
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_,i) => <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />)}
               </div>
-              <p className="text-lg text-slate-300 italic mb-6">"Before SmartTracker, I was losing track of which companies I applied to. The Kanban board and DSA tracker helped me stay organized and eventually land an offer at Amazon."</p>
+              <p className="text-lg text-slate-300 italic mb-6">"Before StudentTracker, I was losing track of which companies I applied to. The Kanban board and DSA tracker helped me stay organized and eventually land an offer at Amazon."</p>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#ff6b00] to-[#ff007b] flex items-center justify-center text-white font-bold text-xl">S</div>
                 <div>
@@ -319,14 +349,13 @@ const LandingPage = () => {
             <p className="text-2xl text-slate-400 mb-12 font-light">Join thousands of students optimizing their career trajectory today.</p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link to="/signup">
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-full sm:w-auto btn-primary px-12 py-5 text-xl font-bold shadow-[0_0_40px_rgba(255,107,0,0.5)] group"
-                >
-                  <Rocket className="w-6 h-6 mr-3 inline-block group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                  Launch Your Career
-                </motion.button>
+                <button className="w-full sm:w-auto relative inline-flex h-16 overflow-hidden rounded-xl p-[2px] focus:outline-none group">
+                  <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ff6b00_0%,#ff007b_50%,#00f0ff_100%)]" />
+                  <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-xl bg-slate-950/90 hover:bg-slate-950 px-12 py-5 text-xl font-bold text-white backdrop-blur-3xl transition-colors shadow-[0_0_40px_rgba(255,107,0,0.5)]">
+                    <Rocket className="w-6 h-6 mr-3 inline-block group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    Launch Your Career
+                  </span>
+                </button>
               </Link>
               <Link to="/login">
                 <motion.button 
@@ -349,9 +378,9 @@ const LandingPage = () => {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg shadow-[#ff6b00]/20">
               <span className="font-bold text-white text-xl">S</span>
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">SmartTracker</span>
+            <span className="text-xl font-bold tracking-tight text-white">StudentTracker</span>
           </div>
-          <p className="text-slate-500 font-medium">© {new Date().getFullYear()} SmartTracker. Built for students.</p>
+          <p className="text-slate-500 font-medium">© {new Date().getFullYear()} StudentTracker. Built for students.</p>
         </div>
       </footer>
     </div>

@@ -32,7 +32,7 @@ const Sidebar = () => {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-[0_0_15px_rgba(255,107,0,0.3)]">
             <span className="font-bold text-white text-xl">S</span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-white">SmartTracker</span>
+          <span className="text-xl font-bold tracking-tight text-white">StudentTracker</span>
         </div>
       </div>
       
@@ -82,10 +82,10 @@ const Sidebar = () => {
       {/* Mobile Top Bar */}
       <div className="md:hidden fixed top-0 left-0 w-full h-16 bg-[#0a0a0f]/90 backdrop-blur-md border-b border-white/5 z-40 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center">
-            <span className="font-bold text-white text-sm">S</span>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg">
+            <span className="font-bold text-white">S</span>
           </div>
-          <span className="text-lg font-bold text-white">SmartTracker</span>
+          <span className="text-xl font-bold tracking-tight text-white">StudentTracker</span>
         </div>
         <button onClick={() => setIsOpen(true)} className="p-2 text-slate-300 hover:text-white">
           <Menu className="w-6 h-6" />

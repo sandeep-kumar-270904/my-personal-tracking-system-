@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit2, Trash2, X, ExternalLink, Briefcase } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 
 const ApplicationsPage = () => {
@@ -84,12 +83,9 @@ const ApplicationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex">
-      <Sidebar />
-      
-      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8">
-        <div className="max-w-7xl mx-auto">
-          <header className="mb-8 flex justify-between items-center">
+    <>
+      <div className="max-w-7xl mx-auto">
+          <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-white/5 pb-6">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Applications</h1>
               <p className="text-slate-400">Track and manage your job applications.</p>
@@ -111,7 +107,8 @@ const ApplicationsPage = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="glass-card-card flex flex-col h-full relative group"
+                  whileHover={{ y: -5 }}
+                  className="glass-card-card flex flex-col h-full relative group hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-white/20 transition-all duration-300"
                 >
                   <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openEditModal(app)} className="p-1.5 bg-slate-700/50 hover:bg-slate-600 rounded-md text-slate-300">
@@ -172,14 +169,13 @@ const ApplicationsPage = () => {
               <p className="text-slate-400 mb-6">Start tracking your job hunt today.</p>
               <button 
                 onClick={() => { resetForm(); setEditingId(null); setIsModalOpen(true); }}
-                className="btn-primary mx-auto"
+                className="btn-primary mx-auto mt-6"
               >
                 Add Your First Application
               </button>
             </div>
           )}
         </div>
-      </main>
 
       {/* Modal */}
       <AnimatePresence>
@@ -292,7 +288,7 @@ const ApplicationsPage = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
 

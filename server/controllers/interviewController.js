@@ -16,7 +16,7 @@ const getInterviews = async (req, res) => {
 // @route   POST /api/interviews
 // @access  Private
 const createInterview = async (req, res) => {
-  const { company, interviewDate, round, notes, status } = req.body;
+  const { company, interviewDate, round, notes, status, interviewer, followUpDate } = req.body;
 
   try {
     const interview = await Interview.create({
@@ -26,6 +26,8 @@ const createInterview = async (req, res) => {
       round,
       notes,
       status: status || 'Scheduled',
+      interviewer,
+      followUpDate,
     });
 
     res.status(201).json(interview);

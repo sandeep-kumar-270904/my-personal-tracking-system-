@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Calendar, Clock, ExternalLink, Code2, Search, Filter } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import api from '../services/api';
 
 const ContestsPage = () => {
   const [contests, setContests] = useState([]);
@@ -130,10 +130,8 @@ const ContestsPage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex font-['Plus_Jakarta_Sans']">
-      <Sidebar />
-      
-      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-24 md:pt-8 relative overflow-hidden min-h-screen">
+    <>
+      <div className="relative overflow-hidden min-h-full">
         {/* Abstract Glow Effects */}
         <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#00f0ff]/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="fixed bottom-0 left-[20%] w-[600px] h-[600px] bg-[#ff007b]/5 rounded-full blur-[150px] pointer-events-none" />
@@ -267,8 +265,8 @@ const ContestsPage = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 };
 

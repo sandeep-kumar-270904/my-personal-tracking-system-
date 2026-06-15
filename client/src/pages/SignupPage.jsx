@@ -77,11 +77,11 @@ const SignupPage = () => {
           animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md relative z-10"
         >
-          <Link to="/" className="inline-flex items-center gap-2 mb-10 text-slate-400 hover:text-white transition-colors">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00f0ff] to-[#ff007b] flex items-center justify-center shadow-lg">
+          <Link to="/" className="inline-flex items-center gap-2 mb-8 text-slate-400 hover:text-white transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg">
               <span className="font-bold text-white text-sm">S</span>
             </div>
-            <span className="font-bold tracking-tight text-xl text-white">SmartTracker</span>
+            <span className="font-bold tracking-tight text-xl text-white">StudentTracker</span>
           </Link>
 
           <div className="mb-10">
