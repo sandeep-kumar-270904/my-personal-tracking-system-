@@ -1,9 +1,87 @@
 import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, TrendingUp, Users, Target, Rocket, Shield, Code2, Play, Star, ChevronRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2, TrendingUp, Users, Target, Rocket, Shield, Code2, Play, Pause, Volume2, VolumeX, Star, ChevronRight } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { useContext } from 'react';
+import { useContext, useState, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
+
+const CustomVideoPlayer = ({ src }) => {
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const togglePlay = (e) => {
+    e.preventDefault();
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = (e) => {
+    e.preventDefault();
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  return (
+    <div 
+      className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(255,0,123,0.15)] transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out bg-[#050508] aspect-[16/9] group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Top Bar */}
+      <div className="absolute top-0 inset-x-0 h-8 bg-white/5 border-b border-white/10 flex items-center px-4 gap-2 z-20 backdrop-blur-md transition-opacity duration-300">
+        <div className="w-3 h-3 rounded-full bg-red-500/80" />
+        <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+        <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+        <div className="ml-4 text-xs text-slate-400 font-mono">smart-tracker-demo.mp4</div>
+      </div>
+
+      {/* Video Element */}
+      <video 
+        ref={videoRef}
+        src={src} 
+        autoPlay 
+        loop 
+        muted={isMuted} 
+        playsInline 
+        className="w-full h-full object-cover pt-8"
+      />
+
+      {/* Play/Pause Overlay */}
+      <div className={`absolute inset-0 pt-8 flex items-center justify-center z-10 transition-all duration-300 ${!isPlaying || isHovered ? 'bg-black/40 backdrop-blur-[2px]' : 'bg-transparent pointer-events-none'}`}>
+        <button 
+          onClick={togglePlay}
+          className={`w-20 h-20 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:bg-[#ff007b]/40 hover:border-[#ff007b] ${!isPlaying || isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}
+        >
+          {isPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
+        </button>
+      </div>
+
+      {/* Bottom Controls */}
+      <div className={`absolute bottom-0 inset-x-0 p-6 flex items-end justify-between z-20 transition-opacity duration-300 ${isHovered || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
+          <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+          <span className="text-sm font-semibold text-white">Live Demo</span>
+        </div>
+        <button 
+          onClick={toggleMute}
+          className="w-12 h-12 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white transition-all duration-300 hover:bg-white/20 hover:scale-105"
+        >
+          {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const LandingPage = () => {
   const { user, loading } = useContext(AuthContext);
@@ -78,22 +156,7 @@ const LandingPage = () => {
             transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
             className="mt-24 relative mx-auto max-w-5xl perspective-1000"
           >
-            <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(255,0,123,0.15)] transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out bg-[#050508] aspect-[16/9] group">
-              <div className="absolute top-0 inset-x-0 h-8 bg-white/5 border-b border-white/10 flex items-center px-4 gap-2 z-10 backdrop-blur-md">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                <div className="ml-4 text-xs text-slate-400 font-mono">smart-tracker-demo.mp4</div>
-              </div>
-              <video 
-                src="https://drive.google.com/uc?export=download&id=18dGMWdVbYhvC-mwR2Sr1fAESe5M4djW-" 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
-                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500 pt-8"
-              />
-            </div>
+            <CustomVideoPlayer src="https://drive.google.com/uc?export=download&id=18dGMWdVbYhvC-mwR2Sr1fAESe5M4djW-" />
             {/* Ambient shadow for mockup */}
             <div className="absolute -inset-4 bg-gradient-to-r from-[#ff6b00]/20 via-[#ff007b]/20 to-[#00f0ff]/20 blur-3xl -z-10 opacity-50 pointer-events-none" />
           </motion.div>
