@@ -30,7 +30,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#0a0a0f] font-['Plus_Jakarta_Sans']">
+    <div className="min-h-screen flex bg-mesh font-['Plus_Jakarta_Sans']">
       {/* Left Side - Visuals (Hidden on Mobile) */}
       <div className="hidden lg:flex w-1/2 relative overflow-hidden items-center justify-center border-r border-white/5 bg-[#050508]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#ff6b00]/10 via-transparent to-[#ff007b]/10" />

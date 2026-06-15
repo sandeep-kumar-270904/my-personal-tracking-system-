@@ -65,12 +65,36 @@
     background-size: 200% 200%;
     animation: gradientX 5s ease infinite;
   }
+
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at center, black, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
+  }
+
+  .bg-mesh {
+    background-color: #050508;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(334,100%,50%,0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(25,100%,50%,0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(180,100%,50%,0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(280,100%,50%,0.15) 0px, transparent 50%);
+    animation: mesh-movement 20s ease-in-out infinite alternate;
+  }
 }
 
 @layer utilities {
   .animate-gradient-x {
     background-size: 200% 200%;
     animation: gradientX 5s ease infinite;
+  }
+
+  @keyframes mesh-movement {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
   }
 
   @keyframes gradientX {

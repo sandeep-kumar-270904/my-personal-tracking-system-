@@ -65,7 +65,7 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#0a0a0f] font-['Plus_Jakarta_Sans']">
+    <div className="min-h-screen flex bg-mesh font-['Plus_Jakarta_Sans']">
       
       {/* Right Side - Form (Reversed layout compared to Login) */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 relative overflow-hidden z-10 bg-[#0a0a0f]">
