@@ -1,7 +1,7 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, User, Mail, Lock, Loader2 } from 'lucide-react';
+import { ArrowRight, User, Mail, Lock, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const SignupPage = () => {
@@ -10,16 +10,52 @@ const SignupPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Password Validation States
+  const [pwdReqs, setPwdReqs] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false
+  });
+
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    setPwdReqs({
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password)
+    });
+  }, [password]);
+
+  const getStrength = () => {
+    const passed = Object.values(pwdReqs).filter(Boolean).length;
+    if (password.length === 0) return { label: '', color: 'bg-slate-700', width: 'w-0' };
+    if (passed <= 2) return { label: 'Weak', color: 'bg-red-500', width: 'w-1/3' };
+    if (passed <= 4) return { label: 'Medium', color: 'bg-yellow-500', width: 'w-2/3' };
+    return { label: 'Strong', color: 'bg-emerald-500', width: 'w-full' };
+  };
+
+  const strength = getStrength();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (Object.values(pwdReqs).some(req => !req)) {
+      setError('Please ensure your password meets all requirements.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
     try {
       await register(name, email, password);
-      navigate('/dashboard');
+      navigate('/login', { state: { message: 'Registration successful! Please sign in.' } });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to register. Please try again.');
     } finally {
@@ -79,6 +115,7 @@ const SignupPage = () => {
                   className="input-field pl-12 focus:ring-[#ff007b]/50 focus:border-[#ff007b]" 
                   placeholder="John Doe"
                   required 
+                  minLength={2}
                   disabled={isSubmitting}
                 />
               </div>
@@ -118,7 +155,42 @@ const SignupPage = () => {
                   disabled={isSubmitting}
                 />
               </div>
-              <p className="text-xs text-slate-500 mt-2">Must be at least 6 characters long.</p>
+              
+              {/* Password Strength Indicator */}
+              {password.length > 0 && (
+                <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-400">Password Strength</span>
+                    <span className={`text-sm font-bold ${strength.color.replace('bg-', 'text-')}`}>{strength.label}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div className={`h-full ${strength.color} ${strength.width} transition-all duration-300`} />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <div className="flex items-center gap-2 text-xs">
+                      {pwdReqs.length ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-slate-600" />}
+                      <span className={pwdReqs.length ? 'text-slate-300' : 'text-slate-500'}>8+ characters</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      {pwdReqs.uppercase ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-slate-600" />}
+                      <span className={pwdReqs.uppercase ? 'text-slate-300' : 'text-slate-500'}>Uppercase letter</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      {pwdReqs.lowercase ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-slate-600" />}
+                      <span className={pwdReqs.lowercase ? 'text-slate-300' : 'text-slate-500'}>Lowercase letter</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      {pwdReqs.number ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-slate-600" />}
+                      <span className={pwdReqs.number ? 'text-slate-300' : 'text-slate-500'}>Number</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      {pwdReqs.special ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-slate-600" />}
+                      <span className={pwdReqs.special ? 'text-slate-300' : 'text-slate-500'}>Special character</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button 
