@@ -126,22 +126,84 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* How It Works Section */}
+      <section className="py-24 relative z-10 bg-[#050508]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Your Placement Journey, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff007b] to-[#ff6b00]">Streamlined</span></h2>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">From building your resume to signing your offer letter, we guide you through every single step.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+            {/* Connecting Line */}
+            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2 z-0" />
+            
+            {/* Step 1 */}
+            <motion.div whileHover={{ y: -5 }} className="relative z-10 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#0a0a0f] border-2 border-[#ff6b00] flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,107,0,0.3)]">
+                <span className="text-2xl font-bold text-white">1</span>
+              </div>
+              <h3 className="text-xl font-bold mb-3">Build Profile</h3>
+              <p className="text-slate-400">Upload multiple resumes and set your target roles and dream companies.</p>
+            </motion.div>
+
+            {/* Step 2 */}
+            <motion.div whileHover={{ y: -5 }} className="relative z-10 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#0a0a0f] border-2 border-[#ff007b] flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,123,0.3)]">
+                <span className="text-2xl font-bold text-white">2</span>
+              </div>
+              <h3 className="text-xl font-bold mb-3">Track & Prep</h3>
+              <p className="text-slate-400">Log applications on the Kanban board and track your daily DSA progress.</p>
+            </motion.div>
+
+            {/* Step 3 */}
+            <motion.div whileHover={{ y: -5 }} className="relative z-10 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#0a0a0f] border-2 border-[#00f0ff] flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+                <span className="text-2xl font-bold text-white">3</span>
+              </div>
+              <h3 className="text-xl font-bold mb-3">Ace Interviews</h3>
+              <p className="text-slate-400">Record mock interview notes, feedback, and calendar schedules.</p>
+            </motion.div>
+
+            {/* Step 4 */}
+            <motion.div whileHover={{ y: -5 }} className="relative z-10 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#0a0a0f] border-2 border-emerald-500 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                <span className="text-2xl font-bold text-white">4</span>
+              </div>
+              <h3 className="text-xl font-bold mb-3">Compare Offers</h3>
+              <p className="text-slate-400">Analyze CTC breakdowns side-by-side to make the best career decision.</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#ff007b]/10" />
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
           <h2 className="text-5xl md:text-6xl font-bold mb-8">Ready to land your <span className="text-[#ff6b00]">dream job?</span></h2>
           <p className="text-2xl text-slate-400 mb-12">Join thousands of students optimizing their career trajectory today.</p>
-          <Link to="/signup">
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="btn-primary px-12 py-6 text-xl shadow-[0_0_40px_rgba(255,107,0,0.5)]"
-            >
-              <Rocket className="w-6 h-6 mr-3 inline-block" />
-              Launch Your Career
-            </motion.button>
-          </Link>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link to="/signup">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto btn-primary px-12 py-6 text-xl shadow-[0_0_40px_rgba(255,107,0,0.5)]"
+              >
+                <Rocket className="w-6 h-6 mr-3 inline-block" />
+                Launch Your Career
+              </motion.button>
+            </Link>
+            <Link to="/login">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto btn-secondary px-12 py-6 text-xl"
+              >
+                Sign In
+              </motion.button>
+            </Link>
+          </div>
         </div>
       </section>
 

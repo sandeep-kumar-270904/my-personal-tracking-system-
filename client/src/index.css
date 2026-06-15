@@ -61,7 +61,9 @@
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#ff6b00] via-[#ff007b] to-[#00f0ff] animate-gradient-x;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#ff6b00] via-[#ff007b] to-[#00f0ff];
+    background-size: 200% 200%;
+    animation: gradientX 5s ease infinite;
   }
 }
 

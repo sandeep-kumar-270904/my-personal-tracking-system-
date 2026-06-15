@@ -1,16 +1,19 @@
 import { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Briefcase, ArrowRight, Lock, Mail, Loader2 } from 'lucide-react';
+import { Briefcase, ArrowRight, Lock, Mail, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = location.state?.message;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,6 +77,19 @@ const LoginPage = () => {
             <p className="text-slate-400 text-lg">Enter your details to access your dashboard.</p>
           </div>
 
+          {successMessage && !error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex gap-3 items-start"
+            >
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle2 className="text-emerald-500 w-3 h-3" />
+              </div>
+              <p className="text-emerald-400 text-sm font-medium">{successMessage}</p>
+            </motion.div>
+          )}
+
           {error && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
@@ -116,14 +132,21 @@ const LoginPage = () => {
                   <Lock className="h-5 w-5 text-slate-500" />
                 </div>
                 <input 
-                  type="password" 
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field pl-12" 
+                  className="input-field pl-12 pr-12" 
                   placeholder="••••••••"
                   required 
                   disabled={isSubmitting}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
 
