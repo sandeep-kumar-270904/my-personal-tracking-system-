@@ -1,234 +1,335 @@
-import { useState, useEffect } from 'react';
-import { FileText, Plus, Star, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { FileText, Plus, Star, Trash2, X, Download, Eye, Zap } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../services/api';
-import { motion } from 'framer-motion';
+import EmptyState from '../components/EmptyState';
+import ConfirmModal from '../components/ConfirmModal';
+
+const fetchResumes = async () => {
+  const { data } = await api.get('/resumes');
+  return data;
+};
 
 const ResumesPage = () => {
-  const [resumes, setResumes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [resumeToDelete, setResumeToDelete] = useState(null);
+  
+  const [file, setFile] = useState(null);
   const [formData, setFormData] = useState({
-    title: '',
-    fileUrl: '',
+    versionTag: 'v1',
     isPrimary: false,
-    notes: '',
   });
 
-  useEffect(() => {
-    fetchResumes();
-  }, []);
+  const { data: resumes = [], isLoading, isError } = useQuery({
+    queryKey: ['resumes'],
+    queryFn: fetchResumes
+  });
 
-  const fetchResumes = async () => {
-    try {
-      const { data } = await api.get('/resumes');
-      setResumes(data);
-    } catch (error) {
-      console.error('Failed to fetch resumes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddResume = async (e) => {
-    e.preventDefault();
-    try {
-      const { data } = await api.post('/resumes', formData);
-      if (data.isPrimary) {
-        setResumes(resumes.map(r => ({ ...r, isPrimary: false })).concat(data));
-      } else {
-        setResumes([data, ...resumes]);
-      }
+  const uploadMutation = useMutation({
+    mutationFn: async (uploadData) => {
+      const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+      return await api.post('/resumes', uploadData, config);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['resumes']);
+      toast.success('Resume uploaded successfully!');
       setShowModal(false);
-      setFormData({ title: '', fileUrl: '', isPrimary: false, notes: '' });
-      fetchResumes(); // re-fetch to ensure correct sorting/primary state
-    } catch (error) {
-      console.error('Failed to add resume:', error);
+      setFile(null);
+      setFormData({ versionTag: 'v1', isPrimary: false });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to upload resume');
     }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => await api.delete(`/resumes/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['resumes']);
+      toast.success('Resume deleted');
+      setResumeToDelete(null);
+    },
+    onError: () => {
+      toast.error('Failed to delete resume');
+    }
+  });
+
+  const primaryMutation = useMutation({
+    mutationFn: async (id) => await api.put(`/resumes/${id}`, { isPrimary: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['resumes']);
+      toast.success('Primary resume updated');
+    },
+    onError: () => {
+      toast.error('Failed to set primary resume');
+    }
+  });
+
+  const handleUpload = (e) => {
+    e.preventDefault();
+    if (!file) {
+      toast.error('Please select a PDF file to upload');
+      return;
+    }
+
+    const data = new FormData();
+    data.append('resume', file);
+    data.append('versionTag', formData.versionTag);
+    data.append('isPrimary', formData.isPrimary);
+
+    uploadMutation.mutate(data);
   };
 
-  const setPrimary = async (id) => {
-    try {
-      await api.put(`/api/resumes/${id}`, { isPrimary: true });
-      fetchResumes();
-    } catch (error) {
-      console.error('Failed to update resume:', error);
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile && selectedFile.type !== 'application/pdf') {
+      toast.error('Only PDF files are allowed');
+      e.target.value = null;
+      return;
     }
+    setFile(selectedFile);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await api.delete(`/api/resumes/${id}`);
-      setResumes(resumes.filter((r) => r._id !== id));
-    } catch (error) {
-      console.error('Failed to delete resume:', error);
-    }
+  if (isLoading) {
+    return (
+      <div className="p-8 w-full max-w-6xl mx-auto">
+        <div className="h-10 w-48 bg-white/5 animate-pulse rounded-lg mb-8"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1,2,3].map(i => (
+            <div key={i} className="h-48 bg-white/5 animate-pulse rounded-2xl"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <EmptyState icon={FileText} heading="Error" subtext="Failed to load resumes." />;
+  }
+
+  const formatSize = (bytes) => {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  if (loading) return <div className="flex-1 flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div></div>;
+  const getFullUrl = (filePath) => {
+    // Determine the base URL depending on environment
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    // Remove '/api' to get the root URL
+    const rootUrl = baseUrl.replace(/\/api$/, '');
+    return `${rootUrl}${filePath}`;
+  };
 
   return (
-    <div className="p-8 w-full max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 border-b border-white/5 pb-6">
+    <div className="max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col pb-10">
+      <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-white/5 pb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Resume Manager</h1>
-          <p className="text-slate-400 mt-1">Manage and track your resume versions</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Resumes</h1>
+          <p className="text-slate-400">Manage your resume versions and tailor them to specific roles.</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
+          className="btn-primary flex items-center gap-2"
         >
-          <Plus className="w-5 h-5 mr-2" /> Add Resume
+          <Plus className="w-5 h-5" /> Upload Resume
         </button>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {resumes.map((resume) => (
-          <motion.div
-            key={resume._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -5 }}
-            className="glass-card flex flex-col h-full p-6 rounded-2xl border border-white/5 hover:border-white/20 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 group relative"
-          >
-            {resume.isPrimary && (
-              <div className="absolute -top-3 -right-3 bg-yellow-500 text-white p-1.5 rounded-full shadow-lg">
-                <Star className="w-4 h-4 fill-current" />
-              </div>
-            )}
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-blue-500/10 rounded-xl">
-                <FileText className="w-8 h-8 text-[#00f0ff]" />
-              </div>
-              <button
-                onClick={() => handleDelete(resume._id)}
-                className="p-2 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <h3 className="text-lg font-semibold text-slate-200 mb-1">{resume.title}</h3>
-            <p className="text-sm text-slate-400 mb-4 line-clamp-2">{resume.notes || 'No notes provided.'}</p>
-            
-            <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-              <a
-                href={resume.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#00f0ff] hover:text-blue-300 text-sm font-medium"
-              >
-                View File
-              </a>
-              {!resume.isPrimary && (
-                <button
-                  onClick={() => setPrimary(resume._id)}
-                  className="text-xs px-3 py-1 bg-[#13141f] hover:bg-white/[0.05] text-slate-300 rounded-full transition-colors"
-                >
-                  Set Primary
-                </button>
+      {resumes.length === 0 ? (
+        <EmptyState 
+          icon={FileText} 
+          heading="No resumes uploaded" 
+          subtext="Upload your first resume in PDF format to start." 
+          ctaText="Upload Resume"
+          ctaAction={() => setShowModal(true)}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {resumes.map((resume) => (
+            <motion.div
+              key={resume._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card flex flex-col h-full p-6 rounded-2xl border border-white/5 hover:border-white/20 transition-all duration-300 relative group"
+            >
+              {resume.isPrimary && (
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20 text-xs font-bold">
+                  <Star className="w-3 h-3 fill-current" /> Primary
+                </div>
               )}
-            </div>
-          </motion.div>
-        ))}
-      </div>
+              {!resume.isPrimary && (
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => setResumeToDelete(resume._id)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
-      {resumes.length === 0 && (
-        <div className="text-center py-20 glass-card rounded-2xl border border-white/5">
-          <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-slate-300 mb-2">No resumes yet</h3>
-          <p className="text-slate-500">Upload your first resume version to get started.</p>
-        </div>
-      )}
-
-      {showModal && (
-        <div className="fixed inset-0 bg-[#0a0a0f]/80 backdrop-blur-sm flex justify-center items-center z-50">
-          <motion.div 
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="glass-card w-full max-w-md p-8 rounded-2xl border border-white/5"
-          >
-            <h2 className="text-2xl font-bold text-white mb-6">Add Resume Version</h2>
-            <form onSubmit={handleAddResume} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Version Title</label>
-                <input
-                  type="text"
-                  required
-                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g. Frontend Dev 2024"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Upload Resume (PDF)</label>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-[#00f0ff] hover:file:bg-blue-500/20"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      setFormData({ ...formData, fileUrl: URL.createObjectURL(file) });
-                    }
-                  }}
-                />
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex-1 h-px bg-white/10"></div>
-                <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">OR</span>
-                <div className="flex-1 h-px bg-white/10"></div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Drive Link / URL</label>
-                <input
-                  type="url"
-                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
-                  value={formData.fileUrl}
-                  onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
-                  placeholder="https://drive.google.com/..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Notes</label>
-                <textarea
-                  className="w-full bg-[#0a0a0f]/50 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"
-                  rows="3"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Tailored for startup roles..."
-                ></textarea>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isPrimary"
-                  className="w-4 h-4 rounded border-white/10 bg-[#0a0a0f]/50 text-[#ff6b00] focus:ring-blue-500 focus:ring-offset-slate-900"
-                  checked={formData.isPrimary}
-                  onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
-                />
-                <label htmlFor="isPrimary" className="ml-2 text-sm text-slate-300">Set as Primary Resume</label>
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 border border-blue-500/20">
+                <FileText className="w-6 h-6 text-blue-400" />
               </div>
               
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 px-4 bg-[#13141f] hover:bg-white/[0.05] text-slate-300 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 px-4 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
-                >
-                  Save Resume
-                </button>
+              <h3 className="text-lg font-bold text-white mb-1 pr-20 truncate">{resume.originalName}</h3>
+              <div className="flex items-center gap-3 text-xs text-slate-400 mb-6 font-medium">
+                <span className="bg-white/5 px-2 py-0.5 rounded-md">{resume.versionTag}</span>
+                <span>{formatSize(resume.size)}</span>
+                <span>{new Date(resume.createdAt).toLocaleDateString()}</span>
               </div>
-            </form>
+              
+              <div className="flex items-center gap-2 mt-auto pt-4 border-t border-white/5">
+                <a
+                  href={getFullUrl(resume.filePath)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Eye className="w-4 h-4" /> Preview
+                </a>
+                <a
+                  href={getFullUrl(resume.filePath)}
+                  download
+                  className="flex items-center justify-center p-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
+                  title="Download"
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+                {!resume.isPrimary && (
+                  <button
+                    onClick={() => primaryMutation.mutate(resume._id)}
+                    className="flex items-center justify-center px-3 py-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
+                    title="Set as Primary"
+                  >
+                    Set Primary
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          ))}
+          
+          {/* Mock "Tailor Resume" Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card flex flex-col items-center justify-center h-full p-6 rounded-2xl border border-dashed border-[#ff6b00]/50 hover:border-[#ff6b00] hover:bg-[#ff6b00]/5 transition-all duration-300 cursor-pointer group min-h-[220px]"
+            onClick={() => toast.success('Tailoring Engine Coming Soon in AI Phase!')}
+          >
+            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#ff6b00] to-[#ff007b] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Tailor Your Resume</h3>
+            <p className="text-sm text-center text-slate-400">Paste a Job Description and let AI tailor your resume for a perfect match.</p>
           </motion.div>
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmModal
+        isOpen={!!resumeToDelete}
+        onClose={() => setResumeToDelete(null)}
+        onConfirm={() => deleteMutation.mutate(resumeToDelete)}
+        title="Delete Resume"
+        message="Are you sure you want to delete this resume version? This action cannot be undone."
+      />
+
+      {/* Upload Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-[#13141f] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+            >
+              <div className="flex justify-between items-center p-6 border-b border-white/5">
+                <h2 className="text-xl font-bold text-white">Upload Resume</h2>
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className="text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleUpload} className="p-6 space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">PDF File</label>
+                  <div className="relative">
+                    <input 
+                      type="file" 
+                      accept=".pdf"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                      required 
+                    />
+                    <div className="w-full bg-white/5 border border-dashed border-white/20 rounded-xl px-4 py-8 flex flex-col items-center justify-center text-center hover:border-[#ff6b00]/50 transition-colors">
+                      <FileText className="w-8 h-8 text-slate-400 mb-2" />
+                      {file ? (
+                        <p className="text-sm font-medium text-[#00f0ff]">{file.name}</p>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-white mb-1">Click to browse or drag and drop</p>
+                          <p className="text-xs text-slate-500">PDF only (Max 5MB)</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Version Tag</label>
+                  <input 
+                    type="text" 
+                    value={formData.versionTag}
+                    onChange={(e) => setFormData({...formData, versionTag: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] transition-colors" 
+                    placeholder="e.g. Frontend v2, Final..."
+                    required 
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                  <input
+                    type="checkbox"
+                    id="isPrimary"
+                    checked={formData.isPrimary}
+                    onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
+                    className="w-5 h-5 rounded border-white/20 bg-[#13141f] text-[#ff6b00] focus:ring-[#ff6b00] focus:ring-offset-[#13141f]"
+                  />
+                  <div>
+                    <label htmlFor="isPrimary" className="text-sm font-medium text-white block">Set as Primary</label>
+                    <p className="text-xs text-slate-400">This version will be sent for new applications by default.</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4 gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowModal(false)}
+                    className="px-5 py-2.5 rounded-xl text-slate-300 font-medium hover:bg-white/5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={uploadMutation.isPending || !file}
+                    className="bg-[#ff6b00] hover:bg-[#EA6C0A] text-white font-medium px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {uploadMutation.isPending ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : null}
+                    Upload
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

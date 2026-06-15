@@ -11,6 +11,7 @@ const networkRoutes = require('./routes/networkRoutes');
 const goalRoutes = require('./routes/goalRoutes');
 const offerRoutes = require('./routes/offerRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const startCronJobs = require('./utils/cron');
 
 const app = express();
@@ -25,6 +26,10 @@ startCronJobs();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from uploads
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/applications', appRoutes);
@@ -35,6 +40,7 @@ app.use('/api/network', networkRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.get('/', (req, res) => {
   res.send('Smart Internship & Career Tracker API is running...');

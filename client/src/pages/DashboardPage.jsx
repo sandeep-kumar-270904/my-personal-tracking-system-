@@ -1,82 +1,78 @@
-import { useState, useEffect, useContext } from 'react';
+import { useContext } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Briefcase, CheckCircle2, XCircle, Clock, FileText, Code, Calendar, AlertCircle, Target } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Briefcase, CheckCircle2, Clock, Code, AlertCircle, Flame } from 'lucide-react';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import QuickAddFab from '../components/QuickAddFab';
+import EmptyState from '../components/EmptyState';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
-  Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, Legend
 } from 'recharts';
+
+const fetchDashboardData = async () => {
+  const [stats, apps, dsa, interviews, goals] = await Promise.all([
+    api.get('/dashboard/stats').then(res => res.data),
+    api.get('/applications').then(res => res.data),
+    api.get('/dsa').then(res => res.data),
+    api.get('/interviews').then(res => res.data),
+    api.get('/goals').then(res => res.data)
+  ]);
+  return { stats, applications: apps, dsa, interviews, goalsData: goals };
+};
 
 const DashboardPage = () => {
   const { user } = useContext(AuthContext);
-  const [data, setData] = useState({
-    applications: [],
-    resumes: [],
-    dsa: [],
-    interviews: [],
-    goalsData: null,
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboardData'],
+    queryFn: fetchDashboardData,
   });
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        const [appRes, resRes, dsaRes, intRes, goalsRes] = await Promise.all([
-          api.get('/applications').catch(() => ({ data: [] })),
-          api.get('/resumes').catch(() => ({ data: [] })),
-          api.get('/dsa').catch(() => ({ data: [] })),
-          api.get('/interviews').catch(() => ({ data: [] })),
-          api.get('/goals').catch(() => ({ data: null }))
-        ]);
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="h-10 w-48 bg-white/5 animate-pulse rounded-lg mb-8"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="h-32 bg-white/5 animate-pulse rounded-2xl"></div>
+          ))}
+        </div>
+        <div className="h-48 bg-white/5 animate-pulse rounded-2xl mb-8"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-96 bg-white/5 animate-pulse rounded-2xl"></div>
+          <div className="h-96 bg-white/5 animate-pulse rounded-2xl"></div>
+        </div>
+      </div>
+    );
+  }
 
-        setData({
-          applications: appRes.data,
-          resumes: resRes.data,
-          dsa: dsaRes.data,
-          interviews: intRes.data,
-          goalsData: goalsRes.data
-        });
-      } catch (error) {
-        console.error('Failed to fetch dashboard data', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  if (isError) {
+    return <EmptyState icon={AlertCircle} heading="Failed to load dashboard" subtext="There was an error loading your data." />;
+  }
 
-    fetchAllData();
-  }, []);
+  const { stats, applications, dsa, interviews, goalsData } = data;
 
-  const { applications, resumes, dsa, interviews, goalsData } = data;
-
-  // Stats calculation
-  const totalApps = applications.length;
-  const interviewing = applications.filter(a => a.status === 'Interview').length;
-  const offers = applications.filter(a => a.status === 'Selected').length;
-  const totalDSA = dsa.length;
-  
   const statsCards = [
-    { title: 'Total Applications', value: totalApps, icon: Briefcase, color: 'text-[#ff6b00]', bg: 'bg-blue-500/20' },
-    { title: 'Active Interviews', value: interviewing, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/20' },
-    { title: 'Offers Received', value: offers, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/20' },
-    { title: 'DSA Topics Tracked', value: totalDSA, icon: Code, color: 'text-purple-500', bg: 'bg-purple-500/20' },
+    { title: 'Total Applications', value: stats.totalApplications, icon: Briefcase, color: 'text-[#ff6b00]', bg: 'bg-[#ff6b00]/20', border: 'border-[#ff6b00]/50' },
+    { title: 'Active Interviews', value: stats.activeInterviews, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/20', border: 'border-amber-500/50' },
+    { title: 'Offers Received', value: stats.offersReceived, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/20', border: 'border-emerald-500/50' },
+    { title: 'DSA Topics Tracked', value: stats.dsaTopicsTracked, icon: Code, color: 'text-purple-500', bg: 'bg-purple-500/20', border: 'border-purple-500/50' },
+    { title: 'Current Streak', value: '3 Days', icon: Flame, color: 'text-red-500', bg: 'bg-red-500/20', border: 'border-red-500/50' }, // Hardcoded streak for now until backend added
   ];
 
-  // Chart data: Applications Status
+  // Applications Overview Line Chart
+  const monthlyData = applications.reduce((acc, app) => {
+    const month = new Date(app.appliedDate).toLocaleString('default', { month: 'short' });
+    const existing = acc.find(item => item.name === month);
+    if (existing) existing.count += 1;
+    else acc.push({ name: month, count: 1 });
+    return acc;
+  }, []).reverse().slice(0, 6);
+
+  // Application Status Pie Chart
   const statusData = [
     { name: 'Applied', value: applications.filter(a => a.status === 'Applied').length },
     { name: 'OA', value: applications.filter(a => a.status === 'OA').length },
@@ -84,29 +80,27 @@ const DashboardPage = () => {
     { name: 'Rejected', value: applications.filter(a => a.status === 'Rejected').length },
     { name: 'Selected', value: applications.filter(a => a.status === 'Selected').length },
   ].filter(d => d.value > 0);
-
   const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981'];
 
-  // Chart data: Monthly applications
-  const monthlyData = applications.reduce((acc, app) => {
-    const month = new Date(app.appliedDate).toLocaleString('default', { month: 'short' });
-    const existing = acc.find(item => item.name === month);
-    if (existing) {
-      existing.count += 1;
-    } else {
-      acc.push({ name: month, count: 1 });
+  // Application Growth Area Chart
+  const last30Days = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    last30Days.push({ dateStr: d.toISOString().split('T')[0], display: `${d.getMonth()+1}/${d.getDate()}`, count: 0, cumulative: 0 });
+  }
+  applications.forEach(app => {
+    if (app.appliedDate) {
+      const dateStr = app.appliedDate.split('T')[0];
+      const dayData = last30Days.find(d => d.dateStr === dateStr);
+      if (dayData) dayData.count += 1;
     }
-    return acc;
-  }, []).reverse().slice(0, 6);
+  });
+  let runningTotal = 0;
+  last30Days.forEach(day => { runningTotal += day.count; day.cumulative = runningTotal; });
 
-  // Chart data: DSA Progress
-  const dsaProgressData = [
-    { name: 'Easy', completed: dsa.filter(d => d.difficulty === 'Easy' && d.status === 'Completed').length, total: dsa.filter(d => d.difficulty === 'Easy').length },
-    { name: 'Medium', completed: dsa.filter(d => d.difficulty === 'Medium' && d.status === 'Completed').length, total: dsa.filter(d => d.difficulty === 'Medium').length },
-    { name: 'Hard', completed: dsa.filter(d => d.difficulty === 'Hard' && d.status === 'Completed').length, total: dsa.filter(d => d.difficulty === 'Hard').length },
-  ];
-
-  // Chart data: Activity by Day of Week
+  // Activity by Day Bar Chart
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const activityByDay = Array(7).fill(0).map((_, i) => ({ name: daysOfWeek[i], count: 0 }));
   applications.forEach(app => {
@@ -116,88 +110,15 @@ const DashboardPage = () => {
     }
   });
 
-  // Chart data: Cumulative Growth (Last 30 Days)
-  const last30Days = [];
-  const today = new Date();
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    last30Days.push({
-      dateStr: d.toISOString().split('T')[0],
-      display: `${d.getMonth()+1}/${d.getDate()}`,
-      count: 0,
-      cumulative: 0
-    });
-  }
-  
-  applications.forEach(app => {
-    if (app.appliedDate) {
-      const dateStr = app.appliedDate.split('T')[0];
-      const dayData = last30Days.find(d => d.dateStr === dateStr);
-      if (dayData) dayData.count += 1;
-    }
-  });
-
-  let runningTotal = 0;
-  last30Days.forEach(day => {
-    runningTotal += day.count;
-    day.cumulative = runningTotal;
-  });
-
-  // Productivity Insights Logic
-  const getInsights = () => {
-    const insights = [];
-    const now = new Date();
-    
-    // Check stale applications
-    const staleApps = applications.filter(a => {
-      if (a.status !== 'Applied') return false;
-      const daysSince = Math.floor((now - new Date(a.appliedDate)) / (1000 * 60 * 60 * 24));
-      return daysSince > 14;
-    });
-    if (staleApps.length > 0) {
-      insights.push({ id: 1, type: 'warning', text: `You have ${staleApps.length} applications stuck in 'Applied' for over 14 days. Consider following up.` });
-    }
-
-    // Check primary resume
-    const hasPrimaryResume = resumes.some(r => r.isPrimary);
-    if (resumes.length === 0) {
-      insights.push({ id: 2, type: 'info', text: "You haven't uploaded any resumes yet." });
-    } else if (!hasPrimaryResume) {
-      insights.push({ id: 3, type: 'warning', text: "You have resumes uploaded but none marked as 'Primary'." });
-    }
-
-    // Upcoming interviews
-    const upcomingInterviews = interviews.filter(i => {
-      if (i.status === 'Done' || i.status === 'Cancelled') return false;
-      const daysUntil = Math.ceil((new Date(i.interviewDate) - now) / (1000 * 60 * 60 * 24));
-      return daysUntil >= 0 && daysUntil <= 3;
-    });
-    if (upcomingInterviews.length > 0) {
-      insights.push({ id: 4, type: 'urgent', text: `You have ${upcomingInterviews.length} interview(s) coming up in the next 3 days! Keep preparing.` });
-    }
-
-    // DSA check
-    const hardPending = dsa.filter(d => d.difficulty === 'Hard' && d.status !== 'Completed');
-    if (hardPending.length > 3) {
-      insights.push({ id: 5, type: 'info', text: `You have several 'Hard' DSA topics pending. Break them down into smaller problems.` });
-    }
-
-    if (insights.length === 0) {
-      insights.push({ id: 6, type: 'success', text: "Everything looks great! You're on top of your career prep." });
-    }
-
-    return insights;
-  };
-
-  const insights = getInsights();
+  // DSA Donut Chart
+  const dsaProgressData = [
+    { name: 'Easy', completed: dsa.filter(d => d.difficulty === 'Easy' && d.status === 'Completed').length, total: dsa.filter(d => d.difficulty === 'Easy').length },
+    { name: 'Medium', completed: dsa.filter(d => d.difficulty === 'Medium' && d.status === 'Completed').length, total: dsa.filter(d => d.difficulty === 'Medium').length },
+    { name: 'Hard', completed: dsa.filter(d => d.difficulty === 'Hard' && d.status === 'Completed').length, total: dsa.filter(d => d.difficulty === 'Hard').length },
+  ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-7xl mx-auto"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto pb-20">
       <header className="mb-8 flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
@@ -205,219 +126,154 @@ const DashboardPage = () => {
         </div>
       </header>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
-      ) : (
-        <>
-          {/* Productivity Insights */}
-          <div className="mb-8">
-            <h3 className="text-lg font-bold text-white mb-4">Productivity Insights</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {insights.map(insight => (
-                <div key={insight.id} className={`p-4 rounded-xl border flex items-start gap-3
-                  ${insight.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : ''}
-                  ${insight.type === 'urgent' ? 'bg-red-500/10 border-red-500/20 text-red-200' : ''}
-                  ${insight.type === 'info' ? 'bg-blue-500/10 border-blue-500/20 text-blue-200' : ''}
-                  ${insight.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200' : ''}
-                `}>
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm font-medium">{insight.text}</p>
-                </div>
-              ))}
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        {statsCards.map((stat, idx) => (
+          <motion.div 
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className={`glass-card p-5 rounded-2xl border border-white/5 hover:border-white/20 transition-all duration-300 border-l-4 ${stat.border} relative overflow-hidden`}
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
+                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">{stat.title}</p>
+                <h3 className="text-2xl font-bold text-white mt-1">{stat.value}</h3>
+              </div>
             </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Weekly Goals Widget */}
+      {goalsData && goalsData.goal && (
+        <div className="mb-8 glass-card p-6 rounded-2xl border border-white/5">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-white">Weekly Goals Progress</h3>
+            <Link to="/goals" className="text-sm font-medium text-[#ff6b00] hover:text-[#EA6C0A] transition-colors">Edit Goals &rarr;</Link>
           </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {statsCards.map((stat, idx) => (
-                <motion.div 
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  whileHover={{ y: -5, scale: 1.02 }}
-                  className="glass-card flex items-center p-6 rounded-2xl border border-white/5 hover:border-white/20 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 group cursor-default relative overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className={`w-14 h-14 rounded-xl ${stat.bg} flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300 relative z-10`}>
-                    <stat.icon className={`w-7 h-7 ${stat.color}`} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { label: 'Applications', progress: goalsData.progress.applications, target: goalsData.goal.targetApplications, color: 'bg-blue-500' },
+              { label: 'DSA Practice', progress: goalsData.progress.dsa, target: goalsData.goal.targetDSA, color: 'bg-purple-500' },
+              { label: 'Networking', progress: goalsData.progress.networking, target: goalsData.goal.targetNetworking, color: 'bg-amber-500' }
+            ].map(goal => {
+              const pct = Math.min(100, Math.round((goal.progress / goal.target) * 100)) || 0;
+              return (
+                <div key={goal.label}>
+                  <div className="flex justify-between text-sm mb-2 font-medium">
+                    <span className="text-slate-300">{goal.label} <span className="text-slate-500">({goal.progress}/{goal.target})</span></span>
+                    <span className="text-white">{pct}%</span>
                   </div>
-                  <div className="relative z-10">
-                    <p className="text-slate-400 text-sm font-medium mb-1 group-hover:text-slate-300 transition-colors">{stat.title}</p>
-                    <h3 className="text-3xl font-bold text-white tracking-tight">{stat.value}</h3>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-          {/* Weekly Goals Widget */}
-          {goalsData && goalsData.goal && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white">Weekly Goals Progress</h3>
-                <Link to="/goals" className="text-sm text-[#00f0ff] hover:text-blue-300 flex items-center">
-                  View details
-                </Link>
-              </div>
-              <div className="glass-card p-6 rounded-2xl border border-white/5">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-slate-300">Applications ({goalsData.progress.applications}/{goalsData.goal.targetApplications})</span>
-                      <span className="text-[#00f0ff] font-medium">{Math.min(100, Math.round((goalsData.progress.applications / goalsData.goal.targetApplications) * 100)) || 0}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-[#13141f] rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.applications / goalsData.goal.targetApplications) * 100) || 0}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-slate-300">DSA Practice ({goalsData.progress.dsa}/{goalsData.goal.targetDSA})</span>
-                      <span className="text-violet-400 font-medium">{Math.min(100, Math.round((goalsData.progress.dsa / goalsData.goal.targetDSA) * 100)) || 0}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-[#13141f] rounded-full overflow-hidden">
-                      <div className="h-full bg-violet-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.dsa / goalsData.goal.targetDSA) * 100) || 0}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-slate-300">Networking ({goalsData.progress.networking}/{goalsData.goal.targetNetworking})</span>
-                      <span className="text-amber-400 font-medium">{Math.min(100, Math.round((goalsData.progress.networking / goalsData.goal.targetNetworking) * 100)) || 0}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-[#13141f] rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min(100, (goalsData.progress.networking / goalsData.goal.targetNetworking) * 100) || 0}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="glass-card p-6 rounded-2xl border border-white/5 h-96">
-              <h3 className="text-lg font-bold text-white mb-6">Applications Overview</h3>
-              {totalApps > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                    <XAxis dataKey="name" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '0.5rem' }}
-                      itemStyle={{ color: '#e2e8f0' }}
-                    />
-                    <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6', r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-500 pb-10">No data available</div>
-              )}
-            </div>
-
-            <div className="glass-card p-6 rounded-2xl border border-white/5 h-96">
-              <h3 className="text-lg font-bold text-white mb-6">Application Status</h3>
-              {totalApps > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={80}
-                      outerRadius={110}
-                      paddingAngle={5}
-                      dataKey="value"
+                  <div className="w-full h-3 bg-[#13141f] rounded-full overflow-hidden shadow-inner border border-white/5">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 1, ease: 'easeOut' }}
+                      className={`h-full ${goal.color} rounded-full relative`}
                     >
-                      {statusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '0.5rem' }}
-                      itemStyle={{ color: '#e2e8f0' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-500 pb-10">No data available</div>
-              )}
-            </div>
-            
-            <div className="glass-card p-6 rounded-2xl border border-white/5 h-96 lg:col-span-2">
-              <h3 className="text-lg font-bold text-white mb-6">Applications Growth (Last 30 Days)</h3>
-              {totalApps > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={last30Days}>
-                    <defs>
-                      <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#00f0ff" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#00f0ff" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                    <XAxis dataKey="display" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '0.5rem' }}
-                      itemStyle={{ color: '#e2e8f0' }}
-                    />
-                    <Area type="monotone" dataKey="cumulative" stroke="#00f0ff" fillOpacity={1} fill="url(#colorCumulative)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-500 pb-10">No data available</div>
-              )}
-            </div>
-
-            <div className="glass-card p-6 rounded-2xl border border-white/5 h-96 lg:col-span-2">
-              <h3 className="text-lg font-bold text-white mb-6">Activity by Day of Week</h3>
-              {totalApps > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={activityByDay}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                    <XAxis dataKey="name" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '0.5rem' }}
-                      itemStyle={{ color: '#e2e8f0' }}
-                      cursor={{ fill: '#334155', opacity: 0.4 }}
-                    />
-                    <Bar dataKey="count" name="Applications Submitted" fill="#ff007b" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-500 pb-10">No data available</div>
-              )}
-            </div>
-
-            <div className="glass-card p-6 rounded-2xl border border-white/5 h-96 lg:col-span-2">
-              <h3 className="text-lg font-bold text-white mb-6">DSA Topic Completion by Difficulty</h3>
-              {totalDSA > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dsaProgressData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                    <XAxis dataKey="name" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '0.5rem' }}
-                      itemStyle={{ color: '#e2e8f0' }}
-                      cursor={{ fill: '#334155', opacity: 0.4 }}
-                    />
-                    <Legend />
-                    <Bar dataKey="total" name="Total Topics Tracked" fill="#475569" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="completed" name="Completed Topics" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-500 pb-10">No DSA data available</div>
-              )}
-            </div>
+                      <div className="absolute inset-0 bg-white/20 w-full h-full animate-pulse"></div>
+                    </motion.div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-        </>
+        </div>
       )}
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        
+        {/* Applications Growth */}
+        <div className="glass-card p-6 rounded-2xl border border-white/5 h-[400px]">
+          <h3 className="text-lg font-bold text-white mb-6">Applications Growth (Last 30 Days)</h3>
+          {stats.totalApplications > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={last30Days}>
+                <defs>
+                  <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ff6b00" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ff6b00" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="display" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
+                <Area type="monotone" dataKey="cumulative" stroke="#ff6b00" strokeWidth={3} fillOpacity={1} fill="url(#colorCumulative)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState icon={Briefcase} heading="No applications yet" subtext="Add your first application to see the growth chart." ctaText="Add Application" ctaLink="/applications" />
+          )}
+        </div>
+
+        {/* Application Status */}
+        <div className="glass-card p-6 rounded-2xl border border-white/5 h-[400px]">
+          <h3 className="text-lg font-bold text-white mb-6">Application Pipeline</h3>
+          {stats.totalApplications > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={statusData} cx="50%" cy="45%" innerRadius={80} outerRadius={110} paddingAngle={5} dataKey="value">
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState icon={Briefcase} heading="No applications yet" subtext="Start adding applications to build your pipeline." ctaText="Add Application" ctaLink="/applications" />
+          )}
+        </div>
+
+        {/* Activity by Day */}
+        <div className="glass-card p-6 rounded-2xl border border-white/5 h-[400px]">
+          <h3 className="text-lg font-bold text-white mb-6">Activity by Day of Week</h3>
+          {stats.totalApplications > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={activityByDay}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: '#334155', opacity: 0.4 }} contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
+                <Bar dataKey="count" name="Applications Submitted" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState icon={Briefcase} heading="No activity" subtext="Log applications to see which days you are most active." ctaText="Add Application" ctaLink="/applications" />
+          )}
+        </div>
+
+        {/* DSA Difficulty */}
+        <div className="glass-card p-6 rounded-2xl border border-white/5 h-[400px]">
+          <h3 className="text-lg font-bold text-white mb-6">DSA Completion by Difficulty</h3>
+          {stats.dsaTopicsTracked > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dsaProgressData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: '#334155', opacity: 0.4 }} contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                <Bar dataKey="total" name="Total Tracked" fill="#475569" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="completed" name="Completed" fill="#10b981" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState icon={Code} heading="No DSA tracked" subtext="Start tracking your LeetCode progress here." ctaText="Log DSA" ctaLink="/dsa" />
+          )}
+        </div>
+
+      </div>
+
+      <QuickAddFab />
     </motion.div>
   );
 };

@@ -1,79 +1,74 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BadgeDollarSign, Plus, X, Trash2, Edit2, MapPin, Building2, Calendar, TrendingUp } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { BadgeDollarSign, Plus, X, Trash2, Edit2, Building2, Calendar, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
 import api from '../services/api';
+import ConfirmModal from '../components/ConfirmModal';
+import EmptyState from '../components/EmptyState';
+
+const fetchOffers = async () => {
+  const { data } = await api.get('/offers');
+  return data;
+};
 
 const OffersPage = () => {
-  const [offers, setOffers] = useState([]);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    company: '',
-    role: '',
-    baseSalary: '',
-    signOnBonus: '',
-    rsu: '',
-    deadline: '',
-    status: 'Pending',
-    notes: ''
-  });
   const [editingId, setEditingId] = useState(null);
+  const [offerToDelete, setOfferToDelete] = useState(null);
 
-  useEffect(() => {
-    fetchOffers();
-  }, []);
+  const [formData, setFormData] = useState({
+    company: '', role: '', baseSalary: '', signOnBonus: '', rsu: '', deadline: '', status: 'Pending', notes: ''
+  });
 
-  const fetchOffers = async () => {
-    try {
-      const res = await api.get('/offers');
-      setOffers(res.data);
-    } catch (error) {
-      console.error('Error fetching offers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: offers = [], isLoading, isError } = useQuery({
+    queryKey: ['offers'], queryFn: fetchOffers
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingId) {
-        await api.put(`/offers/${editingId}`, formData);
-      } else {
-        await api.post('/offers', formData);
-      }
+  const saveMutation = useMutation({
+    mutationFn: async (data) => {
+      if (editingId) return await api.put(`/offers/${editingId}`, data);
+      return await api.post('/offers', data);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(['offers']);
+      toast.success(editingId ? 'Offer updated' : 'Offer added');
       setIsModalOpen(false);
-      setFormData({
-        company: '', role: '', baseSalary: '', signOnBonus: '', rsu: '', deadline: '', status: 'Pending', notes: ''
-      });
-      setEditingId(null);
-      fetchOffers();
-    } catch (error) {
-      console.error('Error saving offer:', error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this offer?')) {
-      try {
-        await api.delete(`/offers/${id}`);
-        fetchOffers();
-      } catch (error) {
-        console.error('Error deleting offer:', error);
+      
+      // Trigger confetti if status is set to Accepted!
+      if (variables.status === 'Accepted') {
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       }
-    }
+
+      setFormData({ company: '', role: '', baseSalary: '', signOnBonus: '', rsu: '', deadline: '', status: 'Pending', notes: '' });
+      setEditingId(null);
+    },
+    onError: () => toast.error('Failed to save offer')
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => await api.delete(`/offers/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['offers']);
+      toast.success('Offer deleted');
+      setOfferToDelete(null);
+    },
+    onError: () => toast.error('Failed to delete offer')
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    saveMutation.mutate(formData);
   };
 
   const openEditModal = (offer) => {
     setFormData({
-      company: offer.company,
-      role: offer.role,
-      baseSalary: offer.baseSalary,
-      signOnBonus: offer.signOnBonus,
-      rsu: offer.rsu,
+      company: offer.company, role: offer.role,
+      baseSalary: offer.baseSalary, signOnBonus: offer.signOnBonus, rsu: offer.rsu,
       deadline: offer.deadline ? offer.deadline.split('T')[0] : '',
-      status: offer.status,
-      notes: offer.notes
+      status: offer.status, notes: offer.notes
     });
     setEditingId(offer._id);
     setIsModalOpen(true);
@@ -81,11 +76,7 @@ const OffersPage = () => {
 
   const formatCurrency = (value) => {
     if (!value) return '$0';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0
-    }).format(value);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
   };
 
   const getStatusColor = (status) => {
@@ -97,13 +88,41 @@ const OffersPage = () => {
     }
   };
 
+  const getDeadlineText = (deadline) => {
+    if (!deadline) return null;
+    const now = new Date();
+    const d = new Date(deadline);
+    now.setHours(0,0,0,0); d.setHours(0,0,0,0);
+    const diffTime = d - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return { text: `Expired ${Math.abs(diffDays)}d ago`, color: 'text-slate-400' };
+    if (diffDays === 0) return { text: 'Expires Today!', color: 'text-red-400 font-bold animate-pulse' };
+    if (diffDays <= 3) return { text: `${diffDays} days left`, color: 'text-amber-400 font-bold' };
+    return { text: `${diffDays} days left`, color: 'text-emerald-400' };
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-8"><div className="h-10 w-48 bg-white/5 animate-pulse rounded-lg mb-8"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1,2].map(i => <div key={i} className="h-64 bg-white/5 animate-pulse rounded-2xl"></div>)}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <EmptyState icon={BadgeDollarSign} heading="Error" subtext="Failed to load offers." />;
+  }
+
   return (
-    <div className="p-8 w-full max-w-6xl mx-auto">
-      <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-white/5 pb-6">
+    <div className="max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col pb-10">
+      <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-white/5 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
             <BadgeDollarSign className="text-emerald-500 w-8 h-8" />
-            Offer & Compensation Tracker
+            Offer Tracker
           </h1>
           <p className="text-slate-400">Compare your CTC breakdowns and never miss a negotiation deadline.</p>
         </div>
@@ -113,187 +132,168 @@ const OffersPage = () => {
             setFormData({ company: '', role: '', baseSalary: '', signOnBonus: '', rsu: '', deadline: '', status: 'Pending', notes: '' });
             setIsModalOpen(true);
           }} 
-          className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors"
+          className="btn-primary flex items-center"
         >
           <Plus className="w-5 h-5 mr-2" /> Add Offer
         </button>
       </header>
 
-      {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+      <div className="flex-1 overflow-y-auto pr-2 pb-10">
+        {offers.length === 0 ? (
+          <EmptyState 
+            icon={BadgeDollarSign} 
+            heading="No offers tracked yet" 
+            subtext="Aced the interview? Add your job offer here to track compensation." 
+            ctaText="Add Your First Offer"
+            ctaAction={() => setIsModalOpen(true)}
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AnimatePresence>
+              {offers.map(offer => {
+                const basePct = (offer.baseSalary / offer.totalCTC) * 100 || 0;
+                const bonusPct = (offer.signOnBonus / offer.totalCTC) * 100 || 0;
+                const rsuPct = (offer.rsu / offer.totalCTC) * 100 || 0;
+                const countdown = getDeadlineText(offer.deadline);
+
+                return (
+                  <motion.div 
+                    key={offer._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="glass-card p-6 rounded-2xl border border-white/5 hover:border-white/20 transition-all duration-300 relative group flex flex-col h-full"
+                  >
+                    <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button onClick={() => openEditModal(offer)} className="p-1.5 bg-[#13141f] hover:bg-white/10 rounded-md text-slate-300 border border-white/5 shadow-md">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setOfferToDelete(offer._id)} className="p-1.5 bg-[#13141f] hover:bg-red-500/20 rounded-md text-red-400 border border-white/5 shadow-md">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="pr-16">
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                          <Building2 className="w-5 h-5 text-slate-400" /> {offer.company}
+                        </h3>
+                        <p className="text-[#00f0ff] font-medium">{offer.role}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(offer.status)}`}>
+                        {offer.status}
+                      </span>
+                    </div>
+
+                    <div className="mb-6 flex flex-wrap gap-3">
+                      {offer.deadline && (
+                        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 w-fit px-3 py-1.5 rounded-lg border border-white/10">
+                          <Calendar className="w-4 h-4 text-slate-400" />
+                          <span>{new Date(offer.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      )}
+                      {countdown && offer.status !== 'Declined' && offer.status !== 'Accepted' && (
+                        <div className="flex items-center gap-1 text-sm bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
+                          <Clock className={`w-4 h-4 ${countdown.color}`} />
+                          <span className={countdown.color}>{countdown.text}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-[#0a0a0f]/50 p-5 rounded-xl border border-white/5 mb-4 flex-1">
+                      <div className="flex justify-between items-end mb-4">
+                        <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Total CTC (Year 1)</span>
+                        <span className="text-3xl font-bold text-emerald-400">{formatCurrency(offer.totalCTC)}</span>
+                      </div>
+
+                      <div className="w-full h-3 rounded-full flex overflow-hidden mb-3 bg-[#13141f]">
+                        {basePct > 0 && (
+                          <div style={{ width: `${basePct}%` }} className="bg-blue-500 h-full relative group/tooltip">
+                            <div className="opacity-0 group-hover/tooltip:opacity-100 absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-20 border border-white/10 shadow-lg pointer-events-none transition-opacity">Base: {formatCurrency(offer.baseSalary)}</div>
+                          </div>
+                        )}
+                        {bonusPct > 0 && (
+                          <div style={{ width: `${bonusPct}%` }} className="bg-amber-500 h-full relative group/tooltip">
+                            <div className="opacity-0 group-hover/tooltip:opacity-100 absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-20 border border-white/10 shadow-lg pointer-events-none transition-opacity">Bonus: {formatCurrency(offer.signOnBonus)}</div>
+                          </div>
+                        )}
+                        {rsuPct > 0 && (
+                          <div style={{ width: `${rsuPct}%` }} className="bg-purple-500 h-full relative group/tooltip">
+                            <div className="opacity-0 group-hover/tooltip:opacity-100 absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-20 border border-white/10 shadow-lg pointer-events-none transition-opacity">RSU: {formatCurrency(offer.rsu)}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex justify-between text-xs font-bold text-slate-400">
+                        {basePct > 0 && <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div> Base</div>}
+                        {bonusPct > 0 && <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> Sign-On</div>}
+                        {rsuPct > 0 && <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div> RSU</div>}
+                      </div>
+                    </div>
+
+                    {offer.notes && (
+                      <p className="text-sm text-slate-300 bg-white/5 p-3 rounded-lg border border-white/5 italic">
+                        "{offer.notes}"
+                      </p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
-      ) : offers.length === 0 ? (
-        <div className="text-center py-20 glass-card rounded-2xl border border-white/5">
-          <BadgeDollarSign className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-white mb-2">No offers tracked yet</h3>
-          <p className="text-slate-400 mb-6">Aced the interview? Add your job offer here to track compensation.</p>
-          <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 bg-[#ff6b00] hover:bg-[#ff007b] text-white rounded-lg transition-colors mx-auto mt-6">Add Your First Offer</button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {offers.map(offer => {
-            const basePct = (offer.baseSalary / offer.totalCTC) * 100 || 0;
-            const bonusPct = (offer.signOnBonus / offer.totalCTC) * 100 || 0;
-            const rsuPct = (offer.rsu / offer.totalCTC) * 100 || 0;
+        )}
+      </div>
 
-            return (
-              <motion.div 
-                key={offer._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-6 rounded-2xl border border-white/5 hover:bg-[#13141f]/30 transition-colors"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                      <Building2 className="w-5 h-5 text-slate-400" /> {offer.company}
-                    </h3>
-                    <p className="text-slate-400 font-medium">{offer.role}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(offer.status)}`}>
-                    {offer.status}
-                  </span>
-                </div>
+      <ConfirmModal
+        isOpen={!!offerToDelete}
+        onClose={() => setOfferToDelete(null)}
+        onConfirm={() => deleteMutation.mutate(offerToDelete)}
+        title="Delete Offer"
+        message="Are you sure you want to delete this offer? This action cannot be undone."
+      />
 
-                <div className="mb-6 flex items-center gap-2 text-sm text-slate-300 bg-white/[0.02] w-fit px-3 py-1.5 rounded-lg border border-white/5">
-                  <Calendar className="w-4 h-4 text-red-400" />
-                  <span className="font-medium text-slate-200">Deadline:</span> 
-                  {new Date(offer.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                </div>
-
-                <div className="bg-[#0a0a0f]/50 p-4 rounded-xl border border-white/5 mb-4">
-                  <div className="flex justify-between items-end mb-4">
-                    <span className="text-slate-400 font-medium uppercase tracking-wider text-xs">Total CTC (Year 1)</span>
-                    <span className="text-3xl font-bold text-emerald-400">{formatCurrency(offer.totalCTC)}</span>
-                  </div>
-
-                  {/* Stacked Bar Chart for CTC Breakdown */}
-                  <div className="w-full h-4 rounded-full flex overflow-hidden mb-3">
-                    <div style={{ width: `${basePct}%` }} className="bg-blue-500 h-full relative group">
-                      <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Base: {formatCurrency(offer.baseSalary)}</div>
-                    </div>
-                    <div style={{ width: `${bonusPct}%` }} className="bg-amber-500 h-full relative group">
-                       <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">Bonus: {formatCurrency(offer.signOnBonus)}</div>
-                    </div>
-                    <div style={{ width: `${rsuPct}%` }} className="bg-purple-500 h-full relative group">
-                       <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#13141f] text-xs px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">RSU: {formatCurrency(offer.rsu)}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between text-xs font-medium">
-                    <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Base</div>
-                    <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Sign-On</div>
-                    <div className="flex items-center gap-1 text-slate-300"><div className="w-2 h-2 rounded-full bg-purple-500"></div> RSU</div>
-                  </div>
-                </div>
-
-                {offer.notes && (
-                  <p className="text-sm text-slate-400 mb-4 bg-[#13141f]/30 p-3 rounded-lg border border-white/10/30 italic">
-                    "{offer.notes}"
-                  </p>
-                )}
-
-                <div className="flex justify-end gap-2 pt-4 border-t border-white/5">
-                  <button onClick={() => openEditModal(offer)} className="p-2 text-slate-400 hover:text-[#00f0ff] transition-colors bg-[#13141f] hover:bg-white/[0.05] rounded-lg">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDelete(offer._id)} className="p-2 text-slate-400 hover:text-red-400 transition-colors bg-[#13141f] hover:bg-white/[0.05] rounded-lg">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Edit Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 overflow-y-auto">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#0a0a0f] border border-white/10 p-6 rounded-2xl w-full max-w-2xl my-8 relative"
-            >
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[#13141f] border border-white/10 p-6 rounded-2xl w-full max-w-2xl relative shadow-2xl">
+              <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white bg-white/5 p-2 rounded-lg"><X className="w-5 h-5" /></button>
               
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <BadgeDollarSign className="text-emerald-500 w-6 h-6" />
-                {editingId ? 'Edit Offer' : 'Add New Offer'}
+                {editingId ? 'Edit Offer Details' : 'Add New Offer'}
               </h2>
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Company</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={formData.company}
-                      onChange={(e) => setFormData({...formData, company: e.target.value})}
-                      className="input-field" 
-                      placeholder="e.g. Google"
-                    />
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Company</label>
+                    <input type="text" required value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. Google" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Role</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={formData.role}
-                      onChange={(e) => setFormData({...formData, role: e.target.value})}
-                      className="input-field" 
-                      placeholder="e.g. Software Engineer"
-                    />
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Role</label>
+                    <input type="text" required value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. SDE 1" />
                   </div>
                 </div>
 
-                <div className="bg-[#13141f]/30 p-4 rounded-xl border border-white/5 space-y-4">
-                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Compensation (Year 1)</h4>
+                <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Compensation Breakdown (Year 1)</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Base Salary ($)</label>
-                      <input 
-                        type="number" 
-                        required
-                        min="0"
-                        value={formData.baseSalary}
-                        onChange={(e) => setFormData({...formData, baseSalary: e.target.value})}
-                        className="input-field" 
-                      />
+                      <label className="block text-sm font-medium text-slate-300 mb-1.5">Base Salary ($)</label>
+                      <input type="number" required min="0" value={formData.baseSalary} onChange={(e) => setFormData({...formData, baseSalary: e.target.value})} className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Sign-On Bonus ($)</label>
-                      <input 
-                        type="number" 
-                        min="0"
-                        value={formData.signOnBonus}
-                        onChange={(e) => setFormData({...formData, signOnBonus: e.target.value})}
-                        className="input-field" 
-                      />
+                      <label className="block text-sm font-medium text-slate-300 mb-1.5">Sign-On Bonus ($)</label>
+                      <input type="number" min="0" value={formData.signOnBonus} onChange={(e) => setFormData({...formData, signOnBonus: e.target.value})} className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">RSU/Stock ($)</label>
-                      <input 
-                        type="number" 
-                        min="0"
-                        value={formData.rsu}
-                        onChange={(e) => setFormData({...formData, rsu: e.target.value})}
-                        className="input-field" 
-                      />
+                      <label className="block text-sm font-medium text-slate-300 mb-1.5">RSU/Stock ($)</label>
+                      <input type="number" min="0" value={formData.rsu} onChange={(e) => setFormData({...formData, rsu: e.target.value})} className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
                     </div>
                   </div>
-                  <div className="pt-2 flex justify-between items-center text-sm font-medium">
-                    <span className="text-slate-400">Calculated CTC:</span>
-                    <span className="text-xl text-emerald-400">
+                  <div className="pt-2 flex justify-between items-center">
+                    <span className="text-sm font-bold text-slate-400">Total Calculated CTC:</span>
+                    <span className="text-xl font-bold text-emerald-400">
                       {formatCurrency(Number(formData.baseSalary || 0) + Number(formData.signOnBonus || 0) + Number(formData.rsu || 0))}
                     </span>
                   </div>
@@ -301,45 +301,28 @@ const OffersPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Deadline Date</label>
-                    <input 
-                      type="date" 
-                      required
-                      value={formData.deadline}
-                      onChange={(e) => setFormData({...formData, deadline: e.target.value})}
-                      className="input-field" 
-                    />
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Deadline to Accept</label>
+                    <input type="date" required value={formData.deadline} onChange={(e) => setFormData({...formData, deadline: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Status</label>
-                    <select 
-                      value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="input-field bg-[#13141f]"
-                    >
-                      <option value="Pending">Pending / Exploring</option>
-                      <option value="Negotiating">Negotiating</option>
-                      <option value="Accepted">Accepted</option>
-                      <option value="Declined">Declined</option>
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Status</label>
+                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 appearance-none">
+                      <option value="Pending" className="bg-[#13141f]">Pending / Exploring</option>
+                      <option value="Negotiating" className="bg-[#13141f]">Negotiating</option>
+                      <option value="Accepted" className="bg-[#13141f]">Accepted</option>
+                      <option value="Declined" className="bg-[#13141f]">Declined</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Notes (e.g. Relocation, Benefits)</label>
-                  <textarea 
-                    value={formData.notes}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    className="input-field h-24 resize-none" 
-                    placeholder="Includes $10k relocation and full remote work options..."
-                  />
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Notes & Benefits</label>
+                  <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 h-24 resize-none" placeholder="Relocation package details, PTO, remote options..." />
                 </div>
 
                 <div className="pt-4 flex justify-end gap-3">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-400 hover:text-white transition-colors">
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-primary">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-slate-300 font-bold hover:bg-white/5 transition-colors">Cancel</button>
+                  <button type="submit" disabled={saveMutation.isPending} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg transition-all disabled:opacity-50">
                     {editingId ? 'Update Offer' : 'Save Offer'}
                   </button>
                 </div>
