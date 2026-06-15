@@ -102,7 +102,7 @@ const DSAPage = () => {
         </div>
         <div className="flex gap-4">
           <a
-            href="https://roadmap.sh/ds"
+            href="https://roadmap.sh/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg transition-colors"
