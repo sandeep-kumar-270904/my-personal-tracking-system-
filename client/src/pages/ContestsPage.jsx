@@ -134,10 +134,10 @@ const ContestsPage = () => {
               </span>
               Real-Time Tracking
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
-              Live <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] to-[#3b82f6]">Contests</span>
+            <h1 className="text-[28px] font-semibold text-white mb-1">
+              Contests
             </h1>
-            <p className="text-slate-400 text-lg max-w-2xl">
+            <p className="text-[14px] text-slate-400 max-w-2xl">
               Never miss a rated contest. Track upcoming assessments from LeetCode, Codeforces, and CodeChef.
             </p>
           </div>

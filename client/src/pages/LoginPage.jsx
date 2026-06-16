@@ -1,16 +1,28 @@
 import { useState, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Briefcase, ArrowRight, Lock, Mail, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Target, Code2, Trophy, BadgeDollarSign, Check } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
+
+// Standardized Google Icon SVG
+const GoogleIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24">
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+  </svg>
+);
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useContext(AuthContext);
+  const { login, googleLogin } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const successMessage = location.state?.message;
@@ -23,161 +35,222 @@ const LoginPage = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      setError(err.response?.data?.message || 'Incorrect email or password. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex bg-mesh font-['Plus_Jakarta_Sans']">
-      {/* Left Side - Visuals (Hidden on Mobile) */}
-      <div className="hidden lg:flex w-1/2 relative overflow-hidden items-center justify-center border-r border-white/5 bg-[#050508]">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#ff6b00]/10 via-transparent to-[#ff007b]/10" />
-        <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-[#ff6b00]/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" />
-        <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-[#ff007b]/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDelay: '2s' }} />
-        
-        <div className="relative z-10 max-w-lg p-12 glass-card-card neon-border">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2 leading-tight">
-            Welcome back to <br/>
-            <span className="text-gradient">StudentTracker</span>
-          </h1>
-          <p className="text-xl text-slate-400 leading-relaxed mb-8">
-            Log in to continue managing your placement journey, track your latest applications, and analyze your mock interview performance.
-          </p>
-          <div className="flex items-center gap-4 text-slate-500 font-medium">
-            <div className="flex -space-x-4">
-              <img className="w-12 h-12 rounded-full border-2 border-[#050508]" src="https://ui-avatars.com/api/?name=User+One&background=ff6b00&color=fff" alt="" />
-              <img className="w-12 h-12 rounded-full border-2 border-[#050508]" src="https://ui-avatars.com/api/?name=User+Two&background=00f0ff&color=fff" alt="" />
-              <img className="w-12 h-12 rounded-full border-2 border-[#050508]" src="https://ui-avatars.com/api/?name=User+Three&background=ff007b&color=fff" alt="" />
-            </div>
-            <p>Join 10,000+ top students</p>
-          </div>
-        </div>
-      </div>
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setIsSubmitting(true);
+        setError('');
+        // Send the access token to backend
+        await googleLogin(tokenResponse.access_token);
+        navigate('/dashboard');
+      } catch (err) {
+        setError(err.response?.data?.message || 'Google login failed.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    onError: () => setError('Google Login Failed'),
+  });
 
-      {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 relative overflow-hidden">
-        {/* Mobile background blurs */}
-        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#ff6b00]/20 rounded-full blur-[100px] lg:hidden" />
+  return (
+    <div className="min-h-screen flex font-['Plus_Jakarta_Sans'] text-slate-200">
+      
+      {/* Left Panel (40%) */}
+      <div className="hidden lg:flex flex-col w-[40%] relative overflow-hidden bg-[#0D1117] border-r border-[#1E2330] p-10 justify-between">
+        {/* Subtle orange glow */}
+        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#F97316]/40 blur-[120px] rounded-full pointer-events-none translate-x-1/3 -translate-y-1/3" />
         
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="w-full max-w-md relative z-10"
-        >
-          <Link to="/" className="flex items-center gap-2 group cursor-pointer">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg group-hover:shadow-[0_0_20px_rgba(255,107,0,0.4)] transition-all">
+        {/* Logo */}
+        <div className="relative z-10">
+          <Link to="/" className="flex items-center gap-2 group cursor-pointer w-fit">
+            <div className="w-8 h-8 rounded bg-[#F97316] flex items-center justify-center">
               <span className="font-bold text-white text-sm">S</span>
             </div>
             <span className="font-bold tracking-tight text-xl text-white">StudentTracker</span>
           </Link>
+        </div>
 
-          <div className="mb-10">
-            <h2 className="text-3xl font-extrabold text-white mb-3">Sign In</h2>
-            <p className="text-slate-400 text-lg">Enter your details to access your dashboard.</p>
+        {/* Center Content */}
+        <div className="relative z-10 my-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
+            <h1 className="text-4xl font-bold text-white mb-4 leading-tight">Everything you need to crack placement season.</h1>
+            <p className="text-[16px] text-slate-400 leading-relaxed mb-10">
+              Track applications, master DSA, monitor contests, and compare offers — all in one place built for Indian students.
+            </p>
+
+            <div className="space-y-3">
+              {[
+                { icon: Target, label: 'Applications tracker' },
+                { icon: Trophy, label: 'Live contest alerts' },
+                { icon: Code2, label: 'DSA progress heatmap' },
+                { icon: BadgeDollarSign, label: 'CTC comparison' },
+              ].map((feature, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.2 + i * 0.08 }}
+                  className="bg-[#1A1F2E] border border-[#2A2F3E] rounded-lg p-[10px] px-[14px] flex items-center gap-3 w-fit"
+                >
+                  <feature.icon className="w-5 h-5 text-[#F97316]" />
+                  <span className="text-white font-medium text-sm">{feature.label}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Bottom Content */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.6 }} className="relative z-10 pt-8 border-t border-[#1E2330]">
+          <p className="text-white font-semibold mb-1">3,200+ students · 180+ colleges · ₹40L+ avg CTC tracked</p>
+          <p className="text-slate-500 text-sm">Trusted by students from ANITS, VIT, NIT Warangal, IIIT Hyderabad and more</p>
+        </motion.div>
+      </div>
+
+      {/* Right Panel (60%) */}
+      <div className="w-full lg:w-[60%] flex items-center justify-center p-6 sm:p-12 bg-[#111318]">
+        
+        {/* Mobile Header (Hidden on Desktop) */}
+        <div className="lg:hidden absolute top-0 left-0 right-0 p-6 flex flex-col items-center border-b border-[#1E2330] bg-[#0D1117]">
+          <Link to="/" className="flex items-center gap-2 group cursor-pointer mb-2">
+            <div className="w-8 h-8 rounded bg-[#F97316] flex items-center justify-center">
+              <span className="font-bold text-white text-sm">S</span>
+            </div>
+            <span className="font-bold tracking-tight text-xl text-white">StudentTracker</span>
+          </Link>
+          <p className="text-slate-400 text-[14px] text-center">Everything you need to crack placement season.</p>
+        </div>
+
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          className={`w-full max-w-[420px] ${error ? 'animate-[shake_0.3s_ease-in-out]' : ''} mt-24 lg:mt-0`}
+        >
+          <div className="mb-8">
+            <h2 className="text-[24px] font-medium text-white mb-2">Welcome back</h2>
+            <p className="text-[#8B949E] text-[14px]">Sign in to your StudentTracker account</p>
           </div>
 
+          {/* Success Message */}
           {successMessage && !error && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex gap-3 items-start"
-            >
-              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                <CheckCircle2 className="text-emerald-500 w-3 h-3" />
-              </div>
-              <p className="text-emerald-400 text-sm font-medium">{successMessage}</p>
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-4 rounded-lg bg-emerald-500/10 border-l-4 border-emerald-500 text-emerald-400 text-sm font-medium">
+              {successMessage}
             </motion.div>
           )}
 
+          {/* Error Message */}
           {error && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex gap-3 items-start"
-            >
-              <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-red-500 text-xs font-bold">!</span>
-              </div>
-              <p className="text-red-400 text-sm font-medium">{error}</p>
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-3 rounded-md bg-[#FEF2F2] border-l-[3px] border-[#EF4444] text-[#EF4444] text-[13px] font-medium">
+              {error}
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-300">Email Address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-500" />
-                </div>
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input-field pl-12" 
-                  placeholder="you@example.com"
-                  required 
-                  disabled={isSubmitting}
-                />
-              </div>
+          {/* Google Auth Button */}
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-3 bg-white text-black border border-[#2A2F3E] rounded-lg py-[10px] px-4 font-medium hover:bg-[#F5F5F5] transition-colors mb-6"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </motion.button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-[#2A2F3E]"></div>
+            <span className="text-[#8B949E] text-[13px]">or continue with email</span>
+            <div className="flex-1 h-px bg-[#2A2F3E]"></div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="block text-[13px] text-[#8B949E] font-medium">Email address</label>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`w-full h-[44px] bg-[#1A1F2E] border ${error ? 'border-[#EF4444]' : 'border-[#2A2F3E]'} rounded-lg px-4 text-white placeholder-slate-500 focus:outline-none focus:border-[#F97316] focus:ring-[3px] focus:ring-[#F97316]/15 transition-all`}
+                placeholder="you@college.edu"
+                required 
+                disabled={isSubmitting}
+              />
             </div>
             
-            <div className="space-y-2">
+            {/* Password Field */}
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-semibold text-slate-300">Password</label>
-                <a href="#" className="text-sm font-medium text-[#ff6b00] hover:text-[#ff007b] transition-colors">Forgot password?</a>
+                <label className="block text-[13px] text-[#8B949E] font-medium">Password</label>
+                <Link to="/forgot-password" className="text-[13px] text-[#F97316] hover:underline">Forgot password?</Link>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-500" />
-                </div>
                 <input 
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field pl-12 pr-12" 
-                  placeholder="••••••••"
+                  className={`w-full h-[44px] bg-[#1A1F2E] border ${error ? 'border-[#EF4444]' : 'border-[#2A2F3E]'} rounded-lg pl-4 pr-10 text-white placeholder-slate-500 focus:outline-none focus:border-[#F97316] focus:ring-[3px] focus:ring-[#F97316]/15 transition-all`}
                   required 
                   disabled={isSubmitting}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#8B949E] hover:text-white transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            <button 
+            {/* Remember Me */}
+            <div className="flex items-center gap-2 mt-2">
+              <button 
+                type="button"
+                onClick={() => setRememberMe(!rememberMe)}
+                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${rememberMe ? 'bg-[#F97316] border-[#F97316]' : 'bg-[#1A1F2E] border-[#8B949E]'}`}
+              >
+                {rememberMe && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+              </button>
+              <span className="text-[13px] text-[#8B949E] cursor-pointer" onClick={() => setRememberMe(!rememberMe)}>Remember me for 30 days</span>
+            </div>
+
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               type="submit" 
               disabled={isSubmitting}
-              className="w-full btn-primary py-4 text-lg mt-4 flex items-center justify-center gap-2"
+              className="w-full bg-[#F97316] hover:bg-[#EA6C0A] transition-colors text-white font-medium rounded-lg py-[12px] px-[24px] text-[15px] flex items-center justify-center disabled:opacity-70 disabled:pointer-events-none mt-6"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Authenticating...
-                </>
-              ) : (
-                <>
-                  Sign In
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+            </motion.button>
           </form>
 
-          <p className="mt-10 text-center text-slate-400 font-medium">
+          <p className="mt-8 text-center text-[#8B949E] text-[14px]">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-white hover:text-[#ff6b00] transition-colors font-bold underline decoration-white/30 underline-offset-4">
-              Create an account
+            <Link to="/signup" className="text-[#F97316] hover:underline font-medium">
+              Sign up &rarr;
             </Link>
           </p>
         </motion.div>
       </div>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-8px); }
+          50% { transform: translateX(8px); }
+          75% { transform: translateX(-4px); }
+        }
+      `}} />
     </div>
   );
 };

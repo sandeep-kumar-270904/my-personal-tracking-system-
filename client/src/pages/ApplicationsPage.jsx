@@ -290,22 +290,22 @@ const ApplicationsPage = () => {
               <form onSubmit={handleFormSubmit} className="p-6 space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Company</label>
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Company</label>
                     <input 
                       type="text" 
                       value={formData.company}
                       onChange={(e) => setFormData({...formData, company: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] transition-colors" 
+                      className="input-field py-2.5 px-4" 
                       required 
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Role</label>
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Role</label>
                     <input 
                       type="text" 
                       value={formData.role}
                       onChange={(e) => setFormData({...formData, role: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] transition-colors" 
+                      className="input-field py-2.5 px-4" 
                       required 
                     />
                   </div>
@@ -313,11 +313,11 @@ const ApplicationsPage = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Status</label>
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
                     <select 
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] transition-colors appearance-none"
+                      className="input-field py-2.5 px-4 appearance-none"
                     >
                       <option value="Applied">Applied</option>
                       <option value="OA">Online Assessment (OA)</option>
@@ -327,34 +327,34 @@ const ApplicationsPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Date Applied</label>
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Applied</label>
                     <input 
                       type="date" 
                       value={formData.appliedDate}
                       onChange={(e) => setFormData({...formData, appliedDate: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] transition-colors [color-scheme:dark]" 
+                      className="input-field py-2.5 px-4 [color-scheme:dark]" 
                       required 
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Job Link URL</label>
+                  <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Job Link URL</label>
                   <input 
                     type="url" 
                     value={formData.link}
                     onChange={(e) => setFormData({...formData, link: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] transition-colors" 
+                    className="input-field py-2.5 px-4" 
                     placeholder="https://"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Notes</label>
+                  <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notes</label>
                   <textarea 
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] transition-colors min-h-[100px] resize-y" 
+                    className="input-field py-2.5 px-4 min-h-[100px] resize-y" 
                     placeholder="Interview details, contact info..."
                   ></textarea>
                 </div>
@@ -363,14 +363,14 @@ const ApplicationsPage = () => {
                   <button 
                     type="button" 
                     onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-2.5 rounded-xl text-slate-300 font-medium hover:bg-white/5 transition-colors"
+                    className="btn-secondary px-5 py-2.5 text-sm"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit" 
                     disabled={saveMutation.isPending}
-                    className="bg-[#ff6b00] hover:bg-[#EA6C0A] text-white font-medium px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50 flex items-center gap-2"
+                    className="btn-primary px-6 py-2.5 text-sm flex items-center gap-2 disabled:opacity-50"
                   >
                     {saveMutation.isPending ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : null}
                     {editingApp ? 'Save Changes' : 'Add Application'}

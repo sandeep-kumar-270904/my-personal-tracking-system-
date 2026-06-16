@@ -189,8 +189,8 @@ const CalendarPage = () => {
     <div className="max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col pb-10">
       <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-white/5 pb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Calendar</h1>
-          <p className="text-slate-400">Track all your interview dates, follow-ups, and application timelines.</p>
+          <h1 className="text-[28px] font-semibold text-white mb-1">Calendar</h1>
+          <p className="text-[14px] text-slate-400">Track all your interview dates, follow-ups, and application timelines.</p>
         </div>
       </header>
 
@@ -243,28 +243,28 @@ const CalendarPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Event Title</label>
-                    <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff]" placeholder="e.g. Call with Recruiter" />
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Event Title</label>
+                    <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="input-field py-2.5 px-4" placeholder="e.g. Call with Recruiter" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1.5">Type</label>
-                      <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff] appearance-none">
+                      <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Type</label>
+                      <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="input-field py-2.5 px-4 appearance-none">
                         <option value="Event" className="bg-[#13141f]">Event</option>
                         <option value="Reminder" className="bg-[#13141f]">Reminder</option>
                         <option value="Deadline" className="bg-[#13141f]">Deadline</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1.5">Time</label>
-                      <input type="datetime-local" required value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff] [color-scheme:dark]" />
+                      <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Time</label>
+                      <input type="datetime-local" required value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="input-field py-2.5 px-4 [color-scheme:dark]" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Description (Optional)</label>
-                    <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff] min-h-[100px] resize-y" placeholder="Add any details or links..." />
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Description (Optional)</label>
+                    <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="input-field py-2.5 px-4 min-h-[100px] resize-y" placeholder="Add any details or links..." />
                   </div>
 
                   <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
@@ -276,8 +276,8 @@ const CalendarPage = () => {
                   </div>
 
                   <div className="pt-6 flex gap-3">
-                    <button type="button" onClick={() => setIsDrawerOpen(false)} className="flex-1 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition-colors font-bold">Cancel</button>
-                    <button type="submit" disabled={saveMutation.isPending} className="flex-1 py-3 rounded-xl bg-[#00f0ff] hover:bg-[#00f0ff]/80 text-[#13141f] font-bold shadow-lg shadow-[#00f0ff]/20 transition-all disabled:opacity-50">Save Event</button>
+                    <button type="button" onClick={() => setIsDrawerOpen(false)} className="btn-secondary flex-1 py-3 text-sm">Cancel</button>
+                    <button type="submit" disabled={saveMutation.isPending} className="btn-primary flex-1 py-3 text-sm disabled:opacity-50">Save Event</button>
                   </div>
                 </form>
               </div>

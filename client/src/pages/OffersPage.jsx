@@ -97,8 +97,8 @@ const OffersPage = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) return { text: `Expired ${Math.abs(diffDays)}d ago`, color: 'text-slate-400' };
-    if (diffDays === 0) return { text: 'Expires Today!', color: 'text-red-400 font-bold animate-pulse' };
-    if (diffDays <= 3) return { text: `${diffDays} days left`, color: 'text-amber-400 font-bold' };
+    if (diffDays === 0) return { text: 'Expires Today!', color: 'text-red-500 font-bold animate-pulse' };
+    if (diffDays < 7) return { text: `${diffDays} days left`, color: 'text-red-400 font-bold' };
     return { text: `${diffDays} days left`, color: 'text-emerald-400' };
   };
 
@@ -120,11 +120,11 @@ const OffersPage = () => {
     <div className="max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col pb-10">
       <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-white/5 pb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+          <h1 className="text-[28px] font-semibold text-white mb-1 flex items-center gap-3">
             <BadgeDollarSign className="text-emerald-500 w-8 h-8" />
             Offer Tracker
           </h1>
-          <p className="text-slate-400">Compare your CTC breakdowns and never miss a negotiation deadline.</p>
+          <p className="text-[14px] text-slate-400">Compare your CTC breakdowns and never miss a negotiation deadline.</p>
         </div>
         <button 
           onClick={() => {
@@ -266,33 +266,33 @@ const OffersPage = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Company</label>
-                    <input type="text" required value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. Google" />
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Company</label>
+                    <input type="text" required value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})} className="input-field py-2.5 px-4" placeholder="e.g. Google" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Role</label>
-                    <input type="text" required value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. SDE 1" />
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Role</label>
+                    <input type="text" required value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="input-field py-2.5 px-4" placeholder="e.g. SDE 1" />
                   </div>
                 </div>
 
                 <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Compensation Breakdown (Year 1)</h4>
+                  <h4 className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">Compensation Breakdown (Year 1)</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1.5">Base Salary ($)</label>
-                      <input type="number" required min="0" value={formData.baseSalary} onChange={(e) => setFormData({...formData, baseSalary: e.target.value})} className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                      <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Base Salary ($)</label>
+                      <input type="number" required min="0" value={formData.baseSalary} onChange={(e) => setFormData({...formData, baseSalary: e.target.value})} className="input-field py-2.5 px-4" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1.5">Sign-On Bonus ($)</label>
-                      <input type="number" min="0" value={formData.signOnBonus} onChange={(e) => setFormData({...formData, signOnBonus: e.target.value})} className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                      <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Sign-On Bonus ($)</label>
+                      <input type="number" min="0" value={formData.signOnBonus} onChange={(e) => setFormData({...formData, signOnBonus: e.target.value})} className="input-field py-2.5 px-4" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1.5">RSU/Stock ($)</label>
-                      <input type="number" min="0" value={formData.rsu} onChange={(e) => setFormData({...formData, rsu: e.target.value})} className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                      <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">RSU/Stock ($)</label>
+                      <input type="number" min="0" value={formData.rsu} onChange={(e) => setFormData({...formData, rsu: e.target.value})} className="input-field py-2.5 px-4" />
                     </div>
                   </div>
                   <div className="pt-2 flex justify-between items-center">
-                    <span className="text-sm font-bold text-slate-400">Total Calculated CTC:</span>
+                    <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">Total Calculated CTC:</span>
                     <span className="text-xl font-bold text-emerald-400">
                       {formatCurrency(Number(formData.baseSalary || 0) + Number(formData.signOnBonus || 0) + Number(formData.rsu || 0))}
                     </span>
@@ -301,28 +301,28 @@ const OffersPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Deadline to Accept</label>
-                    <input type="date" required value={formData.deadline} onChange={(e) => setFormData({...formData, deadline: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]" />
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Deadline to Accept</label>
+                    <input type="date" required value={formData.deadline} onChange={(e) => setFormData({...formData, deadline: e.target.value})} className="input-field py-2.5 px-4 [color-scheme:dark]" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Status</label>
-                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 appearance-none">
-                      <option value="Pending" className="bg-[#13141f]">Pending / Exploring</option>
-                      <option value="Negotiating" className="bg-[#13141f]">Negotiating</option>
-                      <option value="Accepted" className="bg-[#13141f]">Accepted</option>
-                      <option value="Declined" className="bg-[#13141f]">Declined</option>
+                    <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
+                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="input-field py-2.5 px-4 appearance-none">
+                      <option value="Pending">Pending / Exploring</option>
+                      <option value="Negotiating">Negotiating</option>
+                      <option value="Accepted">Accepted</option>
+                      <option value="Declined">Declined</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Notes & Benefits</label>
-                  <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 h-24 resize-none" placeholder="Relocation package details, PTO, remote options..." />
+                  <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notes & Benefits</label>
+                  <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} className="input-field py-2.5 px-4 h-24 resize-none" placeholder="Relocation package details, PTO, remote options..." />
                 </div>
 
                 <div className="pt-4 flex justify-end gap-3">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-slate-300 font-bold hover:bg-white/5 transition-colors">Cancel</button>
-                  <button type="submit" disabled={saveMutation.isPending} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg transition-all disabled:opacity-50">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary px-5 py-2.5 text-sm">Cancel</button>
+                  <button type="submit" disabled={saveMutation.isPending} className="btn-success px-6 py-2.5 text-sm disabled:opacity-50">
                     {editingId ? 'Update Offer' : 'Save Offer'}
                   </button>
                 </div>

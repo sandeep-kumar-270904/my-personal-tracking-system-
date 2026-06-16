@@ -37,21 +37,21 @@ const TableView = ({ applications, onAppClick }) => {
   };
 
   return (
-    <div className="glass-card rounded-2xl border border-white/5 overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="glass-card rounded-2xl border border-white/5 overflow-hidden flex flex-col h-full max-h-[70vh]">
+      <div className="overflow-auto custom-scrollbar flex-1 relative">
         <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-white/5 border-b border-white/5 text-sm uppercase tracking-wider text-slate-400">
-              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('company')}>
+          <thead className="sticky top-0 z-10 bg-[#13141f] shadow-md">
+            <tr className="border-b border-white/5 text-[13px] font-bold uppercase tracking-wider text-slate-500">
+              <th className="p-4 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('company')}>
                 <div className="flex items-center gap-2">Company {sortConfig.key === 'company' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>)}</div>
               </th>
-              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('role')}>
+              <th className="p-4 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('role')}>
                 <div className="flex items-center gap-2">Role {sortConfig.key === 'role' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>)}</div>
               </th>
-              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('status')}>
+              <th className="p-4 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('status')}>
                 <div className="flex items-center gap-2">Status {sortConfig.key === 'status' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>)}</div>
               </th>
-              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('appliedDate')}>
+              <th className="p-4 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('appliedDate')}>
                 <div className="flex items-center gap-2">Applied Date {sortConfig.key === 'appliedDate' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>)}</div>
               </th>
               <th className="p-4 text-right">Actions</th>
@@ -65,7 +65,7 @@ const TableView = ({ applications, onAppClick }) => {
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
                   key={app._id} 
                   onClick={() => onAppClick(app)}
-                  className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors group"
+                  className={`border-b border-white/5 hover:bg-white/10 cursor-pointer transition-colors group ${idx % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.02]'}`}
                 >
                   <td className="p-4">
                     <div className="flex items-center gap-3">

@@ -41,10 +41,10 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
               {message}
             </p>
 
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-end mt-6">
               <button 
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                className="btn-secondary px-4 py-2 text-sm"
               >
                 Cancel
               </button>
@@ -53,10 +53,8 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
                   onConfirm();
                   onClose();
                 }}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                  isDestructive 
-                    ? 'bg-red-500 hover:bg-red-600' 
-                    : 'bg-[#ff6b00] hover:bg-[#EA6C0A]'
+                className={`px-4 py-2 text-sm ${
+                  isDestructive ? 'btn-danger' : 'btn-primary'
                 }`}
               >
                 {confirmText}

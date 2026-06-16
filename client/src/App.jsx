@@ -4,6 +4,12 @@ import { AuthContext } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import AIAnalyzerPage from './pages/AIAnalyzerPage';
 import DashboardPage from './pages/DashboardPage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -45,21 +51,27 @@ function App() {
           <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
           <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
           <Route path="/signup" element={user ? <Navigate to="/dashboard" /> : <SignupPage />} />
+          <Route path="/forgot-password" element={user ? <Navigate to="/dashboard" /> : <ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={user ? <Navigate to="/dashboard" /> : <ResetPasswordPage />} />
+          <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
           
           {/* Protected Dashboard Routes */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/applications" element={<ApplicationsPage />} />
-            <Route path="/resumes" element={<ResumesPage />} />
-            <Route path="/dsa" element={<DSAPage />} />
-            <Route path="/interviews" element={<InterviewsPage />} />
-            <Route path="/network" element={<NetworkPage />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/goals" element={<GoalsPage />} />
-            <Route path="/offers" element={<OffersPage />} />
-            <Route path="/contests" element={<ContestsPage />} />
-            <Route path="/resources" element={<ResourcesPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="applications" element={<ApplicationsPage />} />
+            <Route path="resumes" element={<ResumesPage />} />
+            <Route path="dsa" element={<DSAPage />} />
+            <Route path="interviews" element={<InterviewsPage />} />
+            <Route path="network" element={<NetworkPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="goals" element={<GoalsPage />} />
+            <Route path="offers" element={<OffersPage />} />
+            <Route path="contests" element={<ContestsPage />} />
+            <Route path="resources" element={<ResourcesPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="ai-analyzer" element={<AIAnalyzerPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

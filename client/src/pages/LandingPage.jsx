@@ -1,82 +1,96 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, TrendingUp, Users, Target, Rocket, Shield, Code2, Play, Pause, Volume2, VolumeX, Star, ChevronRight } from 'lucide-react';
+import { 
+  ArrowRight, CheckCircle2, TrendingUp, Users, Target, Rocket, Shield, 
+  Code2, Play, ChevronRight, Briefcase, MapPin, IndianRupee, Trophy, 
+  Star, MessageSquare, Plus, Minus
+} from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { useContext, useState, useRef, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
-const CustomVideoPlayer = ({ src }) => {
-  const videoRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
-
-  const togglePlay = (e) => {
-    e.preventDefault();
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const toggleMute = (e) => {
-    e.preventDefault();
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
+const DashboardMockup = () => {
   return (
-    <div 
-      className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(255,0,123,0.15)] transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out bg-[#050508] aspect-[16/9] group"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Top Bar */}
-      <div className="absolute top-0 inset-x-0 h-8 bg-white/5 border-b border-white/10 flex items-center px-4 gap-2 z-20 backdrop-blur-md transition-opacity duration-300">
-        <div className="w-3 h-3 rounded-full bg-red-500/80" />
-        <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-        <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-        <div className="ml-4 text-xs text-slate-400 font-mono">smart-tracker-demo.mp4</div>
+    <div className="relative rounded-2xl overflow-hidden border border-[#2A2F3E] bg-[#0D1117] shadow-2xl transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out w-full max-w-[540px] aspect-[4/3] flex flex-col mx-auto">
+      {/* Browser Chrome */}
+      <div className="h-8 bg-[#161B22] border-b border-[#2A2F3E] flex items-center px-4 gap-2 z-20">
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F]" />
+        </div>
+        <div className="ml-4 flex-1 flex justify-center">
+          <div className="bg-[#0D1117] rounded text-[10px] text-slate-500 font-mono px-3 py-0.5 border border-[#2A2F3E]">studenttracker.app/dashboard</div>
+        </div>
       </div>
+      {/* Mockup Body */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-1/4 bg-[#0A0D12] border-r border-[#1E2330] p-3 flex flex-col gap-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-5 h-5 rounded bg-[#F97316] flex items-center justify-center text-[10px] font-bold text-white">S</div>
+            <div className="h-3 w-16 bg-white/20 rounded"></div>
+          </div>
+          <div className="flex flex-col gap-2">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className={`h-6 rounded flex items-center gap-2 px-2 ${i===1 ? 'bg-[#1A1F2E] border-l-2 border-[#F97316]' : ''}`}>
+                <div className={`w-3 h-3 rounded ${i===1 ? 'bg-[#F97316]' : 'bg-slate-600'}`}></div>
+                <div className="h-2 w-12 bg-slate-700 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Main Content */}
+        <div className="flex-1 p-4 bg-[#0D1117] flex flex-col gap-4">
+          <div className="h-4 w-24 bg-white/20 rounded"></div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {[ {v: '24', l: 'Applications'}, {v: '3', l: 'Interviews'}, {v: '147', l: 'DSA Problems'}, {v: '2', l: 'Offers'} ].map((stat, i) => (
+              <div key={i} className="bg-[#1A1F2E] border border-[#2A2F3E] rounded-lg p-3">
+                <div className="text-lg font-bold text-white leading-none mb-1">{stat.v}</div>
+                <div className="text-[9px] text-slate-400">{stat.l}</div>
+              </div>
+            ))}
+          </div>
+          {/* Chart Placeholder */}
+          <div className="bg-[#1A1F2E] border border-[#2A2F3E] rounded-lg p-3 flex-1 flex flex-col justify-end gap-1">
+            <div className="text-[10px] text-slate-400 mb-2">Application Status</div>
+            <div className="flex gap-1 h-2/3 items-end">
+              <div className="w-1/4 bg-[#3B82F6] rounded-t" style={{height: '80%'}}></div>
+              <div className="w-1/4 bg-[#F59E0B] rounded-t" style={{height: '40%'}}></div>
+              <div className="w-1/4 bg-[#10B981] rounded-t" style={{height: '20%'}}></div>
+              <div className="w-1/4 bg-[#EF4444] rounded-t" style={{height: '60%'}}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-      {/* Video Element */}
-      <video 
-        ref={videoRef}
-        autoPlay 
-        loop 
-        muted={isMuted} 
-        playsInline 
-        className="w-full h-full object-cover pt-8"
+const FAQItem = ({ question, answer }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="border border-[#1E2330] rounded-xl bg-[#0A0D12] overflow-hidden mb-4">
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="w-full flex items-center justify-between p-6 text-left"
       >
-        <source src="/demo.mp4" type="video/mp4" />
-        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4" />
-      </video>
-
-      {/* Play/Pause Overlay */}
-      <div className={`absolute inset-0 pt-8 flex items-center justify-center z-10 transition-all duration-300 ${!isPlaying ? 'bg-black/40 backdrop-blur-sm' : isHovered ? 'bg-black/10' : 'bg-transparent pointer-events-none'}`}>
-        <button 
-          onClick={togglePlay}
-          className={`w-20 h-20 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:bg-[#ff007b]/40 hover:border-[#ff007b] ${!isPlaying || isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}
-        >
-          {isPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
-        </button>
-      </div>
-
-      {/* Bottom Controls */}
-      <div className={`absolute bottom-0 inset-x-0 p-6 flex items-end justify-end z-20 transition-opacity duration-300 ${isHovered || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-        <button 
-          onClick={toggleMute}
-          className="w-12 h-12 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white transition-all duration-300 hover:bg-white/20 hover:scale-105"
-        >
-          {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-        </button>
-      </div>
+        <span className="font-bold text-white text-lg">{question}</span>
+        {isOpen ? <Minus className="w-5 h-5 text-[#F97316]" /> : <Plus className="w-5 h-5 text-slate-400" />}
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="px-6 pb-6 text-slate-400 leading-relaxed"
+          >
+            {answer}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -124,63 +138,54 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-mesh font-['Plus_Jakarta_Sans'] text-slate-200 selection:bg-[#ff007b]/30">
+    <div className="min-h-screen bg-[#050508] font-['Plus_Jakarta_Sans'] text-slate-200">
       <Navbar />
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Animated Background Blobs */}
         <div className="absolute top-0 right-0 -z-10 translate-x-1/3 -translate-y-1/4">
-          <div className="w-[500px] h-[500px] bg-[#ff6b00]/20 blur-[120px] rounded-full mix-blend-screen animate-pulse" />
-        </div>
-        <div className="absolute bottom-0 left-0 -z-10 -translate-x-1/3 translate-y-1/4">
-          <div className="w-[600px] h-[600px] bg-[#00f0ff]/20 blur-[150px] rounded-full mix-blend-screen animate-pulse" style={{ animationDelay: '2s' }} />
-        </div>
-        <div className="absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2">
-          <div className="w-[800px] h-[800px] bg-[#ff007b]/10 blur-[150px] rounded-full mix-blend-screen" />
+          <div className="w-[500px] h-[500px] bg-[#F97316]/10 blur-[120px] rounded-full mix-blend-screen" />
         </div>
 
         <div className="text-center max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-8 text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer">
-              <span className="flex h-2 w-2 rounded-full bg-[#00f0ff] animate-pulse"></span>
-              Placement Tracker v2.0 is live
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }}>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1F2E] border border-[#2A2F3E] mb-8 text-sm font-medium hover:bg-[#2A2F3E] transition-colors cursor-pointer">
+              <span className="flex h-2 w-2 rounded-full bg-[#F97316] animate-pulse"></span>
+              StudentTracker 2.0 is live for the 2026 Batch
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </div>
             
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-8 leading-[1.1]">
-              {displayText} <span className="animate-pulse font-light opacity-50">|</span> <br className="hidden md:block"/>
-              <span className="text-gradient">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-8 leading-[1.1] text-white">
+              {displayText} <span className="animate-pulse font-light opacity-50 text-[#F97316]">|</span> <br className="hidden md:block"/>
+              <span className="text-[#F97316]">
                 {textIndex === 0 ? "Placement Season" : textIndex === 1 ? "Tech Career" : "Job Hunt"}
               </span>
             </h1>
-            <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-12 leading-relaxed font-light">
-              The ultimate mission-control for your career. Track applications, crush DSA goals, and analyze offers in one beautifully crafted platform.
+            <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-12 leading-relaxed font-medium">
+              The ultimate mission-control for Indian college students. Track applications, crush DSA goals, and analyze offers in one platform.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-              <Link to="/signup">
-                <button className="w-full sm:w-auto relative inline-flex h-14 overflow-hidden rounded-xl p-[2px] focus:outline-none group">
-                  <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ff6b00_0%,#ff007b_50%,#00f0ff_100%)]" />
-                  <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-xl bg-slate-950/90 hover:bg-slate-950 px-8 py-4 text-lg font-bold text-white backdrop-blur-3xl transition-colors gap-2">
-                    Start Tracking Free <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </button>
+              <Link to="/signup" className="w-full sm:w-auto">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full bg-[#F97316] hover:bg-[#EA6C0A] px-8 py-4 text-lg font-bold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]"
+                >
+                  Start Tracking Free <ArrowRight className="w-5 h-5" />
+                </motion.button>
               </Link>
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('video-showcase').scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto btn-secondary px-8 py-4 text-lg flex items-center justify-center gap-2 hover:border-white/30 transition-colors"
+                className="w-full sm:w-auto bg-transparent border border-[#2A2F3E] hover:bg-[#1A1F2E] px-8 py-4 text-lg font-bold rounded-xl flex items-center justify-center gap-2 transition-colors text-white"
               >
                 <Play className="w-5 h-5" fill="currentColor" /> Watch Demo
-              </button>
+              </motion.button>
             </div>
           </motion.div>
 
-          {/* Platform Video Showcase */}
           <motion.div 
             id="video-showcase"
             initial={{ opacity: 0, y: 100 }}
@@ -188,183 +193,251 @@ const LandingPage = () => {
             transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
             className="mt-24 relative mx-auto max-w-5xl perspective-1000 scroll-mt-24"
           >
-            <CustomVideoPlayer src="https://drive.google.com/uc?export=download&id=18dGMWdVbYhvC-mwR2Sr1fAESe5M4djW-" />
-            {/* Ambient shadow for mockup */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-[#ff6b00]/20 via-[#ff007b]/20 to-[#00f0ff]/20 blur-3xl -z-10 opacity-50 pointer-events-none" />
+            <DashboardMockup />
+            <div className="absolute -inset-4 bg-gradient-to-r from-[#F97316]/20 via-[#F97316]/10 to-transparent blur-3xl -z-10 opacity-50 pointer-events-none" />
           </motion.div>
         </div>
       </section>
 
-      {/* Trusted By Marquee */}
-      <section className="py-12 border-y border-white/5 bg-white/[0.02] overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 text-center mb-8">
-          <p className="text-sm font-semibold tracking-widest text-slate-500 uppercase">Trusted by students placed at</p>
-        </div>
-        <div className="flex gap-16 items-center justify-center opacity-50 grayscale animate-[marquee_20s_linear_infinite] whitespace-nowrap">
-          {/* Mock Logos - purely textual for aesthetics */}
-          {['GOOGLE', 'AMAZON', 'MICROSOFT', 'META', 'APPLE', 'NETFLIX', 'UBER'].map((company, i) => (
-            <span key={i} className="text-2xl font-black tracking-tighter text-slate-400 inline-block px-8">{company}</span>
-          ))}
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="py-32 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeIn} className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Everything you need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] to-[#ff007b]">succeed</span></h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">Stop using messy spreadsheets. Bring your entire placement workflow into one unified, intelligent workspace.</p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <motion.div {...fadeIn} className="glass-card border border-white/5 p-8 rounded-3xl group hover:-translate-y-2 hover:bg-white/[0.05] hover:shadow-[0_8px_30px_rgba(255,107,0,0.15)] transition-all duration-300">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ff6b00] to-[#ff007b] p-[1px] mb-8">
-                <div className="w-full h-full bg-[#0a0a0f] rounded-xl flex items-center justify-center group-hover:bg-transparent transition-colors">
-                  <Target className="w-7 h-7 text-[#ff6b00] group-hover:text-white transition-colors" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold mb-4 text-white">Application Tracker</h3>
-              <p className="text-slate-400 leading-relaxed text-lg">Visualize your job hunt with a Kanban board. Move applications from 'Applied' to 'Offer' seamlessly.</p>
-            </motion.div>
-
-            <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="glass-card border border-white/5 p-8 rounded-3xl group hover:-translate-y-2 hover:bg-white/[0.05] hover:shadow-[0_8px_30px_rgba(255,0,123,0.15)] transition-all duration-300">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ff007b] to-[#00f0ff] p-[1px] mb-8">
-                <div className="w-full h-full bg-[#0a0a0f] rounded-xl flex items-center justify-center group-hover:bg-transparent transition-colors">
-                  <Code2 className="w-7 h-7 text-[#ff007b] group-hover:text-white transition-colors" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold mb-4 text-white">DSA & Contests</h3>
-              <p className="text-slate-400 leading-relaxed text-lg">Keep track of problems solved and upcoming coding contests on CodeChef, Codeforces, and LeetCode.</p>
-            </motion.div>
-
-            <motion.div {...fadeIn} transition={{ delay: 0.2 }} className="glass-card border border-white/5 p-8 rounded-3xl group hover:-translate-y-2 hover:bg-white/[0.05] hover:shadow-[0_8px_30px_rgba(0,240,255,0.15)] transition-all duration-300 lg:col-span-1 md:col-span-2">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00f0ff] to-[#ff6b00] p-[1px] mb-8">
-                <div className="w-full h-full bg-[#0a0a0f] rounded-xl flex items-center justify-center group-hover:bg-transparent transition-colors">
-                  <TrendingUp className="w-7 h-7 text-[#00f0ff] group-hover:text-white transition-colors" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold mb-4 text-white">Offer Analytics</h3>
-              <p className="text-slate-400 leading-relaxed text-lg">Compare CTCs, base pay, and stock options side-by-side to make the most informed career choices.</p>
-            </motion.div>
+      {/* Stats Row */}
+      <section className="py-12 border-y border-[#1E2330] bg-[#0D1117] overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16">
+          <div className="text-center">
+            <p className="text-4xl font-black text-white mb-1">3,200+</p>
+            <p className="text-slate-400 font-medium">Students Placed</p>
+          </div>
+          <div className="hidden md:block w-px h-12 bg-[#1E2330]"></div>
+          <div className="text-center">
+            <p className="text-4xl font-black text-white mb-1">180+</p>
+            <p className="text-slate-400 font-medium">Colleges Reached</p>
+          </div>
+          <div className="hidden md:block w-px h-12 bg-[#1E2330]"></div>
+          <div className="text-center">
+            <p className="text-4xl font-black text-white mb-1">₹40L+</p>
+            <p className="text-slate-400 font-medium">Average Top CTC</p>
           </div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="py-24 relative z-10 bg-[#050508]">
+      <section id="features" className="py-24 relative z-10 bg-[#050508]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div {...fadeIn} className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Your Placement Journey, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff007b] to-[#ff6b00]">Streamlined</span></h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">Your Placement Journey, <span className="text-[#F97316]">Streamlined</span></h2>
             <p className="text-xl text-slate-400 max-w-2xl mx-auto">From building your resume to signing your offer letter, we guide you through every single step.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-            {/* Connecting Line */}
-            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2 z-0" />
+            <div className="hidden md:block absolute top-8 left-0 w-full h-0.5 bg-[#1E2330] z-0" />
             
-            {/* Step 1 */}
-            <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="relative z-10 text-center group">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#0a0a0f] border-2 border-[#ff6b00] flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,107,0,0.3)] group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">1</span>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Build Profile</h3>
-              <p className="text-slate-400 text-sm">Upload multiple resumes and set your target roles and dream companies.</p>
-            </motion.div>
+            {[
+              { num: '1', title: 'Build Profile', desc: 'Add your target companies and placement season.' },
+              { num: '2', title: 'Track & Prep', desc: 'Log applications and track daily DSA progress.' },
+              { num: '3', title: 'Ace Interviews', desc: 'Record mock interview notes and feedback.' },
+              { num: '4', title: 'Compare Offers', desc: 'Analyze CTC breakdowns side-by-side.' }
+            ].map((step, i) => (
+              <motion.div key={i} {...fadeIn} transition={{ delay: 0.1 * (i+1) }} className="relative z-10 text-center group">
+                <div className="w-16 h-16 mx-auto rounded-full bg-[#0D1117] border-2 border-[#F97316] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl font-bold text-[#F97316]">{step.num}</span>
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">{step.title}</h3>
+                <p className="text-slate-400 text-sm">{step.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Step 2 */}
-            <motion.div {...fadeIn} transition={{ delay: 0.2 }} className="relative z-10 text-center group">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#0a0a0f] border-2 border-[#ff007b] flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,123,0.3)] group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">2</span>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Track & Prep</h3>
-              <p className="text-slate-400 text-sm">Log applications on the Kanban board and track your daily DSA progress.</p>
-            </motion.div>
+      {/* Features Grid - 6 Cards */}
+      <section className="py-32 relative z-10 bg-[#0D1117] border-y border-[#1E2330]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div {...fadeIn} className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">Everything you need to <span className="text-[#F97316]">succeed</span></h2>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { icon: Target, title: 'Application Tracker', desc: 'Visualize your job hunt with a Kanban board. Move applications from Applied to Offer seamlessly.' },
+              { icon: Code2, title: 'DSA Progress Heatmap', desc: 'Keep track of problems solved across LeetCode and Codeforces with a GitHub-style heatmap.' },
+              { icon: MessageSquare, title: 'Interview Experience', desc: 'Log your interview rounds, behavioral questions, and technical challenges for future reference.' },
+              { icon: Trophy, title: 'Contest Alerts', desc: 'Never miss an upcoming coding contest. Get unified alerts for all major platforms.' },
+              { icon: Briefcase, title: 'Resume Vault', desc: 'Store tailored resumes for different roles and easily attach them to specific job applications.' },
+              { icon: TrendingUp, title: 'Offer Analytics', desc: 'Compare CTCs, base pay, and stock options side-by-side to negotiate the best possible compensation.' }
+            ].map((feature, i) => (
+              <motion.div key={i} {...fadeIn} transition={{ delay: i * 0.1 }} className="bg-[#0A0D12] p-8 border border-[#1E2330] rounded-2xl hover:border-[#F97316]/50 transition-colors group">
+                <div className="w-12 h-12 rounded-xl bg-[#F97316]/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <feature.icon className="w-6 h-6 text-[#F97316]" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                <p className="text-slate-400 leading-relaxed">{feature.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Step 3 */}
-            <motion.div {...fadeIn} transition={{ delay: 0.3 }} className="relative z-10 text-center group">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#0a0a0f] border-2 border-[#00f0ff] flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(0,240,255,0.3)] group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">3</span>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Ace Interviews</h3>
-              <p className="text-slate-400 text-sm">Record mock interview notes, feedback, and calendar schedules.</p>
-            </motion.div>
+      {/* India First Section */}
+      <section className="py-24 bg-[#050508] relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div {...fadeIn}>
+            <div className="inline-block px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-sm mb-6">
+              🇮🇳 Built for Indian Placements
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">Not just another tracker.</h2>
+            <p className="text-xl text-slate-400 max-w-3xl mx-auto mb-12">We understand the chaos of Indian college placements. That's why we built features specifically for the desis.</p>
+            
+            <div className="flex flex-wrap justify-center gap-4">
+              {[
+                { i: IndianRupee, t: 'CTC breakdowns (In-hand vs ESOPs)' },
+                { i: Trophy, t: 'On-campus vs Off-campus tags' },
+                { i: MapPin, t: 'Bangalore / Pune / Gurgaon filters' },
+                { i: Code2, t: 'OA (Online Assessment) tracking' }
+              ].map((pill, i) => (
+                <div key={i} className="flex items-center gap-3 bg-[#1A1F2E] border border-[#2A2F3E] rounded-full px-6 py-3">
+                  <pill.i className="w-5 h-5 text-[#F97316]" />
+                  <span className="text-white font-medium">{pill.t}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
-            {/* Step 4 */}
-            <motion.div {...fadeIn} transition={{ delay: 0.4 }} className="relative z-10 text-center group">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#0a0a0f] border-2 border-emerald-500 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(16,185,129,0.3)] group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">4</span>
+      {/* College Leaderboard Preview */}
+      <section id="leaderboard" className="py-24 bg-[#0D1117] border-y border-[#1E2330]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            <motion.div {...fadeIn} className="lg:w-1/2">
+              <h2 className="text-4xl font-bold text-white mb-6">College Leaderboard</h2>
+              <p className="text-xl text-slate-400 mb-8">See how your college ranks against the rest of India. Track collective placement stats and get inspired by top performers from your own campus.</p>
+              <ul className="space-y-4 mb-8">
+                {['Highest packages grabbed', 'Most active DSA solvers', 'Top placement rates'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-300">
+                    <CheckCircle2 className="w-5 h-5 text-[#F97316]" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+            
+            <motion.div {...fadeIn} transition={{ delay: 0.2 }} className="lg:w-1/2 w-full">
+              <div className="bg-[#0A0D12] border border-[#1E2330] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6 border-b border-[#1E2330] pb-4">
+                  <h3 className="text-lg font-bold text-white">Top Colleges 2026</h3>
+                  <span className="text-sm font-medium text-[#F97316]">View All</span>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { rank: 1, name: 'BITS Pilani', score: '9,450 pts' },
+                    { rank: 2, name: 'IIT Roorkee', score: '8,210 pts' },
+                    { rank: 3, name: 'NIT Trichy', score: '7,980 pts' },
+                    { rank: 4, name: 'VIT Vellore', score: '6,450 pts' }
+                  ].map((college) => (
+                    <div key={college.rank} className="flex items-center justify-between p-3 rounded-lg bg-[#1A1F2E] border border-[#2A2F3E]">
+                      <div className="flex items-center gap-4">
+                        <span className={`font-bold w-6 text-center ${college.rank === 1 ? 'text-yellow-500' : college.rank === 2 ? 'text-slate-300' : college.rank === 3 ? 'text-orange-400' : 'text-slate-500'}`}>#{college.rank}</span>
+                        <span className="text-white font-medium">{college.name}</span>
+                      </div>
+                      <span className="text-slate-400 text-sm font-mono">{college.score}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-3">Compare Offers</h3>
-              <p className="text-slate-400 text-sm">Analyze CTC breakdowns side-by-side to make the best career decision.</p>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-32 relative z-10 bg-gradient-to-b from-[#050508] to-[#0a0a0f]">
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 bg-[#050508]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div {...fadeIn} className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Loved by Top <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] to-[#00ff88]">Engineers</span></h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">Simple Pricing. <span className="text-[#F97316]">No BS.</span></h2>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">We believe in making powerful tools accessible to every student.</p>
           </motion.div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="glass-card p-8 border-white/10 hover:border-[#ff6b00]/50 transition-colors">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_,i) => <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />)}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Tier */}
+            <motion.div {...fadeIn} className="bg-[#0D1117] border border-[#1E2330] rounded-3xl p-8 flex flex-col">
+              <h3 className="text-2xl font-bold text-white mb-2">Basic</h3>
+              <p className="text-slate-400 mb-6">Perfect for getting started</p>
+              <div className="mb-8">
+                <span className="text-5xl font-black text-white">₹0</span>
+                <span className="text-slate-400">/forever</span>
               </div>
-              <p className="text-lg text-slate-300 italic mb-6">"Before StudentTracker, I was losing track of which companies I applied to. The Kanban board and DSA tracker helped me stay organized and eventually land an offer at Amazon."</p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#ff6b00] to-[#ff007b] flex items-center justify-center text-white font-bold text-xl">S</div>
-                <div>
-                  <h4 className="font-bold text-white">Sandeep Kumar</h4>
-                  <p className="text-sm text-slate-500">SDE-1 at Amazon</p>
-                </div>
-              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {['Track up to 50 applications', 'Basic DSA heatmap', '1 Resume storage', 'Community access'].map((feat, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-300">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" /> {feat}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/signup" className="w-full">
+                <button className="w-full py-4 rounded-xl border border-[#2A2F3E] text-white font-bold hover:bg-[#1A1F2E] transition-colors">Start Free</button>
+              </Link>
             </motion.div>
 
-            <motion.div {...fadeIn} transition={{ delay: 0.2 }} className="glass-card p-8 border-white/10 hover:border-[#00f0ff]/50 transition-colors">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_,i) => <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />)}
+            {/* Pro Tier */}
+            <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="bg-[#0A0D12] border-2 border-[#F97316] rounded-3xl p-8 flex flex-col relative transform md:-translate-y-4 shadow-[0_0_40px_rgba(249,115,22,0.15)]">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#F97316] text-white px-4 py-1 rounded-full text-sm font-bold">MOST POPULAR</div>
+              <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+              <p className="text-slate-400 mb-6">For the serious job hunter</p>
+              <div className="mb-8">
+                <span className="text-5xl font-black text-white">₹199</span>
+                <span className="text-slate-400">/year</span>
               </div>
-              <p className="text-lg text-slate-300 italic mb-6">"The UI is absolutely gorgeous. It makes the stressful process of placement tracking actually feel rewarding. Highly recommend it to all CS students."</p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#00f0ff] to-[#ff007b] flex items-center justify-center text-white font-bold text-xl">P</div>
-                <div>
-                  <h4 className="font-bold text-white">Priya Patel</h4>
-                  <p className="text-sm text-slate-500">Frontend Engineer</p>
-                </div>
-              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {['Unlimited applications', 'Advanced DSA analytics', 'Unlimited Resumes', 'Offer negotiation insights', 'Priority support'].map((feat, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-300">
+                    <CheckCircle2 className="w-5 h-5 text-[#F97316]" /> {feat}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/signup" className="w-full">
+                <button className="w-full py-4 rounded-xl bg-[#F97316] text-white font-bold hover:bg-[#EA6C0A] transition-colors shadow-[0_0_20px_rgba(249,115,22,0.3)]">Upgrade to Pro</button>
+              </Link>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-24 bg-[#0D1117] border-t border-[#1E2330]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div {...fadeIn} className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-6">Frequently Asked Questions</h2>
+          </motion.div>
+          
+          <div className="space-y-2">
+            {[
+              { q: 'Is my data secure?', a: 'Yes! We use industry-standard encryption and will never sell your data to third parties. Your offers and application statuses are private to you.' },
+              { q: 'Can I import my data from an Excel sheet?', a: 'We are currently building a CSV import feature in Phase 6 which will allow you to bulk-upload your existing application tracker.' },
+              { q: 'Does it work for off-campus placements?', a: 'Absolutely. StudentTracker is designed for both on-campus drives and off-campus hunting, complete with specific tags.' },
+              { q: 'What payment methods do you accept?', a: 'For Pro users, we accept UPI, Credit/Debit cards, and Net Banking via Razorpay.' }
+            ].map((faq, i) => (
+              <FAQItem key={i} question={faq.q} answer={faq.a} />
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#ff007b]/10" />
+      <section className="py-32 relative overflow-hidden bg-[#050508]">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#F97316]/10 pointer-events-none" />
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
           <motion.div {...fadeIn}>
-            <h2 className="text-5xl md:text-7xl font-black mb-8 tracking-tight">Ready to land your <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff6b00] to-[#ff007b]">dream job?</span></h2>
-            <p className="text-2xl text-slate-400 mb-12 font-light">Join thousands of students optimizing their career trajectory today.</p>
+            <h2 className="text-5xl md:text-7xl font-black mb-8 tracking-tight text-white">Ready to land your <br/><span className="text-[#F97316]">dream job?</span></h2>
+            <p className="text-2xl text-slate-400 mb-12 font-medium">Join thousands of students optimizing their career trajectory today.</p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link to="/signup">
-                <button className="w-full sm:w-auto relative inline-flex h-16 overflow-hidden rounded-xl p-[2px] focus:outline-none group">
-                  <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ff6b00_0%,#ff007b_50%,#00f0ff_100%)]" />
-                  <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-xl bg-slate-950/90 hover:bg-slate-950 px-12 py-5 text-xl font-bold text-white backdrop-blur-3xl transition-colors shadow-[0_0_40px_rgba(255,107,0,0.5)]">
-                    <Rocket className="w-6 h-6 mr-3 inline-block group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                    Launch Your Career
-                  </span>
+                <button className="w-full sm:w-auto bg-[#F97316] hover:bg-[#EA6C0A] px-12 py-5 text-xl font-bold text-white rounded-xl transition-all shadow-[0_0_30px_rgba(249,115,22,0.4)] hover:scale-105">
+                  Launch Your Career
                 </button>
               </Link>
               <Link to="/login">
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-full sm:w-auto btn-secondary px-12 py-5 text-xl font-bold bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20"
-                >
-                  Sign In to Dashboard
-                </motion.button>
+                <button className="w-full sm:w-auto bg-transparent border border-[#2A2F3E] hover:bg-[#1A1F2E] px-12 py-5 text-xl font-bold rounded-xl transition-colors text-white">
+                  Sign In
+                </button>
               </Link>
             </div>
           </motion.div>
@@ -372,15 +445,46 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-[#050508] py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-lg shadow-[#ff6b00]/20">
-              <span className="font-bold text-white text-xl">S</span>
+      <footer className="border-t border-[#1E2330] bg-[#0A0D12] py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded bg-[#F97316] flex items-center justify-center">
+                  <span className="font-bold text-white text-sm">S</span>
+                </div>
+                <span className="text-xl font-bold tracking-tight text-white">StudentTracker</span>
+              </div>
+              <p className="text-slate-400 max-w-sm">The ultimate mission-control for Indian college students. Track applications, crush DSA goals, and analyze offers.</p>
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">StudentTracker</span>
+            
+            <div>
+              <h4 className="text-white font-bold mb-6">Product</h4>
+              <ul className="space-y-4">
+                <li><a href="#features" className="text-slate-400 hover:text-[#F97316] transition-colors">Features</a></li>
+                <li><a href="#pricing" className="text-slate-400 hover:text-[#F97316] transition-colors">Pricing</a></li>
+                <li><a href="#leaderboard" className="text-slate-400 hover:text-[#F97316] transition-colors">Leaderboard</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-white font-bold mb-6">Legal</h4>
+              <ul className="space-y-4">
+                <li><a href="#" className="text-slate-400 hover:text-[#F97316] transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-[#F97316] transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-[#F97316] transition-colors">Contact Us</a></li>
+              </ul>
+            </div>
           </div>
-          <p className="text-slate-500 font-medium">© {new Date().getFullYear()} StudentTracker. Built for students.</p>
+          
+          <div className="border-t border-[#1E2330] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-slate-500 font-medium">© {new Date().getFullYear()} StudentTracker. Built for Indian students.</p>
+            <div className="flex gap-6">
+              <a href="#" className="text-slate-500 hover:text-white transition-colors">Twitter</a>
+              <a href="#" className="text-slate-500 hover:text-white transition-colors">LinkedIn</a>
+              <a href="#" className="text-slate-500 hover:text-white transition-colors">GitHub</a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

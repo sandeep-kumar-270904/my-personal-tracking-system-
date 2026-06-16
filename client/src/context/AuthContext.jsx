@@ -31,8 +31,8 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data);
   };
 
-  const register = async (name, email, password) => {
-    await api.post('/auth/register', { name, email, password });
+  const register = async (userData) => {
+    await api.post('/auth/register', userData);
     // Removed auto-login. The component should redirect to login page.
   };
 
@@ -41,8 +41,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const googleLogin = async (credential) => {
+    const res = await api.post('/auth/google', { credential });
+    localStorage.setItem('token', res.data.token);
+    setUser(res.data);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, googleLogin }}>
       {children}
     </AuthContext.Provider>
   );

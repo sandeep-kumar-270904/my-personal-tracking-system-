@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -26,7 +27,22 @@ const userSchema = new mongoose.Schema({
   gradYear: {
     type: String,
     default: ''
-  }
+  },
+  targetCompanies: {
+    type: [String],
+    default: []
+  },
+  placementSeasonStart: {
+    type: String,
+    default: ''
+  },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: String,
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
@@ -39,6 +55,33 @@ userSchema.pre('save', async function (next) {
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Generate and hash password token
+userSchema.methods.getResetPasswordToken = function () {
+  // Generate token
+  const resetToken = crypto.randomBytes(20).toString('hex');
+
+  // Hash token and set to resetPasswordToken field
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  // Set expire (10 minutes)
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
+
+// Generate email verification token
+userSchema.methods.getVerificationToken = function () {
+  const verificationToken = crypto.randomBytes(20).toString('hex');
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(verificationToken)
+    .digest('hex');
+  return verificationToken;
 };
 
 module.exports = mongoose.model('User', userSchema);
