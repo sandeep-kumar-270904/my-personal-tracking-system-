@@ -37,6 +37,7 @@ const uploadResume = async (req, res) => {
 
     res.status(201).json(resume);
   } catch (error) {
+    console.error("Resume Upload Error:", error);
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };

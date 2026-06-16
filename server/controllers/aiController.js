@@ -55,11 +55,10 @@ const analyzeJD = async (req, res) => {
     const aiResponse = await callGemini(prompt);
     
     // Clean up potential markdown formatting from AI response
-    let jsonString = aiResponse.trim();
-    if (jsonString.startsWith('```json')) {
-      jsonString = jsonString.slice(7, -3).trim();
-    } else if (jsonString.startsWith('```')) {
-      jsonString = jsonString.slice(3, -3).trim();
+    let jsonString = aiResponse;
+    const match = aiResponse.match(/\{[\s\S]*\}/);
+    if (match) {
+      jsonString = match[0];
     }
 
     const result = JSON.parse(jsonString);
@@ -128,11 +127,10 @@ const matchResume = async (req, res) => {
 
     const aiResponse = await callGemini(prompt);
     
-    let jsonString = aiResponse.trim();
-    if (jsonString.startsWith('```json')) {
-      jsonString = jsonString.slice(7, -3).trim();
-    } else if (jsonString.startsWith('```')) {
-      jsonString = jsonString.slice(3, -3).trim();
+    let jsonString = aiResponse;
+    const match = aiResponse.match(/\{[\s\S]*\}/);
+    if (match) {
+      jsonString = match[0];
     }
 
     const result = JSON.parse(jsonString);
@@ -141,6 +139,7 @@ const matchResume = async (req, res) => {
       analysis: result
     });
   } catch (error) {
+    console.error("Match Resume Error:", error);
     res.status(500).json({ message: 'Failed to match resume', error: error.message });
   }
 };

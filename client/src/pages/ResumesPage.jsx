@@ -217,7 +217,7 @@ const ResumesPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="glass-card flex flex-col items-center justify-center h-full p-6 rounded-2xl border border-dashed border-[#ff6b00]/50 hover:border-[#ff6b00] hover:bg-[#ff6b00]/5 transition-all duration-300 cursor-pointer group min-h-[220px]"
-            onClick={() => toast.success('Tailoring Engine Coming Soon in AI Phase!')}
+            onClick={() => window.location.href = '/ai-analyzer'}
           >
             <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#ff6b00] to-[#ff007b] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Zap className="w-6 h-6 text-white" />

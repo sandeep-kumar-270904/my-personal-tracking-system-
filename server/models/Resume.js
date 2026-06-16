@@ -33,14 +33,13 @@ const resumeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Middleware to ensure only one primary resume per user
-resumeSchema.pre('save', async function (next) {
+resumeSchema.pre('save', async function () {
   if (this.isModified('isPrimary') && this.isPrimary) {
     await this.constructor.updateMany(
       { user: this.user, _id: { $ne: this._id } },
       { $set: { isPrimary: false } }
     );
   }
-  next();
 });
 
 module.exports = mongoose.model('Resume', resumeSchema);
