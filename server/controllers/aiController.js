@@ -144,7 +144,67 @@ const matchResume = async (req, res) => {
   }
 };
 
+// @desc    Generate Cold Email
+// @route   POST /api/ai/generate-email
+// @access  Private
+const generateEmail = async (req, res) => {
+  try {
+    const { contactName, role, company, contextText } = req.body;
+
+    if (!contactName || !company) {
+      return res.status(400).json({ message: 'Contact name and company are required' });
+    }
+
+    // 1. Fetch user's primary resume
+    const primaryResume = await Resume.findOne({ user: req.user._id, isPrimary: true });
+    let resumeText = '';
+
+    if (primaryResume) {
+      const fullPath = path.join(__dirname, '../', primaryResume.filePath);
+      if (fs.existsSync(fullPath)) {
+        const dataBuffer = fs.readFileSync(fullPath);
+        const pdfData = await pdf(dataBuffer);
+        resumeText = pdfData.text;
+      }
+    }
+
+    const prompt = `
+      You are an expert career coach and executive assistant. Write a highly professional, concise, and compelling cold outreach email.
+      
+      Target Recipient:
+      Name: ${contactName}
+      Role: ${role || 'Hiring Manager / Recruiter'}
+      Company: ${company}
+
+      Context / Job Description:
+      """
+      ${contextText || 'I am interested in exploring opportunities at your company.'}
+      """
+
+      Candidate Resume Context (Use this to highlight 1-2 highly relevant achievements or skills):
+      """
+      ${resumeText || 'No resume provided.'}
+      """
+
+      Requirements:
+      1. Tone must be strictly professional, respectful, and confident.
+      2. Keep it concise (under 150 words).
+      3. Do NOT use overly casual language.
+      4. Include a strong hook, a brief value proposition based on the resume, and a clear call to action (e.g., a brief chat).
+      5. Output ONLY the email content (no surrounding markdown, no explanations). Include the Subject Line at the top like "Subject: ...".
+    `;
+
+    const aiResponse = await callGemini(prompt);
+    
+    res.status(200).json({ emailDraft: aiResponse.trim() });
+  } catch (error) {
+    console.error("Generate Email Error:", error);
+    res.status(500).json({ message: 'Failed to generate email', error: error.message });
+  }
+};
+
 module.exports = {
   analyzeJD,
   matchResume,
+  generateEmail,
 };

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, X, MessageSquare, Briefcase, Mail, Globe, Users, Clock, Send } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, MessageSquare, Briefcase, Mail, Globe, Users, Clock, Send, Sparkles, Loader2, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import EmptyState from '../components/EmptyState';
@@ -21,6 +21,12 @@ const NetworkPage = () => {
   const [formData, setFormData] = useState({
     name: '', company: '', role: '', platform: 'LinkedIn', status: 'To Contact', lastContactDate: new Date().toISOString().split('T')[0], notes: '', followUpDate: ''
   });
+
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [activeAiContact, setActiveAiContact] = useState(null);
+  const [aiContext, setAiContext] = useState('');
+  const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
+  const [generatedEmail, setGeneratedEmail] = useState('');
 
   const { data: contacts = [], isLoading, isError } = useQuery({
     queryKey: ['network'], queryFn: fetchNetwork
@@ -111,6 +117,44 @@ const NetworkPage = () => {
     const subject = encodeURIComponent(`Connecting regarding opportunities at ${contact.company}`);
     const body = encodeURIComponent(`Hi ${contact.name.split(' ')[0]},\n\nHope you are doing well...\n`);
     window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+  };
+
+  const handleOpenAiModal = (e, contact) => {
+    e.stopPropagation();
+    setActiveAiContact(contact);
+    setAiContext('');
+    setGeneratedEmail('');
+    setIsAiModalOpen(true);
+  };
+
+  const handleGenerateEmail = async () => {
+    if (!activeAiContact) return;
+    setIsGeneratingEmail(true);
+    try {
+      const { data } = await api.post('/ai/generate-email', {
+        contactName: activeAiContact.name,
+        company: activeAiContact.company,
+        role: activeAiContact.role,
+        contextText: aiContext
+      });
+      setGeneratedEmail(data.emailDraft);
+      toast.success('Email generated successfully!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to generate email.');
+    } finally {
+      setIsGeneratingEmail(false);
+    }
+  };
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText(generatedEmail);
+    toast.success('Copied to clipboard!');
+  };
+
+  const handleSendGeneratedEmail = () => {
+    const subjectLine = generatedEmail.split('\n')[0].replace('Subject: ', '').replace('Subject:', '').trim() || `Connecting regarding opportunities at ${activeAiContact?.company}`;
+    const body = encodeURIComponent(generatedEmail.split('\n').slice(1).join('\n').trim());
+    window.open(`mailto:?subject=${encodeURIComponent(subjectLine)}&body=${body}`, '_blank');
   };
 
   if (isLoading) {
@@ -209,12 +253,20 @@ const NetworkPage = () => {
                     </p>
                   </div>
 
-                  <button 
-                    onClick={(e) => handleSendEmail(e, contact)}
-                    className="w-full mt-auto flex items-center justify-center gap-2 py-2.5 bg-white/5 hover:bg-[#00f0ff]/10 text-slate-300 hover:text-[#00f0ff] rounded-xl text-sm font-bold border border-transparent hover:border-[#00f0ff]/30 transition-colors"
-                  >
-                    <Send className="w-4 h-4" /> Send Email
-                  </button>
+                  <div className="flex gap-2 mt-auto">
+                    <button 
+                      onClick={(e) => handleSendEmail(e, contact)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white/5 hover:bg-[#00f0ff]/10 text-slate-300 hover:text-[#00f0ff] rounded-xl text-sm font-bold border border-transparent hover:border-[#00f0ff]/30 transition-colors"
+                    >
+                      <Send className="w-4 h-4" /> Send
+                    </button>
+                    <button 
+                      onClick={(e) => handleOpenAiModal(e, contact)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#ff6b00]/10 to-[#ff007b]/10 hover:from-[#ff6b00]/20 hover:to-[#ff007b]/20 text-slate-300 hover:text-white rounded-xl text-sm font-bold border border-[#ff6b00]/20 hover:border-[#ff007b]/40 transition-all shadow-[0_0_10px_rgba(255,107,0,0.1)] hover:shadow-[0_0_15px_rgba(255,107,0,0.2)]"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#ff6b00]" /> AI Draft
+                    </button>
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -292,6 +344,83 @@ const NetworkPage = () => {
                   <button type="submit" disabled={saveMutation.isPending} className="btn-primary px-6 disabled:opacity-50">{editingId ? 'Save Changes' : 'Add Contact'}</button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Email Modal */}
+      <AnimatePresence>
+        {isAiModalOpen && activeAiContact && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-[#13141f] border border-[#ff6b00]/30 rounded-2xl w-full max-w-2xl overflow-hidden shadow-[0_0_40px_rgba(255,107,0,0.15)] flex flex-col max-h-[90vh]">
+              <div className="flex justify-between items-center p-6 border-b border-white/5 bg-gradient-to-r from-[#ff6b00]/10 to-transparent">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#ff6b00]" /> AI Email Drafter
+                  </h2>
+                  <p className="text-sm text-slate-400 mt-1">Drafting for <span className="text-white font-medium">{activeAiContact.name}</span> at {activeAiContact.company}</p>
+                </div>
+                <button onClick={() => setIsAiModalOpen(false)} className="text-slate-400 hover:text-white bg-white/5 p-2 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+                {!generatedEmail ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1.5">Context / Job Description (Optional)</label>
+                      <p className="text-xs text-slate-500 mb-3">Paste the JD or a brief note about why you're reaching out to help the AI tailor the email.</p>
+                      <textarea 
+                        value={aiContext} 
+                        onChange={(e) => setAiContext(e.target.value)} 
+                        className="w-full bg-[#0a0a0f] border border-white/10 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-[#ff6b00] min-h-[150px] resize-y custom-scrollbar" 
+                        placeholder="I want to ask about the upcoming SWE role..."
+                      ></textarea>
+                    </div>
+                    
+                    <div className="bg-[#ff6b00]/5 border border-[#ff6b00]/20 rounded-xl p-4 flex gap-3">
+                      <Sparkles className="w-5 h-5 text-[#ff6b00] shrink-0 mt-0.5" />
+                      <p className="text-sm text-slate-300">The AI will use your <span className="text-[#ff6b00] font-bold">Primary Resume</span> to automatically inject your most relevant skills into the email draft.</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col h-full">
+                    <label className="block text-sm font-medium text-[#00f0ff] mb-2 flex items-center justify-between">
+                      Generated Draft
+                      <button onClick={() => setGeneratedEmail('')} className="text-xs text-slate-400 hover:text-white transition-colors">Edit Context & Regenerate</button>
+                    </label>
+                    <textarea 
+                      value={generatedEmail} 
+                      onChange={(e) => setGeneratedEmail(e.target.value)} 
+                      className="w-full bg-[#0a0a0f] border border-[#00f0ff]/30 rounded-xl px-4 py-4 text-slate-200 focus:outline-none focus:border-[#00f0ff] min-h-[300px] resize-y custom-scrollbar font-medium" 
+                    ></textarea>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-white/5 bg-[#1a1b26] flex justify-between gap-3">
+                {!generatedEmail ? (
+                  <>
+                    <button onClick={() => setIsAiModalOpen(false)} className="px-5 py-2.5 rounded-xl text-slate-300 hover:bg-white/5 transition-colors font-medium">Cancel</button>
+                    <button 
+                      onClick={handleGenerateEmail} 
+                      disabled={isGeneratingEmail} 
+                      className="bg-gradient-to-r from-[#ff6b00] to-[#ff007b] hover:from-[#ff6b00]/90 hover:to-[#ff007b]/90 text-white font-bold rounded-xl py-2.5 px-6 flex items-center justify-center transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(255,107,0,0.3)] ml-auto"
+                    >
+                      {isGeneratingEmail ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Draft</>}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={handleCopyEmail} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold border border-white/10 transition-colors">
+                      <Copy className="w-4 h-4" /> Copy
+                    </button>
+                    <button onClick={handleSendGeneratedEmail} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#00f0ff]/20 to-blue-500/20 hover:from-[#00f0ff]/30 hover:to-blue-500/30 text-white rounded-xl text-sm font-bold border border-[#00f0ff]/30 transition-all shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                      <Send className="w-4 h-4" /> Open in Mail App
+                    </button>
+                  </>
+                )}
+              </div>
             </motion.div>
           </div>
         )}
