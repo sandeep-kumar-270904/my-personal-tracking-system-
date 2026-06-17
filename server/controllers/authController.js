@@ -34,7 +34,8 @@ const registerUser = async (req, res) => {
       const verificationToken = user.getVerificationToken();
       await user.save({ validateBeforeSave: false });
 
-      const verificationUrl = `http://localhost:5173/verify-email/${verificationToken}`;
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+      const verificationUrl = `${clientUrl}/verify-email/${verificationToken}`;
 
       // Send Welcome & Verification Email
       await sendEmail({
@@ -153,7 +154,8 @@ const forgotPassword = async (req, res) => {
     const resetToken = user.getResetPasswordToken();
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
     const message = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
