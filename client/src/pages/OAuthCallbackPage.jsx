@@ -44,7 +44,11 @@ const OAuthCallbackPage = () => {
         await socialLogin(provider, code);
         navigate('/dashboard');
       } catch (error) {
-        toast.error(error.response?.data?.message || `${provider} login failed`);
+        const backendMessage = error.response?.data?.message;
+        const statusCode = error.response?.status ? ` (Status: ${error.response.status})` : '';
+        const axiosMessage = error.message || 'Unknown network error';
+        
+        toast.error(backendMessage || `${provider} login failed: ${axiosMessage}${statusCode}`);
         navigate('/login');
       }
     };
