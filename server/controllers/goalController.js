@@ -60,21 +60,27 @@ const getGoalsAndProgress = async (req, res) => {
 // @access  Private
 const updateGoals = async (req, res) => {
   try {
-    const { targetApplications, targetDSA, targetNetworking } = req.body;
+    const { applicationsTarget, dsaTarget, networkingTarget } = req.body;
+    
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    const diff = date.getDate() - date.getDay();
+    const startOfWeek = new Date(date.setDate(diff));
 
-    let goal = await Goal.findOne({ user: req.user.id });
+    let goal = await Goal.findOne({ user: req.user.id, weekStartDate: { $lte: new Date(), $gte: startOfWeek } });
     
     if (!goal) {
       goal = await Goal.create({
         user: req.user.id,
-        targetApplications,
-        targetDSA,
-        targetNetworking
+        weekStartDate: startOfWeek,
+        applicationsTarget: applicationsTarget || 10,
+        dsaTarget: dsaTarget || 5,
+        networkingTarget: networkingTarget || 3
       });
     } else {
-      goal.targetApplications = targetApplications || goal.targetApplications;
-      goal.targetDSA = targetDSA || goal.targetDSA;
-      goal.targetNetworking = targetNetworking || goal.targetNetworking;
+      if (applicationsTarget !== undefined) goal.applicationsTarget = applicationsTarget;
+      if (dsaTarget !== undefined) goal.dsaTarget = dsaTarget;
+      if (networkingTarget !== undefined) goal.networkingTarget = networkingTarget;
       await goal.save();
     }
 

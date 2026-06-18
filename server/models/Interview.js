@@ -6,11 +6,19 @@ const interviewSchema = new mongoose.Schema({
     required: true,
     ref: 'User',
   },
+  applicationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application',
+  },
   company: {
     type: String,
     required: true,
   },
-  interviewDate: {
+  role: {
+    type: String,
+    required: true,
+  },
+  scheduledAt: {
     type: Date,
     required: true,
   },
@@ -18,7 +26,20 @@ const interviewSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  type: {
+    type: String,
+    enum: ['ONLINE', 'INPERSON', 'VIDEO'],
+    default: 'VIDEO'
+  },
   notes: {
+    type: String,
+    default: '',
+  },
+  prepNotes: {
+    type: String,
+    default: '',
+  },
+  debrief: {
     type: String,
     default: '',
   },
@@ -31,8 +52,8 @@ const interviewSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Scheduled', 'Preparing', 'Done', 'Cancelled'],
-    default: 'Scheduled',
+    enum: ['UPCOMING', 'COMPLETED', 'REJECTED'],
+    default: 'UPCOMING',
   },
 }, { timestamps: true });
 

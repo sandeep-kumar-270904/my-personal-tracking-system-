@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
 const offerSchema = new mongoose.Schema({
-  user: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  applicationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application'
   },
   company: {
     type: String,
@@ -14,21 +18,20 @@ const offerSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  baseSalary: {
+  baseCTC: {
     type: Number,
     required: true
   },
-  signOnBonus: {
+  variableCTC: {
     type: Number,
     default: 0
   },
-  rsu: {
+  equity: {
     type: Number,
     default: 0
   },
-  totalCTC: {
-    type: Number,
-    required: true
+  joiningDate: {
+    type: Date
   },
   deadline: {
     type: Date,
@@ -36,19 +39,13 @@ const offerSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Negotiating', 'Accepted', 'Declined'],
-    default: 'Pending'
+    enum: ['CONSIDERING', 'ACCEPTED', 'DECLINED', 'NEGOTIATING'],
+    default: 'CONSIDERING'
   },
   notes: {
     type: String,
     default: ''
   }
 }, { timestamps: true });
-
-// Auto calculate CTC before saving
-offerSchema.pre('validate', function(next) {
-  this.totalCTC = (this.baseSalary || 0) + (this.signOnBonus || 0) + (this.rsu || 0);
-  next();
-});
 
 module.exports = mongoose.model('Offer', offerSchema);

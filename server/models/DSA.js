@@ -10,23 +10,27 @@ const dsaSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  problemsSolved: {
-    type: Number,
-    default: 0,
-  },
   difficulty: {
     type: String,
-    enum: ['Easy', 'Medium', 'Hard'],
-    default: 'Medium',
+    enum: ['EASY', 'MEDIUM', 'HARD'],
+    default: 'MEDIUM',
+  },
+  platform: {
+    type: String,
+    enum: ['LEETCODE', 'GFG', 'CODEFORCES'],
+    default: 'LEETCODE'
+  },
+  solvedAt: {
+    type: Date,
+    default: Date.now
+  },
+  companyTag: {
+    type: String,
+    default: ''
   },
   url: {
     type: String,
     default: '',
-  },
-  status: {
-    type: String,
-    enum: ['Not Started', 'In Progress', 'Completed'],
-    default: 'Not Started',
   },
   notes: {
     type: String,

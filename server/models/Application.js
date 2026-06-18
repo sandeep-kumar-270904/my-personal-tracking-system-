@@ -17,13 +17,17 @@ const applicationSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['Applied', 'OA', 'Interview', 'Rejected', 'Selected'],
-    default: 'Applied'
+    enum: ['APPLIED', 'OA_PENDING', 'OA_DONE', 'INTERVIEW_SCHEDULED', 'SHORTLISTED', 'REJECTED', 'OFFER'],
+    default: 'APPLIED'
   },
-  appliedDate: {
+  dateApplied: {
     type: Date,
     required: true,
     default: Date.now
+  },
+  resumeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Resume'
   },
   notes: {
     type: String,

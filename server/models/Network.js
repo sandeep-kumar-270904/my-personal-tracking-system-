@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const networkSchema = new mongoose.Schema({
-  user: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -18,15 +18,19 @@ const networkSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Role is required']
   },
-  platform: {
+  linkedinUrl: {
     type: String,
-    enum: ['LinkedIn', 'Email', 'Twitter', 'Other'],
-    default: 'LinkedIn'
+    default: ''
   },
-  status: {
+  source: {
     type: String,
-    enum: ['To Contact', 'Reached Out', 'Replied', 'Referral Given', 'Rejected'],
-    default: 'To Contact'
+    enum: ['ALUMNI', 'COLD', 'REFERRAL'],
+    default: 'COLD'
+  },
+  outreachStatus: {
+    type: String,
+    enum: ['NOT_CONTACTED', 'MESSAGED', 'REPLIED', 'REFERRAL_RECEIVED'],
+    default: 'NOT_CONTACTED'
   },
   lastContactDate: {
     type: Date,

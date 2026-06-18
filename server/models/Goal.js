@@ -7,17 +7,39 @@ const goalSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  targetApplications: {
+  weekStartDate: {
+    type: Date,
+    required: true,
+    default: function() {
+      const d = new Date();
+      d.setHours(0,0,0,0);
+      d.setDate(d.getDate() - d.getDay()); // Sunday
+      return d;
+    }
+  },
+  applicationsTarget: {
     type: Number,
     default: 10
   },
-  targetDSA: {
+  applicationsCompleted: {
+    type: Number,
+    default: 0
+  },
+  dsaTarget: {
     type: Number,
     default: 5
   },
-  targetNetworking: {
+  dsaCompleted: {
+    type: Number,
+    default: 0
+  },
+  networkingTarget: {
     type: Number,
     default: 3
+  },
+  networkingCompleted: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 
