@@ -120,33 +120,36 @@ const OnboardingFlow = ({ stats, userName, onComplete, onActionClick }) => {
         <div className="p-6 border-b border-white/5 bg-white/[0.02]">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-semibold text-white">Setup Progress</h2>
-            <span className="text-[#ff6b00] font-bold">{totalDone} / 5</span>
           </div>
           <div className="w-full bg-slate-800 rounded-full h-2">
             <motion.div 
               className="bg-[#ff6b00] h-2 rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: \`\${(totalDone / 5) * 100}%\` }}
+              animate={{ width: `${(totalDone / 5) * 100}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-sm font-medium text-slate-400">Progress</span>
+            <span className="text-sm font-bold text-white">{totalDone}/5 Tasks</span>
+          </div>
         </div>
 
-        <div className="p-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
           {steps.map((step, idx) => (
             <div 
               key={step.id}
               onClick={step.action}
-              className={\`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-colors \${step.done ? 'opacity-50 grayscale bg-transparent' : 'hover:bg-white/5'}\`}
+              className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-colors ${step.done ? 'opacity-50 grayscale bg-transparent' : 'hover:bg-white/5'}`}
             >
-              <div className={\`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 \${step.done ? 'bg-green-500/20 text-green-500' : 'bg-white/5 text-slate-400'}\`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${step.done ? 'bg-green-500/20 text-green-500' : 'bg-white/5 text-slate-400'}`}>
                 {step.done ? <CheckCircle className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
               </div>
               <div className="flex items-center gap-3 flex-1">
-                <div className={\`p-2 rounded-lg \${step.done ? 'bg-transparent' : 'bg-[#ff6b00]/10 text-[#ff6b00]'}\`}>
+                <div className={`p-2 rounded-lg ${step.done ? 'bg-transparent' : 'bg-[#ff6b00]/10 text-[#ff6b00]'}`}>
                   {step.icon}
                 </div>
-                <span className={\`font-medium \${step.done ? 'text-slate-500 line-through' : 'text-slate-200'}\`}>
+                <span className={`font-medium ${step.done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
                   {step.title}
                 </span>
               </div>

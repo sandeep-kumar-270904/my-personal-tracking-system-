@@ -427,19 +427,19 @@ const getAIInsights = async (req, res) => {
     const interviews = await Interview.find({ userId, createdAt: { $gte: thirtyDaysAgo } });
     const dsa = await DSA.find({ userId, solvedAt: { $gte: thirtyDaysAgo } });
     
-    const prompt = \`
+    const prompt = `
       You are an expert career coach analyzing a student's placement preparation data for the last 30 days.
       Data:
-      - Applications submitted: \${apps.length}
-      - Interviews scheduled: \${interviews.length}
-      - DSA problems solved: \${dsa.length}
-      - Conversion rate (Interviews / Apps): \${apps.length > 0 ? ((interviews.length / apps.length) * 100).toFixed(1) : 0}%
+      - Applications submitted: ${apps.length}
+      - Interviews scheduled: ${interviews.length}
+      - DSA problems solved: ${dsa.length}
+      - Conversion rate (Interviews / Apps): ${apps.length > 0 ? ((interviews.length / apps.length) * 100).toFixed(1) : 0}%
       
       Generate exactly 2 short, punchy bullet point insights based on this data. Make them highly actionable and encouraging.
       Format: Return ONLY the text, separated by a newline. Do not use asterisks, markdown, or numbers. Just the plain text for the two bullets.
       Example 1: Your application-to-interview rate is 12% — industry average is 15-20%. Try tailoring your resume more specifically per company.
       Example 2: You've solved 45 DSA problems this month. Keep this momentum up to master medium-level dynamic programming.
-    \`;
+    `;
 
     const aiResponse = await callGemini(prompt);
     

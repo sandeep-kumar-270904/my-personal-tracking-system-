@@ -115,7 +115,7 @@ const DashboardPage = () => {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={\`max-w-[1600px] mx-auto pb-20 \${isCompact ? 'space-y-4' : 'space-y-8'}\`}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`max-w-[1600px] mx-auto pb-20 ${isCompact ? 'space-y-4' : 'space-y-8'}`}>
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <DashboardBanner user={user} stats={data.stats} upcoming={data.upcoming} />
@@ -125,14 +125,14 @@ const DashboardPage = () => {
         <div className="flex bg-[#1a1b26] rounded-lg p-1 border border-white/5 ml-4">
           <button 
             onClick={() => setIsCompact(false)}
-            className={\`p-1.5 rounded-md transition-colors \${!isCompact ? 'bg-[#ff6b00] text-white' : 'text-slate-400 hover:text-white'}\`}
+            className={`p-1.5 rounded-md transition-colors ${!isCompact ? 'bg-[#ff6b00] text-white' : 'text-slate-400 hover:text-white'}`}
             title="Default View"
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button 
             onClick={() => setIsCompact(true)}
-            className={\`p-1.5 rounded-md transition-colors \${isCompact ? 'bg-[#ff6b00] text-white' : 'text-slate-400 hover:text-white'}\`}
+            className={`p-1.5 rounded-md transition-colors ${isCompact ? 'bg-[#ff6b00] text-white' : 'text-slate-400 hover:text-white'}`}
             title="Compact View"
           >
             <List className="w-4 h-4" />

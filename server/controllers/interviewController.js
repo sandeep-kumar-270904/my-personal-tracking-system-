@@ -91,21 +91,21 @@ const generatePrepBrief = async (req, res) => {
 
     const { callGemini } = require('./aiController');
     
-    const prompt = \`
+    const prompt = `
       You are an expert technical recruiter and interview coach.
       Generate a comprehensive 'Prep Brief' for an upcoming interview.
       
-      Company: \${interview.company}
-      Role: \${interview.role}
-      Type: \${interview.type}
-      Round: \${interview.round}
+      Company: ${interview.company}
+      Role: ${interview.role}
+      Type: ${interview.type}
+      Round: ${interview.round}
 
       Output the response in markdown format with the following sections:
       1. Company Overview & Recent News
-      2. Common Interview Questions for \${interview.role} at \${interview.company} (or general if unknown)
+      2. Common Interview Questions for ${interview.role} at ${interview.company} (or general if unknown)
       3. Key Technical Concepts to Review
       4. Behavioral Tips
-    \`;
+    `;
 
     const prepBrief = await callGemini(prompt);
     

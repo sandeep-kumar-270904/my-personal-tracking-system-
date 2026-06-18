@@ -59,35 +59,35 @@ const sendWeeklySummaries = async () => {
           goalCompletion = Math.round((p1 + p2 + p3) / 3);
         }
 
-        const html = \`
+        const html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
             <h2 style="color: #ff6b00;">Your week in review — StudentTracker</h2>
-            <p>Hi \${user.name},</p>
+            <p>Hi ${user.name},</p>
             <p>Here's a quick summary of your placement preparation activity from the past week:</p>
             
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Applications Added</strong></td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">\${applications}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${applications}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Interviews Scheduled/Completed</strong></td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">\${interviews}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${interviews}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>DSA Problems Solved</strong></td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">\${dsa}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${dsa}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Weekly Goal Completion</strong></td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">\${goalCompletion}%</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${goalCompletion}%</td>
               </tr>
             </table>
             
             <p style="margin-top: 30px;">Keep up the great work! Consistent effort is the key to cracking placement season.</p>
-            <a href="\${process.env.FRONTEND_URL || 'http://localhost:5173'}" style="display: inline-block; padding: 10px 20px; background-color: #ff6b00; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Go to Dashboard</a>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}" style="display: inline-block; padding: 10px 20px; background-color: #ff6b00; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Go to Dashboard</a>
           </div>
-        \`;
+        `;
 
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
           await transporter.sendMail({
@@ -98,10 +98,10 @@ const sendWeeklySummaries = async () => {
           });
         } else {
           // If no email configured, just log it
-          console.log(\`[Email Job] Would send weekly summary to \${user.email}: \${applications} apps, \${dsa} dsa, \${goalCompletion}% goals\`);
+          console.log(`[Email Job] Would send weekly summary to ${user.email}: ${applications} apps, ${dsa} dsa, ${goalCompletion}% goals`);
         }
       } catch (err) {
-        console.error(\`Failed to generate email for user \${user._id}:\`, err);
+        console.error(`Failed to generate email for user ${user._id}:`, err);
       }
     }
     console.log('Weekly summary email job completed.');

@@ -36,6 +36,33 @@ const applicationSchema = new mongoose.Schema({
   link: {
     type: String,
     default: ''
+  },
+  jobDescriptionUrl: {
+    type: String,
+    default: ''
+  },
+  ctcOffered: {
+    type: Number,
+  },
+  followUpDate: {
+    type: Date,
+  },
+  source: {
+    type: String,
+    enum: ['CAMPUS', 'ONLINE', 'REFERRAL', 'COLD_EMAIL', 'LINKEDIN', 'JOB_PORTAL'],
+    default: 'ONLINE'
+  },
+  priority: {
+    type: String,
+    enum: ['HIGH', 'MEDIUM', 'LOW'],
+    default: 'MEDIUM'
+  },
+  tags: [{
+    type: String
+  }],
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, { timestamps: true });
 
