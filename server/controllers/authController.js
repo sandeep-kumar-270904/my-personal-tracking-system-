@@ -319,14 +319,29 @@ const githubAuth = async (req, res) => {
     const accessToken = tokenData.access_token;
     
     const userResponse = await fetch('https://api.github.com/user', {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { 
+        Authorization: `Bearer ${accessToken}`,
+        'User-Agent': 'Student-Tracker-App'
+      }
     });
     const userData = await userResponse.json();
     
+    if (userData.message) {
+      return res.status(400).json({ message: 'GitHub user fetch failed: ' + userData.message });
+    }
+    
     const emailResponse = await fetch('https://api.github.com/user/emails', {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { 
+        Authorization: `Bearer ${accessToken}`,
+        'User-Agent': 'Student-Tracker-App'
+      }
     });
     const emailData = await emailResponse.json();
+    
+    if (!Array.isArray(emailData)) {
+      return res.status(400).json({ message: 'GitHub email fetch failed: ' + (emailData.message || 'Invalid response') });
+    }
+    
     const primaryEmailObj = emailData.find(e => e.primary) || emailData[0];
     const email = primaryEmailObj?.email;
     
