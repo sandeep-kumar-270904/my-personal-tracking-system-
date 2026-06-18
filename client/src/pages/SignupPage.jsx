@@ -54,8 +54,7 @@ const SignupPage = () => {
   });
 
   const handleGithubSignup = () => {
-    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
-    if (!clientId) return setError('GitHub Client ID is missing');
+    const clientId = 'Ov23lieR3QvH9yKO3AEf';
     const redirectUri = `${window.location.origin}/oauth/callback`;
     const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=github`;
     window.location.href = url;
