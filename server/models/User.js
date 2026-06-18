@@ -43,6 +43,20 @@ const userSchema = new mongoose.Schema({
     default: false
   },
   emailVerificationToken: String,
+  isOnboarded: {
+    type: Boolean,
+    default: false
+  },
+  aiInsightsCache: {
+    text: String,
+    generatedAt: Date
+  },
+  notificationPreferences: {
+    weeklyEmail: {
+      type: Boolean,
+      default: true
+    }
+  }
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

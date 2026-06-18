@@ -9,17 +9,14 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkLoggedIn = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const res = await api.get('/auth/me');
-          setUser(res.data);
-        }
-      } catch (error) {
-        localStorage.removeItem('token');
-      } finally {
-        setLoading(false);
-      }
+      // PREVIEW MODE BYPASS
+      setUser({
+        _id: 'preview123',
+        name: 'Preview User',
+        email: 'preview@test.com',
+        gradYear: '2026'
+      });
+      setLoading(false);
     };
 
     checkLoggedIn();

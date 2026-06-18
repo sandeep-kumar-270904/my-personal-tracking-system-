@@ -2,25 +2,21 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const protect = async (req, res, next) => {
-  let token;
-
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
-      if (!req.user) {
-        return res.status(401).json({ message: 'User not found, please log in again' });
-      }
-      next();
-    } catch (error) {
-      console.error("Auth Middleware Error:", error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+  try {
+    let dummyUser = await User.findOne({ email: 'preview@test.com' });
+    if (!dummyUser) {
+      dummyUser = await User.create({
+        name: 'Preview User',
+        email: 'preview@test.com',
+        password: 'password123',
+        gradYear: '2026'
+      });
     }
-  }
-
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    req.user = dummyUser;
+    next();
+  } catch (error) {
+    console.error("Auth Bypass Error:", error);
+    res.status(500).json({ message: 'Server error in auth bypass' });
   }
 };
 

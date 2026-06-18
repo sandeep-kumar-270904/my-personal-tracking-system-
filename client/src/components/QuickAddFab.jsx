@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Briefcase, Code, Calendar, Users, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const QuickAddFab = () => {
+const QuickAddFab = ({ onActionClick }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -23,15 +23,15 @@ const QuickAddFab = () => {
   }, []);
 
   const actions = [
-    { label: 'Add Application', icon: Briefcase, path: '/applications', color: 'text-blue-400', bg: 'bg-blue-400/10' },
-    { label: 'Log DSA Problem', icon: Code, path: '/dsa', color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-    { label: 'Add Interview', icon: Calendar, path: '/interviews', color: 'text-amber-400', bg: 'bg-amber-400/10' },
-    { label: 'Add Contact', icon: Users, path: '/network', color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    { label: 'Add Application', id: 'ADD_APP', icon: Briefcase, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+    { label: 'Log DSA Problem', id: 'LOG_DSA', icon: Code, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+    { label: 'Add Interview', id: 'ADD_INTERVIEW', icon: Calendar, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+    { label: 'Add Contact', id: 'ADD_CONTACT', icon: Users, color: 'text-purple-400', bg: 'bg-purple-400/10' },
   ];
 
-  const handleAction = (path) => {
+  const handleAction = (actionId) => {
     setIsOpen(false);
-    navigate(path);
+    if (onActionClick) onActionClick(actionId);
   };
 
   return (
@@ -64,7 +64,7 @@ const QuickAddFab = () => {
               {actions.map((action, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleAction(action.path)}
+                  onClick={() => handleAction(action.id)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
                 >
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${action.bg}`}>

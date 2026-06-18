@@ -5,6 +5,24 @@ const Goal = require('../models/Goal');
 const Contest = require('../models/Contest');
 const Offer = require('../models/Offer');
 const Network = require('../models/Network');
+const User = require('../models/User');
+const { GoogleGenAI } = require('@google/genai');
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// Helper to interact with Gemini
+const callGemini = async (prompt) => {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    throw new Error("Failed to process with AI");
+  }
+};
 
 // Helper to get start and end of week (Sunday to Saturday)
 const getWeekBounds = () => {
@@ -118,7 +136,14 @@ const getDashboardStats = async (req, res) => {
       offersReceived,
       dsaTopicsTracked,
       currentStreak,
-      weeklyGoals
+      weeklyGoals,
+      hasLoggedDSAToday: dsaSolves.some(d => {
+        const dDate = new Date(d.solvedAt);
+        dDate.setHours(0,0,0,0);
+        let today = new Date();
+        today.setHours(0,0,0,0);
+        return dDate.getTime() === today.getTime();
+      })
     });
   } catch (error) {
     console.error(error);
@@ -377,11 +402,150 @@ const getDashboardCharts = async (req, res) => {
   }
 };
 
+// @desc    Get dashboard AI Insights
+// @route   GET /api/dashboard/ai-insights
+// @access  Private
+const getAIInsights = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const forceRefresh = req.query.force === 'true';
+
+    // Fetch user to check cache
+    const user = await User.findById(userId);
+    if (!forceRefresh && user.aiInsightsCache && user.aiInsightsCache.text && user.aiInsightsCache.generatedAt) {
+      const hoursSinceGenerated = (Date.now() - user.aiInsightsCache.generatedAt.getTime()) / (1000 * 60 * 60);
+      if (hoursSinceGenerated < 6) {
+        return res.json({ insights: user.aiInsightsCache.text });
+      }
+    }
+
+    // Generate new insights
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const apps = await Application.find({ userId, dateApplied: { $gte: thirtyDaysAgo } });
+    const interviews = await Interview.find({ userId, createdAt: { $gte: thirtyDaysAgo } });
+    const dsa = await DSA.find({ userId, solvedAt: { $gte: thirtyDaysAgo } });
+    
+    const prompt = \`
+      You are an expert career coach analyzing a student's placement preparation data for the last 30 days.
+      Data:
+      - Applications submitted: \${apps.length}
+      - Interviews scheduled: \${interviews.length}
+      - DSA problems solved: \${dsa.length}
+      - Conversion rate (Interviews / Apps): \${apps.length > 0 ? ((interviews.length / apps.length) * 100).toFixed(1) : 0}%
+      
+      Generate exactly 2 short, punchy bullet point insights based on this data. Make them highly actionable and encouraging.
+      Format: Return ONLY the text, separated by a newline. Do not use asterisks, markdown, or numbers. Just the plain text for the two bullets.
+      Example 1: Your application-to-interview rate is 12% — industry average is 15-20%. Try tailoring your resume more specifically per company.
+      Example 2: You've solved 45 DSA problems this month. Keep this momentum up to master medium-level dynamic programming.
+    \`;
+
+    const aiResponse = await callGemini(prompt);
+    
+    user.aiInsightsCache = {
+      text: aiResponse.trim(),
+      generatedAt: new Date()
+    };
+    await user.save();
+
+    res.json({ insights: user.aiInsightsCache.text });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error generating AI insights' });
+  }
+};
+
+// @desc    Get Readiness Score
+// @route   GET /api/dashboard/readiness-score
+// @access  Private
+const getReadinessScore = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const appsThisMonth = await Application.countDocuments({ userId, dateApplied: { $gte: thirtyDaysAgo } });
+    const dsaThisMonth = await DSA.countDocuments({ userId, solvedAt: { $gte: thirtyDaysAgo } });
+    const interviewsAll = await Interview.countDocuments({ userId });
+    const networkAll = await Network.countDocuments({ userId });
+    const resumeCount = await require('../models/Resume').countDocuments({ user: userId });
+    
+    // Streak logic (simplified for score)
+    const dsaSolves = await DSA.find({ userId }).select('solvedAt').sort({ solvedAt: -1 });
+    let streak = 0;
+    if (dsaSolves.length > 0) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      let cDate = new Date(dsaSolves[0].solvedAt); cDate.setHours(0,0,0,0);
+      if (today.getTime() - cDate.getTime() <= 86400000) {
+        streak = 1;
+        // Simple distinct count
+      }
+    }
+
+    const { start, end } = getWeekBounds();
+    const goal = await Goal.findOne({ user: userId, weekStartDate: { $gte: start, $lte: end } });
+    let goalCompletion = 0;
+    if (goal) {
+      const p1 = Math.min(100, goal.applicationsTarget > 0 ? (goal.applicationsCompleted / goal.applicationsTarget) * 100 : 0);
+      const p2 = Math.min(100, goal.dsaTarget > 0 ? (goal.dsaCompleted / goal.dsaTarget) * 100 : 0);
+      const p3 = Math.min(100, goal.networkingTarget > 0 ? (goal.networkingCompleted / goal.networkingTarget) * 100 : 0);
+      goalCompletion = (p1 + p2 + p3) / 3;
+    }
+
+    let pointsApps = Math.min(20, appsThisMonth * 1);
+    let pointsDSA = Math.min(25, dsaThisMonth * 0.5);
+    let pointsStreak = streak >= 7 ? 10 : (streak >= 3 ? 5 : 0);
+    let pointsResume = resumeCount > 0 ? 10 : 0;
+    let pointsGoals = Math.min(15, (goalCompletion / 100) * 15);
+    let pointsInterviews = Math.min(10, interviewsAll * 5);
+    let pointsNetwork = Math.min(10, networkAll * 2);
+
+    const score = Math.round(pointsApps + pointsDSA + pointsStreak + pointsResume + pointsGoals + pointsInterviews + pointsNetwork);
+
+    res.json({
+      score,
+      breakdown: {
+        applications: Math.round(pointsApps),
+        dsa: Math.round(pointsDSA),
+        streak: Math.round(pointsStreak),
+        resume: Math.round(pointsResume),
+        goals: Math.round(pointsGoals),
+        interviews: Math.round(pointsInterviews),
+        network: Math.round(pointsNetwork)
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error fetching readiness score' });
+  }
+};
+
+// @desc    Complete Onboarding
+// @route   POST /api/dashboard/onboard
+// @access  Private
+const completeOnboarding = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (user) {
+      user.isOnboarded = true;
+      await user.save();
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error completing onboarding' });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getDashboardPipeline,
   getDashboardActivityFeed,
   getDashboardUpcoming,
   getDashboardHeatmap,
-  getDashboardCharts
+  getDashboardCharts,
+  getAIInsights,
+  getReadinessScore,
+  completeOnboarding
 };

@@ -8,12 +8,16 @@ const resumeRoutes = require('./routes/resumeRoutes');
 const dsaRoutes = require('./routes/dsaRoutes');
 const interviewRoutes = require('./routes/interviewRoutes');
 const networkRoutes = require('./routes/networkRoutes');
+const calendarRoutes = require('./routes/eventRoutes');
 const goalRoutes = require('./routes/goalRoutes');
 const offerRoutes = require('./routes/offerRoutes');
-const eventRoutes = require('./routes/eventRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const { initCronJobs } = require('./cron/weeklySummary');
 const startCronJobs = require('./utils/cron');
+
+// Initialize Cron Jobs
+initCronJobs();
 
 const app = express();
 
@@ -40,7 +44,7 @@ app.use('/api/interviews', interviewRoutes);
 app.use('/api/network', networkRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/offers', offerRoutes);
-app.use('/api/events', eventRoutes);
+app.use('/api/events', calendarRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
 

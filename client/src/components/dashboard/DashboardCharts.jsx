@@ -71,7 +71,7 @@ const DashboardCharts = ({ charts, heatmap }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       {/* Applications Growth */}
-      <div className="glass-card p-6 rounded-2xl border border-white/5 h-[350px]">
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
         <h3 className="text-lg font-bold text-white mb-6">Applications (Last 30 Days)</h3>
         {charts?.applicationsLast30Days && charts.applicationsLast30Days.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
@@ -95,7 +95,7 @@ const DashboardCharts = ({ charts, heatmap }) => {
       </div>
 
       {/* Pipeline Status */}
-      <div className="glass-card p-6 rounded-2xl border border-white/5 h-[350px]">
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
         <h3 className="text-lg font-bold text-white mb-6">Pipeline Breakdown</h3>
         {pipelineData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
@@ -115,7 +115,7 @@ const DashboardCharts = ({ charts, heatmap }) => {
       </div>
 
       {/* DSA Heatmap */}
-      <div className="glass-card p-6 rounded-2xl border border-white/5 h-[350px] flex flex-col">
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 flex flex-col ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
         <h3 className="text-lg font-bold text-white mb-2">DSA Consistency Heatmap</h3>
         <p className="text-xs text-slate-400 mb-6">Last 12 weeks of problem solving</p>
         <div className="flex-1 flex items-center justify-center">
@@ -133,7 +133,7 @@ const DashboardCharts = ({ charts, heatmap }) => {
       </div>
 
       {/* DSA Difficulty */}
-      <div className="glass-card p-6 rounded-2xl border border-white/5 h-[350px]">
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
         <h3 className="text-lg font-bold text-white mb-6">DSA Difficulty</h3>
         {dsaDifficultyData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
