@@ -17,16 +17,25 @@ const OAuthCallbackPage = () => {
 
       const params = new URLSearchParams(location.search);
       const code = params.get('code');
+      const error = params.get('error');
+      const errorDescription = params.get('error_description');
+      
       // Some providers use state to pass the provider name back
       const state = params.get('state');
-      let provider = new URLSearchParams(location.search).get('provider');
+      let provider = params.get('provider');
       
       if (!provider && state) {
         provider = state;
       }
 
+      if (error) {
+        toast.error(`OAuth Error: ${errorDescription || error}`);
+        navigate('/login');
+        return;
+      }
+
       if (!code || !provider) {
-        toast.error('Invalid OAuth callback parameters');
+        toast.error('Invalid OAuth callback parameters (missing code or provider)');
         navigate('/login');
         return;
       }
