@@ -187,49 +187,37 @@ const getDashboardPipeline = async (req, res) => {
   }
 };
 
-// @desc    Get dashboard activity feed
-// @route   GET /api/dashboard/activity-feed
-// @access  Private
 const getDashboardActivityFeed = async (req, res) => {
   try {
     const userId = req.user._id;
-    const events = [];
+    const UnifiedTimeline = require('../models/UnifiedTimeline');
+    
+    const timelineEvents = await UnifiedTimeline.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(10);
 
-    const apps = await Application.find({ userId }).sort({ createdAt: -1 }).limit(10);
-    apps.forEach(app => events.push({
-      type: 'APPLICATION_ADDED',
-      label: `Applied to ${app.company} — ${app.role}`,
-      timestamp: app.createdAt,
-      linkTo: '/applications'
-    }));
+    const formattedEvents = timelineEvents.map(event => {
+      let linkTo = '/';
+      switch (event.sourceTable) {
+        case 'APPLICATION': linkTo = '/applications'; break;
+        case 'INTERVIEW': linkTo = '/interviews'; break;
+        case 'DSA': linkTo = '/dsa'; break;
+        case 'CONTACT': linkTo = '/networking'; break;
+        case 'OFFER': linkTo = '/offers'; break;
+        case 'CONTEST': linkTo = '/contests'; break;
+        case 'RESUME': linkTo = '/resumes'; break;
+        case 'GOAL': linkTo = '/goals'; break;
+      }
 
-    const interviews = await Interview.find({ userId }).sort({ createdAt: -1 }).limit(10);
-    interviews.forEach(int => events.push({
-      type: 'INTERVIEW_SCHEDULED',
-      label: `Interview Scheduled with ${int.company} — ${int.round}`,
-      timestamp: int.createdAt,
-      linkTo: '/interviews'
-    }));
+      return {
+        type: event.sourceTable + '_' + event.eventType,
+        label: event.title,
+        timestamp: event.createdAt,
+        linkTo
+      };
+    });
 
-    const dsas = await DSA.find({ userId }).sort({ createdAt: -1 }).limit(10);
-    dsas.forEach(dsa => events.push({
-      type: 'DSA_SOLVED',
-      label: `Solved ${dsa.topic} (${dsa.difficulty}) on ${dsa.platform}`,
-      timestamp: dsa.createdAt,
-      linkTo: '/dsa'
-    }));
-
-    const offers = await Application.find({ userId, status: 'OFFER' }).sort({ updatedAt: -1 }).limit(10);
-    offers.forEach(o => events.push({
-      type: 'OFFER_RECEIVED',
-      label: `Offer Received from ${o.company}!`,
-      timestamp: o.updatedAt,
-      linkTo: '/offers'
-    }));
-
-    // Sort all events by timestamp desc and take top 10
-    events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    res.json(events.slice(0, 10));
+    res.json(formattedEvents);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error fetching activity' });

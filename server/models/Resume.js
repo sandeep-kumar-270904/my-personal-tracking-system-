@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
 
 const resumeSchema = new mongoose.Schema({
   user: {
@@ -30,6 +31,37 @@ const resumeSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  name: {
+    type: String,
+  },
+  tags: [{
+    type: String
+  }],
+  version: {
+    type: Number,
+    default: 1
+  },
+  parentResumeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Resume',
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  pageCount: {
+    type: Number
+  },
+  notes: {
+    type: String
+  },
+  thumbnailUrl: {
+    type: String
+  },
+  deletedAt: {
+    type: Date,
+    default: null
+  }
 }, { timestamps: true });
 
 // Middleware to ensure only one primary resume per user
@@ -41,5 +73,7 @@ resumeSchema.pre('save', async function () {
     );
   }
 });
+
+resumeSchema.plugin(timelinePlugin);
 
 module.exports = mongoose.model('Resume', resumeSchema);

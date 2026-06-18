@@ -6,6 +6,7 @@ import Header from './Header';
 import BottomNavBar from './BottomNavBar';
 import InstallPWA from './InstallPWA';
 import NotificationDropdown from './NotificationDropdown';
+import CommandCenter from './CommandCenter';
 
 const PageTransition = ({ children }) => {
   const location = useLocation();
@@ -48,6 +49,7 @@ const DashboardLayout = () => {
       </motion.div>
       <BottomNavBar />
       <InstallPWA />
+      <CommandCenter />
     </div>
   );
 };

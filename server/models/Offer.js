@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
 
 const offerSchema = new mongoose.Schema({
   userId: {
@@ -47,5 +48,7 @@ const offerSchema = new mongoose.Schema({
     default: ''
   }
 }, { timestamps: true });
+
+offerSchema.plugin(timelinePlugin);
 
 module.exports = mongoose.model('Offer', offerSchema);

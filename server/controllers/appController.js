@@ -206,6 +206,14 @@ const updateApplication = async (req, res) => {
 
     if (status && status !== previousStatus) {
       await logTimelineEvent(application._id, `Status changed to ${status}`, previousStatus, status, noteForTimeline || '');
+      
+      // C2: Auto-generate Prep Syllabus on INTERVIEW_SCHEDULED
+      if (status === 'INTERVIEW_SCHEDULED') {
+        const { generateSyllabusInternal } = require('./prepHubController');
+        generateSyllabusInternal(application._id, application.userId).catch(err => {
+          console.error("Failed to auto-generate prep syllabus:", err);
+        });
+      }
     } else if (noteForTimeline) {
        await logTimelineEvent(application._id, `Note added`, application.status, application.status, noteForTimeline);
     }
@@ -364,6 +372,43 @@ const bulkImport = async (req, res) => {
   }
 };
 
+const getApplicationRoi = async (req, res) => {
+  try {
+    const applications = await Application.find({ userId: req.user._id });
+    const sourceStats = {};
+
+    applications.forEach(app => {
+      const source = app.source || 'Other';
+      if (!sourceStats[source]) {
+        sourceStats[source] = { total: 0, interviewScheduled: 0, rejectedGhosted: 0 };
+      }
+      sourceStats[source].total += 1;
+
+      if (['INTERVIEW_SCHEDULED', 'INTERVIEW_COMPLETED', 'OFFER_RECEIVED', 'ACCEPTED'].includes(app.status)) {
+        sourceStats[source].interviewScheduled += 1;
+      } else if (['REJECTED', 'GHOSTED'].includes(app.status)) {
+        sourceStats[source].rejectedGhosted += 1;
+      }
+    });
+
+    const roiData = Object.keys(sourceStats).map(source => {
+      const stats = sourceStats[source];
+      const roiPercent = stats.total > 0 ? ((stats.interviewScheduled / stats.total) * 100).toFixed(1) : 0;
+      return {
+        source,
+        total: stats.total,
+        roiPercent: Number(roiPercent),
+        interviewScheduled: stats.interviewScheduled,
+        rejectedGhosted: stats.rejectedGhosted
+      };
+    }).sort((a, b) => b.roiPercent - a.roiPercent);
+
+    res.json(roiData);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   getApplications,
   createApplication,
@@ -372,5 +417,6 @@ module.exports = {
   getApplicationById,
   getApplicationTimeline,
   getAppStats,
-  bulkImport
+  bulkImport,
+  getApplicationRoi
 };

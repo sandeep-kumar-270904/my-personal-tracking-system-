@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
 
 const contestSchema = new mongoose.Schema({
   userId: {
@@ -31,5 +32,7 @@ const contestSchema = new mongoose.Schema({
     default: false
   }
 }, { timestamps: true });
+
+contestSchema.plugin(timelinePlugin);
 
 module.exports = mongoose.model('Contest', contestSchema);

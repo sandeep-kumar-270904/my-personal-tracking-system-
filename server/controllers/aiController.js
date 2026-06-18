@@ -203,9 +203,65 @@ const generateEmail = async (req, res) => {
   }
 };
 
+// @desc    Generate Cover Letter
+// @route   POST /api/ai/generate-cover-letter
+// @access  Private
+const generateCoverLetter = async (req, res) => {
+  try {
+    const { jdText, context } = req.body;
+
+    // 1. Fetch user's primary resume
+    const primaryResume = await Resume.findOne({ user: req.user._id, isPrimary: true });
+    let resumeText = '';
+
+    if (primaryResume) {
+      const fullPath = path.join(__dirname, '../', primaryResume.filePath);
+      if (fs.existsSync(fullPath)) {
+        const dataBuffer = fs.readFileSync(fullPath);
+        const pdfData = await pdf(dataBuffer);
+        resumeText = pdfData.text;
+      }
+    }
+
+    const prompt = `
+      You are an expert career coach and professional copywriter. Write a highly professional, tailored cover letter.
+      
+      Job Description:
+      """
+      ${jdText || 'No specific job description provided. Use context below.'}
+      """
+
+      Additional Context / Application Details:
+      """
+      ${context || 'No additional context provided.'}
+      """
+
+      Candidate Resume Context (Use this to highlight relevant achievements or skills):
+      """
+      ${resumeText || 'No resume provided.'}
+      """
+
+      Requirements:
+      1. Tone must be professional, confident, and engaging.
+      2. Keep it concise (3-4 short paragraphs).
+      3. It must have a standard business letter format (Greeting, Body, Conclusion, Sign-off).
+      4. Highlight why the candidate is a strong fit based on the resume and the JD/context.
+      5. Output ONLY the cover letter content (no surrounding markdown).
+    `;
+
+    const aiResponse = await callGemini(prompt);
+    
+    res.status(200).json({ coverLetter: aiResponse.trim() });
+  } catch (error) {
+    console.error("Generate Cover Letter Error:", error);
+    res.status(500).json({ message: 'Failed to generate cover letter', error: error.message });
+  }
+};
+
 module.exports = {
   analyzeJD,
   matchResume,
   generateEmail,
+  generateCoverLetter,
   callGemini,
 };

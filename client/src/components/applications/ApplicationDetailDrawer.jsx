@@ -15,6 +15,179 @@ const fetchApplicationDetails = async (id) => {
   return res.data;
 };
 
+const ResumeSelector = ({ app }) => {
+  const queryClient = useQueryClient();
+  const [selectedResumeId, setSelectedResumeId] = useState(app.resumeId);
+
+  const { data: resumes = [] } = useQuery({
+    queryKey: ['resumes'],
+    queryFn: async () => {
+      const res = await api.get('/resumes');
+      return res.data;
+    }
+  });
+
+  const { data: perf } = useQuery({
+    queryKey: ['resumePerformance', selectedResumeId],
+    queryFn: async () => {
+      if (!selectedResumeId) return null;
+      const res = await api.get(`/resumes/${selectedResumeId}/performance`);
+      return res.data;
+    },
+    enabled: !!selectedResumeId
+  });
+
+  const updateResumeMutation = useMutation({
+    mutationFn: async (resumeId) => {
+      await api.patch(`/applications/${app._id}`, { resumeId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['application', app._id]);
+      toast.success('Resume updated for this application.');
+    }
+  });
+
+  const handleChange = (e) => {
+    const newId = e.target.value;
+    if (newId && newId !== app.resumeId) {
+      if (window.confirm("Warning: Changing the resume will alter historical performance metrics. Are you sure?")) {
+        setSelectedResumeId(newId);
+        updateResumeMutation.mutate(newId);
+      } else {
+        e.target.value = selectedResumeId || "";
+      }
+    }
+  };
+
+  const currentResume = resumes.find(r => r._id === selectedResumeId);
+
+  return (
+    <div className="space-y-3">
+      <select 
+        value={selectedResumeId || ""} 
+        onChange={handleChange}
+        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#ff6b00]"
+      >
+        <option value="" disabled>Select a resume</option>
+        {resumes.map(r => (
+          <option key={r._id} value={r._id}>{r.originalName} ({r.versionTag})</option>
+        ))}
+      </select>
+
+      {perf && perf.totalApplications > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">
+            {Math.round((perf.shortlistedCount / perf.totalApplications) * 100)}% Shortlist Rate
+          </span>
+          {perf.topRoles && perf.topRoles.length > 0 && perf.topRoles[0].role === app.role && (
+            <span className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+              <Star className="w-3 h-3" /> Best for this role
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const NetworkContacts = ({ app }) => {
+  const queryClient = useQueryClient();
+  const [isSearching, setIsSearching] = useState(false);
+  const [suggestedContacts, setSuggestedContacts] = useState([]);
+
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['network'],
+    queryFn: async () => {
+      const res = await api.get('/network');
+      return res.data;
+    }
+  });
+
+  const addContactMutation = useMutation({
+    mutationFn: async (contact) => {
+      await api.post('/network', contact);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['network']);
+      toast.success('Contact added to Network!');
+    }
+  });
+
+  const handleFindContacts = async () => {
+    setIsSearching(true);
+    try {
+      const res = await api.get(`/network/search?company=${encodeURIComponent(app.company)}`);
+      setSuggestedContacts(res.data.suggestions || []);
+    } catch (error) {
+      toast.error('Failed to find contacts');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const companyContacts = contacts.filter(c => c.company.toLowerCase() === app.company.toLowerCase());
+
+  if (companyContacts.length === 0 && suggestedContacts.length === 0) {
+    return (
+      <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center">
+        <Users className="w-8 h-8 text-slate-500 mb-2" />
+        <h3 className="text-sm font-semibold text-white mb-1">No Network Contacts</h3>
+        <p className="text-xs text-slate-400 mb-3">You don't have any contacts at {app.company} yet.</p>
+        <button 
+          onClick={handleFindContacts} 
+          disabled={isSearching}
+          className="bg-[#ff6b00]/10 hover:bg-[#ff6b00]/20 text-[#ff6b00] border border-[#ff6b00]/20 px-4 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2"
+        >
+          {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          Find Suggested Contacts
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+      <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2"><Users className="w-4 h-4" /> Company Contacts</h3>
+      <div className="space-y-3">
+        {companyContacts.map(c => (
+          <div key={c._id} className="flex justify-between items-center bg-[#13141f] border border-white/5 rounded-lg p-3">
+            <div>
+              <p className="text-sm text-white font-medium">{c.name}</p>
+              <p className="text-xs text-slate-400">{c.role}</p>
+            </div>
+            <span className={`text-xs px-2 py-1 rounded border font-bold ${c.status === 'Referral Given' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
+              {c.status}
+            </span>
+          </div>
+        ))}
+
+        {suggestedContacts.length > 0 && companyContacts.length === 0 && (
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Suggested Contacts to Add</h4>
+            <div className="space-y-2">
+              {suggestedContacts.map((c, i) => (
+                <div key={i} className="flex justify-between items-center bg-[#1a1b26] border border-[#ff6b00]/20 rounded-lg p-3">
+                  <div>
+                    <p className="text-sm text-white font-medium">{c.name}</p>
+                    <p className="text-xs text-[#ff6b00]">{c.role}</p>
+                  </div>
+                  <button 
+                    onClick={() => addContactMutation.mutate({ ...c, company: app.company, status: 'To Contact', platform: 'LinkedIn', lastContactDate: new Date() })}
+                    disabled={addContactMutation.isLoading}
+                    className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg font-bold transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const ApplicationDetailDrawer = ({ isOpen, onClose, applicationId, onEdit, onDelete }) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('details'); // details, timeline, emails, intel, predict, negotiate
@@ -145,6 +318,15 @@ const ApplicationDetailDrawer = ({ isOpen, onClose, applicationId, onEdit, onDel
                   <div>
                     <div className="flex items-center gap-3">
                       <h2 className="text-2xl font-bold text-white mb-1">{app.company}</h2>
+                      {(() => {
+                        const cachedNetwork = queryClient.getQueryData(['network']) || [];
+                        const hasReferral = cachedNetwork.some(c => c.company.toLowerCase() === app.company.toLowerCase() && c.status === 'Referral Given');
+                        return hasReferral ? (
+                          <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Referral Used
+                          </span>
+                        ) : null;
+                      })()}
                       {app.fitScore !== undefined && (
                         <div className="group relative">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${app.fitScore >= 75 ? 'bg-green-500/10 text-green-400 border-green-500/20' : app.fitScore >= 50 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
@@ -288,6 +470,12 @@ const ApplicationDetailDrawer = ({ isOpen, onClose, applicationId, onEdit, onDel
                   </div>
                 </div>
 
+                {/* Resume Selector */}
+                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-2">Resume Used</p>
+                  <ResumeSelector app={app} />
+                </div>
+
                 {app.link && (
                   <div>
                     <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2"><LinkIcon className="w-4 h-4" /> Application Link</h3>
@@ -340,6 +528,8 @@ const ApplicationDetailDrawer = ({ isOpen, onClose, applicationId, onEdit, onDel
                     <div className="text-sm text-slate-400 whitespace-pre-wrap">{app.notes}</div>
                   </div>
                 )}
+
+                <NetworkContacts app={app} />
 
                 {app.interviews && app.interviews.length > 0 && (
                   <div>

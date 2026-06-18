@@ -16,10 +16,12 @@ const aiRoutes = require('./routes/aiRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const pushRoutes = require('./routes/pushRoutes');
 const exportRoutes = require('./routes/exportRoutes');
+const prephubRoutes = require('./routes/prephubRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const campusDriveRoutes = require('./routes/campusDriveRoutes');
 const benchmarkRoutes = require('./routes/benchmarkRoutes');
+const timelineRoutes = require('./routes/timelineRoutes');
 const { initCronJobs } = require('./cron/weeklySummary');
 const startCronJobs = require('./utils/cron');
 
@@ -56,11 +58,14 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/prephub', require('./routes/prepHubRoutes'));
+app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/data', exportRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/campus-drives', campusDriveRoutes);
 app.use('/api/benchmarks', benchmarkRoutes);
+app.use('/api/timeline', timelineRoutes);
 
 app.get('/', (req, res) => {
   res.send('Smart Internship & Career Tracker API is running...');

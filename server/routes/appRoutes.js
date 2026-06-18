@@ -11,7 +11,8 @@ const {
   getApplicationById,
   getApplicationTimeline,
   getAppStats,
-  bulkImport
+  bulkImport,
+  getApplicationRoi
 } = require('../controllers/appController');
 
 const {
@@ -27,6 +28,7 @@ const { patchEffort, archiveApplication, getSuggestions, updateSuggestion, getWe
 
 const { protect } = require('../middleware/authMiddleware');
 
+router.route('/roi').get(protect, getApplicationRoi);
 router.route('/stats').get(protect, getAppStats);
 router.route('/bulk-import').post(protect, upload.single('file'), bulkImport);
 router.route('/analyze-jd').post(protect, analyzeJD);

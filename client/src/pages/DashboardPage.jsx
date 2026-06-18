@@ -28,13 +28,14 @@ import ShortcutHintCard from '../components/dashboard/ShortcutHintCard';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 
 const fetchDashboardData = async () => {
-  const [statsRes, pipelineRes, upcomingRes, feedRes, heatmapRes, chartsRes] = await Promise.all([
+  const [statsRes, pipelineRes, upcomingRes, feedRes, heatmapRes, chartsRes, roiRes] = await Promise.all([
     api.get('/dashboard/stats'),
     api.get('/dashboard/pipeline'),
     api.get('/dashboard/upcoming'),
     api.get('/dashboard/activity-feed'),
     api.get('/dashboard/heatmap'),
-    api.get('/dashboard/charts')
+    api.get('/dashboard/charts'),
+    api.get('/applications/roi')
   ]);
 
   return {
@@ -43,7 +44,8 @@ const fetchDashboardData = async () => {
     upcoming: upcomingRes.data,
     feed: feedRes.data,
     heatmap: heatmapRes.data,
-    charts: chartsRes.data
+    charts: chartsRes.data,
+    roi: roiRes.data
   };
 };
 
@@ -64,6 +66,14 @@ const DashboardPage = () => {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboardData'],
     queryFn: fetchDashboardData,
+  });
+
+  const { data: prepAlerts = [] } = useQuery({
+    queryKey: ['prepAlerts'],
+    queryFn: async () => {
+      const res = await api.get('/prephub/alerts');
+      return res.data;
+    }
   });
 
   // Keyboard Shortcuts
@@ -140,6 +150,23 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {prepAlerts.map(alert => (
+        <div key={alert._id} className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/30 rounded-xl p-4 flex justify-between items-center mb-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-400" />
+            <p className="text-sm text-white font-medium">
+              Interview prep required for <span className="font-bold text-blue-400">{alert.company}</span> - {alert.role}!
+            </p>
+          </div>
+          <button 
+            onClick={() => window.location.href = `/prephub?syllabusId=${alert._id}`}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+          >
+            Start Syllabus →
+          </button>
+        </div>
+      ))}
+
       {stats.currentStreak >= 3 && !stats.hasLoggedDSAToday && (
         <StreakAlertBanner streak={stats.currentStreak} onLogClick={() => setActiveModal('LOG_DSA')} />
       )}
@@ -162,7 +189,7 @@ const DashboardPage = () => {
           <UpcomingStrip upcoming={data.upcoming} />
           <PipelineKanban pipeline={data.pipeline} />
           <GoalRings goalsData={data.stats?.weeklyGoals} />
-          <DashboardCharts charts={data.charts} heatmap={data.heatmap} isCompact={isCompact} />
+          <DashboardCharts charts={data.charts} heatmap={data.heatmap} roi={data.roi} isCompact={isCompact} />
         </div>
 
         {/* Right Sidebar Column */}

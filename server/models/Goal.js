@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
 
 const goalSchema = new mongoose.Schema({
   user: {
@@ -42,5 +43,7 @@ const goalSchema = new mongoose.Schema({
     default: 0
   }
 }, { timestamps: true });
+
+goalSchema.plugin(timelinePlugin);
 
 module.exports = mongoose.model('Goal', goalSchema);

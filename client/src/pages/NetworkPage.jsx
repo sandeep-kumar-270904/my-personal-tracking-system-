@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import api from '../services/api';
 import EmptyState from '../components/EmptyState';
 import ConfirmModal from '../components/ConfirmModal';
+import NetworkGraph from '../components/network/NetworkGraph';
 
 const fetchNetwork = async () => {
   const { data } = await api.get('/network');
@@ -28,8 +29,27 @@ const NetworkPage = () => {
   const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
   const [generatedEmail, setGeneratedEmail] = useState('');
 
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'graph'
+
   const { data: contacts = [], isLoading, isError } = useQuery({
     queryKey: ['network'], queryFn: fetchNetwork
+  });
+
+  const { data: applications = [] } = useQuery({
+    queryKey: ['applications'],
+    queryFn: async () => {
+      const { data } = await api.get('/applications');
+      return data;
+    }
+  });
+
+  const { data: graphData } = useQuery({
+    queryKey: ['networkGraph'],
+    queryFn: async () => {
+      const { data } = await api.get('/network/graph');
+      return data;
+    },
+    enabled: viewMode === 'graph'
   });
 
   const saveMutation = useMutation({
@@ -39,6 +59,7 @@ const NetworkPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['network']);
+      queryClient.invalidateQueries(['networkGraph']);
       toast.success(editingId ? 'Contact updated' : 'Contact added');
       setIsModalOpen(false);
       setEditingId(null);
@@ -51,6 +72,7 @@ const NetworkPage = () => {
     mutationFn: async (id) => await api.delete(`/network/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['network']);
+      queryClient.invalidateQueries(['networkGraph']);
       toast.success('Contact deleted');
       setContactToDelete(null);
     },
@@ -61,6 +83,7 @@ const NetworkPage = () => {
     mutationFn: async ({ id, status }) => await api.put(`/network/${id}`, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries(['network']);
+      queryClient.invalidateQueries(['networkGraph']);
       toast.success('Status updated');
     },
     onError: () => toast.error('Failed to update status')
@@ -80,7 +103,8 @@ const NetworkPage = () => {
       status: contact.status,
       lastContactDate: contact.lastContactDate ? new Date(contact.lastContactDate).toISOString().split('T')[0] : '',
       notes: contact.notes,
-      followUpDate: contact.followUpDate ? new Date(contact.followUpDate).toISOString().split('T')[0] : ''
+      followUpDate: contact.followUpDate ? new Date(contact.followUpDate).toISOString().split('T')[0] : '',
+      linkedApplication: contact.linkedApplication || ''
     });
     setEditingId(contact._id);
     setIsModalOpen(true);
@@ -88,7 +112,7 @@ const NetworkPage = () => {
 
   const resetForm = () => {
     setFormData({
-      name: '', company: '', role: '', platform: 'LinkedIn', status: 'To Contact', lastContactDate: new Date().toISOString().split('T')[0], notes: '', followUpDate: ''
+      name: '', company: '', role: '', platform: 'LinkedIn', status: 'To Contact', lastContactDate: new Date().toISOString().split('T')[0], notes: '', followUpDate: '', linkedApplication: ''
     });
   };
 
@@ -178,13 +202,31 @@ const NetworkPage = () => {
           <h1 className="text-3xl font-bold text-white mb-2">Networking</h1>
           <p className="text-slate-400">Manage your cold outreach, track referrals, and send emails.</p>
         </div>
-        <button onClick={() => { resetForm(); setEditingId(null); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2">
-          <Plus className="w-5 h-5" /> Add Contact
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="bg-[#13141f] border border-white/10 rounded-xl p-1 flex items-center">
+            <button 
+              onClick={() => setViewMode('list')} 
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === 'list' ? 'bg-[#ff6b00]/20 text-[#ff6b00]' : 'text-slate-400 hover:text-white'}`}
+            >
+              List
+            </button>
+            <button 
+              onClick={() => setViewMode('graph')} 
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === 'graph' ? 'bg-[#00f0ff]/20 text-[#00f0ff]' : 'text-slate-400 hover:text-white'}`}
+            >
+              Relationship Map
+            </button>
+          </div>
+          <button onClick={() => { resetForm(); setEditingId(null); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2">
+            <Plus className="w-5 h-5" /> Add Contact
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto pr-2 pb-10">
-        {contacts.length === 0 ? (
+        {viewMode === 'graph' ? (
+          <NetworkGraph data={graphData} />
+        ) : contacts.length === 0 ? (
           <EmptyState 
             icon={Users} 
             heading="No contacts yet" 
@@ -329,9 +371,20 @@ const NetworkPage = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Follow-up Date (Optional)</label>
-                  <input type="date" value={formData.followUpDate} onChange={(e) => setFormData({...formData, followUpDate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] [color-scheme:dark]" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Follow-up Date (Optional)</label>
+                    <input type="date" value={formData.followUpDate} onChange={(e) => setFormData({...formData, followUpDate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] [color-scheme:dark]" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Link to Application (Optional)</label>
+                    <select value={formData.linkedApplication || ''} onChange={(e) => setFormData({...formData, linkedApplication: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#ff6b00] appearance-none">
+                      <option value="" className="bg-[#13141f]">None</option>
+                      {applications.map(app => (
+                        <option key={app._id} value={app._id} className="bg-[#13141f]">{app.company} - {app.role}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div>

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
 
 const interviewSchema = new mongoose.Schema({
   userId: {
@@ -61,5 +62,7 @@ const interviewSchema = new mongoose.Schema({
     default: 'UPCOMING',
   },
 }, { timestamps: true });
+
+interviewSchema.plugin(timelinePlugin);
 
 module.exports = mongoose.model('Interview', interviewSchema);

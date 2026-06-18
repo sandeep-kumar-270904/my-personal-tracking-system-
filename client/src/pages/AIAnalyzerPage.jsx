@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Loader2, Sparkles, AlertCircle, FileText, CheckCircle2, ChevronRight, ExternalLink, Activity } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Zap, Loader2, Sparkles, AlertCircle, FileText, CheckCircle2, ChevronRight, ExternalLink, Activity, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
@@ -46,7 +47,20 @@ const AIAnalyzerPage = () => {
   
   const [isMatching, setIsMatching] = useState(false);
   const [matchResult, setMatchResult] = useState(null);
-  const [activeTab, setActiveTab] = useState('jd'); // 'jd', 'resume', 'resources'
+  const [activeTab, setActiveTab] = useState('jd'); // 'jd', 'resume', 'coverletter', 'resources'
+
+  const [selectedAppId, setSelectedAppId] = useState('');
+  const [clContext, setClContext] = useState('');
+  const [isGeneratingCl, setIsGeneratingCl] = useState(false);
+  const [generatedCl, setGeneratedCl] = useState('');
+
+  const { data: applications = [] } = useQuery({
+    queryKey: ['applications'],
+    queryFn: async () => {
+      const res = await api.get('/applications');
+      return res.data;
+    }
+  });
 
   const handleAnalyzeJD = async (e) => {
     e.preventDefault();
@@ -83,6 +97,41 @@ const AIAnalyzerPage = () => {
       toast.error(error.response?.data?.message || 'Failed to match resume. Ensure you have a Primary Resume uploaded.');
     } finally {
       setIsMatching(false);
+    }
+  };
+
+  const handleSyncFromApp = () => {
+    if (!selectedAppId) {
+      toast.error('Select an application first');
+      return;
+    }
+    const app = applications.find(a => a._id === selectedAppId);
+    if (!app) return;
+    
+    let context = `Company: ${app.company}\nRole: ${app.role}\n`;
+    if (app.jobDescriptionUrl) context += `Job URL: ${app.jobDescriptionUrl}\n`;
+    if (app.notes) context += `Notes: ${app.notes}\n`;
+    
+    setClContext(context);
+    toast.success('Synced context from application');
+  };
+
+  const handleGenerateCoverLetter = async () => {
+    setIsGeneratingCl(true);
+    try {
+      const payload = { 
+        jdText,
+        context: clContext
+      };
+      // We will need to make an endpoint for generating a cover letter based on jdText and context.
+      // Wait, let's look for existing endpoint or I can create it later. For now, let's assume it's /ai/generate-cover-letter
+      const { data } = await api.post('/ai/generate-cover-letter', payload);
+      setGeneratedCl(data.coverLetter);
+      toast.success('Cover Letter Generated!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to generate cover letter');
+    } finally {
+      setIsGeneratingCl(false);
     }
   };
 
@@ -152,22 +201,28 @@ const AIAnalyzerPage = () => {
         {/* Right Column: Results (Col Span 7) */}
         <div className="lg:col-span-7 glass-card flex flex-col overflow-hidden">
           {/* Tabs */}
-          <div className="flex border-b border-white/10 p-2 gap-2">
+          <div className="flex border-b border-white/10 p-2 gap-2 overflow-x-auto">
             <button
               onClick={() => setActiveTab('jd')}
-              className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'jd' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex-shrink-0 px-4 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'jd' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}`}
             >
               JD Breakdown
             </button>
             <button
               onClick={() => setActiveTab('resume')}
-              className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'resume' ? 'bg-gradient-to-r from-[#ff6b00]/20 to-[#ff007b]/20 text-white border border-[#ff6b00]/30' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex-shrink-0 px-4 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'resume' ? 'bg-gradient-to-r from-[#ff6b00]/20 to-[#ff007b]/20 text-white border border-[#ff6b00]/30' : 'text-slate-500 hover:text-slate-300'}`}
             >
               ATS Match & Score
             </button>
             <button
+              onClick={() => setActiveTab('coverletter')}
+              className={`flex-shrink-0 px-4 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'coverletter' ? 'bg-white/10 text-white border border-white/20' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              Cover Letter
+            </button>
+            <button
               onClick={() => setActiveTab('resources')}
-              className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'resources' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex-shrink-0 px-4 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'resources' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}`}
             >
               ATS Resources
             </button>
@@ -309,6 +364,80 @@ const AIAnalyzerPage = () => {
                   </motion.div>
                 )}
               </div>
+            )}
+
+            {activeTab === 'coverletter' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 flex flex-col h-full">
+                <div className="flex flex-col gap-4">
+                  <div className="bg-[#13141f] border border-white/5 p-4 rounded-xl shadow-inner">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Sync Data from Application (Optional)</label>
+                    <div className="flex items-center gap-3">
+                      <select 
+                        value={selectedAppId} 
+                        onChange={(e) => setSelectedAppId(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#ff6b00] appearance-none"
+                      >
+                        <option value="" className="bg-[#13141f]">-- Select Application --</option>
+                        {applications.map(app => (
+                          <option key={app._id} value={app._id} className="bg-[#13141f]">{app.company} - {app.role}</option>
+                        ))}
+                      </select>
+                      <button 
+                        onClick={handleSyncFromApp}
+                        className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap"
+                      >
+                        Sync Context
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col flex-1 min-h-0">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Additional Context / Instructions</label>
+                    <textarea 
+                      value={clContext}
+                      onChange={(e) => setClContext(e.target.value)}
+                      placeholder="e.g. Focus on my leadership skills and my passion for EdTech..."
+                      className="w-full bg-[#0a0a0f] border border-white/10 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-[#ff6b00] resize-y custom-scrollbar mb-4 h-24 shrink-0"
+                    />
+
+                    {generatedCl ? (
+                      <div className="flex flex-col flex-1 h-full min-h-[250px]">
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="block text-sm font-medium text-[#00f0ff]">Generated Cover Letter</label>
+                          <button 
+                            onClick={() => { navigator.clipboard.writeText(generatedCl); toast.success('Copied to clipboard!'); }}
+                            className="text-xs flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
+                          >
+                            <Copy className="w-3 h-3" /> Copy Text
+                          </button>
+                        </div>
+                        <textarea 
+                          value={generatedCl}
+                          onChange={(e) => setGeneratedCl(e.target.value)}
+                          className="w-full flex-1 bg-[#0a0a0f] border border-[#00f0ff]/30 rounded-xl p-4 text-slate-200 focus:outline-none focus:border-[#00f0ff] resize-none custom-scrollbar font-medium"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center border-2 border-dashed border-white/10 rounded-xl mb-4 min-h-[250px]">
+                        <div className="text-center p-6 text-slate-500">
+                          <FileText className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                          <p className="text-sm">Ready to generate. AI will use the provided JD and context.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-white/5">
+                  <button 
+                    onClick={handleGenerateCoverLetter} 
+                    disabled={isGeneratingCl || (!jdText && !clContext)}
+                    className="w-full bg-gradient-to-r from-[#ff6b00] to-[#ff007b] hover:from-[#ff6b00]/90 hover:to-[#ff007b]/90 text-white font-bold rounded-xl py-3 px-4 flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(255,107,0,0.3)]"
+                  >
+                    {isGeneratingCl ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Sparkles className="w-5 h-5 mr-2" /> Generate Cover Letter</>}
+                  </button>
+                </div>
+              </motion.div>
             )}
 
             {activeTab === 'resources' && (

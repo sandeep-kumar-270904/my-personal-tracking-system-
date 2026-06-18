@@ -32,6 +32,7 @@ const Toolbar = ({ searchParams, setSearchParams, viewMode, setViewMode }) => {
   const sourceFilter = searchParams.get('source') || 'All';
   const priorityFilter = searchParams.get('priority') || 'All';
   const sortBy = searchParams.get('sortBy') || 'dateApplied';
+  const needsFollowUp = searchParams.get('needsFollowUp') === 'true';
   const isDead = searchParams.get('isDead') === 'true';
   const isArchived = searchParams.get('isArchived') === 'true';
 

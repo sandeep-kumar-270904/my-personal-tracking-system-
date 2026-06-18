@@ -1,11 +1,11 @@
-const { GoogleGenerativeAI } = require('@google/genai');
+const { GoogleGenAI } = require('@google/genai');
 const puppeteer = require('puppeteer');
 const Application = require('../models/Application');
 const ApplicationEmail = require('../models/ApplicationEmail');
 const Resume = require('../models/Resume');
 const fs = require('fs');
 
-const genAI = new GoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const aiCache = new Map(); // Simple in-memory cache for JD analysis
 
 const analyzeJD = async (req, res) => {
@@ -41,9 +41,11 @@ const analyzeJD = async (req, res) => {
     }
     Text: ${textContent}`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    let aiResponse = result.response.text();
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    let aiResponse = result.text;
     // Strip markdown formatting if present
     aiResponse = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
     
@@ -83,9 +85,11 @@ const matchResumeToJD = async (req, res) => {
     Required Skills: ${requiredSkills.join(', ')}
     Resume Text: ${resumeText.substring(0, 5000)}`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    let aiResponse = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    let aiResponse = result.text.replace(/```json/g, '').replace(/```/g, '').trim();
     
     res.json(JSON.parse(aiResponse));
   } catch (error) {
@@ -110,9 +114,11 @@ const processEmailThread = async (req, res) => {
     }
     Email Thread: ${rawText}`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    let aiResponse = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    let aiResponse = result.text.replace(/```json/g, '').replace(/```/g, '').trim();
     const extractedData = JSON.parse(aiResponse);
 
     const emailRecord = new ApplicationEmail({
@@ -150,9 +156,11 @@ const analyzeRejection = async (req, res) => {
       "actionableSuggestions": ["suggestion 1", "suggestion 2"]
     }`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    let aiResponse = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    let aiResponse = result.text.replace(/```json/g, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(aiResponse);
 
     application.rejectionAnalysis = parsed;

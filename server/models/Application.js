@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
 
 const applicationSchema = new mongoose.Schema({
   userId: {
@@ -108,5 +109,7 @@ const applicationSchema = new mongoose.Schema({
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
+
+applicationSchema.plugin(timelinePlugin);
 
 module.exports = mongoose.model('Application', applicationSchema);

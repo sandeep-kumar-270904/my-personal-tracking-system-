@@ -12,6 +12,38 @@ const fetchResumes = async () => {
   return data;
 };
 
+const ResumePerformanceBar = ({ resumeId }) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ['resumePerformance', resumeId],
+    queryFn: async () => {
+      const res = await api.get(`/resumes/${resumeId}/performance`);
+      return res.data;
+    }
+  });
+
+  if (isLoading) return <div className="h-6 w-full animate-pulse bg-white/5 rounded"></div>;
+  if (!data) return null;
+
+  const totalApps = data.totalApplications;
+  if (totalApps === 0) return <div className="text-xs text-slate-500 text-center">No applications tracked</div>;
+
+  const shortlistRate = Math.round((data.shortlistedCount / totalApps) * 100);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between text-xs font-medium">
+        <span className="text-slate-400">Performance</span>
+        <span className={shortlistRate > 20 ? 'text-emerald-400' : 'text-slate-300'}>{shortlistRate}% Shortlist</span>
+      </div>
+      <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex">
+        <div style={{ width: `${shortlistRate}%` }} className="h-full bg-emerald-500"></div>
+        <div style={{ width: `${Math.round((data.rejectedCount / totalApps) * 100)}%` }} className="h-full bg-red-500"></div>
+        <div className="h-full bg-slate-600 flex-1"></div>
+      </div>
+    </div>
+  );
+};
+
 const ResumesPage = () => {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
@@ -208,6 +240,9 @@ const ResumesPage = () => {
                     Set Primary
                   </button>
                 )}
+              </div>
+              <div className="mt-4 border-t border-white/5 pt-4">
+                <ResumePerformanceBar resumeId={resume._id} />
               </div>
             </motion.div>
           ))}

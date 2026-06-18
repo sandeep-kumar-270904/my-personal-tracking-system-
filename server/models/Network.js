@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
 
 const networkSchema = new mongoose.Schema({
   userId: {
@@ -42,7 +43,13 @@ const networkSchema = new mongoose.Schema({
   },
   followUpDate: {
     type: Date
+  },
+  linkedApplication: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application'
   }
 }, { timestamps: true });
+
+networkSchema.plugin(timelinePlugin);
 
 module.exports = mongoose.model('Network', networkSchema);

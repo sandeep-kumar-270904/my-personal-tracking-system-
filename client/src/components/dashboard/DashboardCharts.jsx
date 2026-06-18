@@ -153,6 +153,32 @@ const DashboardCharts = ({ charts, heatmap }) => {
           <div className="flex h-full items-center justify-center"><p className="text-slate-500">No DSA problems solved</p></div>
         )}
       </div>
+
+      {/* Application ROI by Source */}
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
+        <h3 className="text-lg font-bold text-white mb-6">Application ROI by Source</h3>
+        {roi && roi.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={roi} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+              <XAxis type="number" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}%`} />
+              <YAxis dataKey="source" type="category" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} width={80} />
+              <Tooltip 
+                cursor={{ fill: '#334155', opacity: 0.4 }} 
+                contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }}
+                formatter={(value, name) => [name === 'roiPercent' ? `${value}%` : value, name === 'roiPercent' ? 'ROI (Interview Rate)' : name]}
+              />
+              <Bar dataKey="roiPercent" name="ROI (Interview Rate)" fill="#10b981" radius={[0, 4, 4, 0]}>
+                {roi.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center"><p className="text-slate-500">No ROI data</p></div>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, LayoutGrid, List, Filter, Download } from 'lucide-react';
@@ -20,8 +20,6 @@ import Toolbar from '../components/applications/Toolbar';
 import SuggestionsPanel from '../components/applications/SuggestionsPanel';
 import WeeklyReviewWizard from '../components/applications/WeeklyReviewWizard';
 import BattlePlanWizard from '../components/applications/BattlePlanWizard';
-import StatsBar from '../components/applications/StatsBar';
-import Toolbar from '../components/applications/Toolbar';
 
 const fetchApplications = async ({ queryKey }) => {
   const [_key, params] = queryKey;
@@ -132,6 +130,21 @@ const ApplicationsPage = () => {
   const daysSinceReview = lastReviewedAt ? Math.floor((new Date() - new Date(lastReviewedAt)) / (1000 * 60 * 60 * 24)) : 100;
   const needsReviewNudge = daysSinceReview > 10;
 
+  useEffect(() => {
+    if (needsReviewNudge && !sessionStorage.getItem('review_nudged')) {
+      toast('Time for a weekly review! Take 2 minutes to reflect.', {
+        icon: '📅',
+        duration: 6000,
+        style: {
+          borderRadius: '10px',
+          background: '#333',
+          color: '#fff',
+        },
+      });
+      sessionStorage.setItem('review_nudged', 'true');
+    }
+  }, [needsReviewNudge]);
+
   const applications = data?.applications || [];
   const totalCount = data?.totalCount || 0;
 
@@ -180,12 +193,12 @@ const ApplicationsPage = () => {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col space-y-6">
-        {/* Section 1: Page Header with Live Stats Bar */}
-        <header>
+      <div className="max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col space-y-8">
+        {/* Section 1: Page Header */}
+        <header className="mb-2">
           {/* Goal Banner */}
           {weeklyGoal && isWednesdayOrLater && weeklyGoal.applications < weeklyGoal.applicationsTarget && !isGoalDismissed && (
-            <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl p-3 mb-4 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl p-3 mb-6 flex justify-between items-center">
               <div className="flex flex-col">
                 <span className="text-sm text-blue-200 font-medium">You're at {weeklyGoal.applications}/{weeklyGoal.applicationsTarget} applications this week — {weeklyGoal.applicationsTarget - weeklyGoal.applications} more to hit your goal by Sunday.</span>
                 <div className="w-full bg-black/20 rounded-full h-1.5 mt-2">
@@ -201,19 +214,10 @@ const ApplicationsPage = () => {
             </div>
           )}
           {weeklyGoal && weeklyGoal.applications >= weeklyGoal.applicationsTarget && !isGoalDismissed && (
-             <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-3 mb-4 flex justify-between items-center">
+             <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-3 mb-6 flex justify-between items-center">
                <span className="text-sm text-emerald-300 font-medium">Weekly goal hit! 🎯 {weeklyGoal.applications}/{weeklyGoal.applicationsTarget} applications this week</span>
                <button onClick={() => setIsGoalDismissed(true)} className="p-1 hover:bg-white/10 rounded-full"><X className="w-4 h-4 text-emerald-300" /></button>
              </div>
-          )}
-
-          {needsReviewNudge && (
-            <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-3 mb-4 flex justify-between items-center cursor-pointer hover:bg-purple-500/30 transition-colors" onClick={() => setIsWeeklyReviewOpen(true)}>
-              <div className="flex items-center gap-3">
-                <span className="text-xl">📅</span>
-                <span className="text-sm text-purple-200 font-medium">It's been a while since your last weekly review. Take 2 minutes to reflect on your progress!</span>
-              </div>
-            </div>
           )}
 
           <div className="flex justify-between items-end mb-4">
@@ -232,21 +236,21 @@ const ApplicationsPage = () => {
                 )}
               </div>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setIsBattlePlanOpen(true)} className="btn-secondary flex items-center gap-2 border-[#ff6b00]/30 text-[#ff6b00] hover:bg-[#ff6b00]/10">
+            <div className="flex flex-wrap items-center gap-3">
+              <button onClick={() => setIsBattlePlanOpen(true)} className="btn-secondary px-4 py-2 text-sm flex items-center gap-2 border-[#ff6b00]/30 text-[#ff6b00] hover:bg-[#ff6b00]/10">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
                 Battle Plan
               </button>
-              <button onClick={() => setIsWeeklyReviewOpen(true)} className="btn-secondary flex items-center gap-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
+              <button onClick={() => setIsWeeklyReviewOpen(true)} className="btn-secondary px-4 py-2 text-sm flex items-center gap-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                 Weekly Review
               </button>
               <div className="relative group">
-                <button className="btn-secondary flex items-center gap-2 relative" onClick={() => setIsSuggestionsOpen(!isSuggestionsOpen)}>
+                <button className="btn-secondary px-4 py-2 text-sm flex items-center gap-2 relative" onClick={() => setIsSuggestionsOpen(!isSuggestionsOpen)}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                   Suggestions
                   {pendingSuggestionsCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-[#1a1b26]">
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border border-[#1a1b26]">
                       {pendingSuggestionsCount}
                     </span>
                   )}
@@ -258,7 +262,7 @@ const ApplicationsPage = () => {
                 )}
               </div>
               <div className="relative group">
-                <button className="btn-secondary flex items-center gap-2">
+                <button className="btn-secondary px-4 py-2 text-sm flex items-center gap-2">
                   <Download className="w-4 h-4" /> Export / Share
                 </button>
                 <div className="absolute right-0 mt-2 w-48 bg-[#1a1b26] border border-white/10 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 overflow-hidden">
@@ -267,7 +271,7 @@ const ApplicationsPage = () => {
                   <button onClick={() => setIsImportModalOpen(true)} className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Import CSV</button>
                 </div>
               </div>
-              <button onClick={() => { setEditingApp(null); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2">
+              <button onClick={() => { setEditingApp(null); setIsModalOpen(true); }} className="btn-primary px-5 py-2 text-sm flex items-center gap-2">
                 <Plus className="w-5 h-5" /> New Application
               </button>
             </div>

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
 
 const dsaSchema = new mongoose.Schema({
   userId: {
@@ -37,5 +38,7 @@ const dsaSchema = new mongoose.Schema({
     default: '',
   },
 }, { timestamps: true });
+
+dsaSchema.plugin(timelinePlugin);
 
 module.exports = mongoose.model('DSA', dsaSchema);

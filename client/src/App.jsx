@@ -26,6 +26,7 @@ import ContestsPage from './pages/ContestsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import SettingsPage from './pages/SettingsPage';
 import PublicProfile from './pages/PublicProfile';
+import JourneyPage from './pages/JourneyPage';
 
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -76,6 +77,7 @@ function App() {
             <Route path="resources" element={<ResourcesPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="ai-analyzer" element={<AIAnalyzerPage />} />
+            <Route path="journey" element={<JourneyPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

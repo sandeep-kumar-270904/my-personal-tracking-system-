@@ -423,7 +423,6 @@ const SettingsPage = () => {
                     </div>
                   </div>
                 </div>
-              </div>
                 <div className="bg-white/5 p-6 rounded-xl border border-white/10 mt-6">
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-red-500/10 rounded-lg text-red-400 shrink-0">
