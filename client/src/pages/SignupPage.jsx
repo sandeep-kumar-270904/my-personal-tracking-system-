@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Loader2, Target, Code2, Trophy, BadgeDollarSign, ChevronLeft } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
+import { FaGithub, FaLinkedinIn } from 'react-icons/fa';
 
 // Standardized Google Icon SVG
 const GoogleIcon = () => (
@@ -51,6 +52,23 @@ const SignupPage = () => {
     },
     onError: () => setError('Google Signup Failed'),
   });
+
+  const handleGithubSignup = () => {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    if (!clientId) return setError('GitHub Client ID is missing');
+    const redirectUri = `${window.location.origin}/oauth/callback`;
+    const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=github`;
+    window.location.href = url;
+  };
+
+  const handleLinkedinSignup = () => {
+    const clientId = import.meta.env.VITE_LINKEDIN_CLIENT_ID;
+    if (!clientId) return setError('LinkedIn Client ID is missing');
+    const redirectUri = `${window.location.origin}/oauth/callback`;
+    const scope = 'openid profile email';
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=linkedin`;
+    window.location.href = url;
+  };
 
   useEffect(() => {
     let strength = 0;
@@ -236,16 +254,41 @@ const SignupPage = () => {
 
                   {step === 1 && (
                     <>
-                      <motion.button 
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        type="button"
-                        onClick={handleGoogleSignup}
-                        className="w-full flex items-center justify-center gap-3 bg-white text-black border border-[#2A2F3E] rounded-lg py-[10px] px-4 font-medium hover:bg-[#F5F5F5] transition-colors mb-6"
-                      >
-                        <GoogleIcon />
-                        Sign up with Google
-                      </motion.button>
+                      {/* Social Auth Buttons */}
+                      <div className="flex items-center justify-center gap-4 mb-6">
+                        <motion.button 
+                          whileHover={{ scale: 1.05, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          type="button"
+                          onClick={handleGoogleSignup}
+                          className="w-12 h-12 rounded-full flex items-center justify-center bg-white border border-[#2A2F3E] hover:bg-[#F5F5F5] hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all"
+                          title="Sign up with Google"
+                        >
+                          <GoogleIcon />
+                        </motion.button>
+
+                        <motion.button 
+                          whileHover={{ scale: 1.05, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          type="button"
+                          onClick={handleGithubSignup}
+                          className="w-12 h-12 rounded-full flex items-center justify-center bg-[#24292e] text-white border border-[#2A2F3E] hover:bg-[#2f363d] hover:shadow-[0_0_15px_rgba(36,41,46,0.3)] transition-all"
+                          title="Sign up with GitHub"
+                        >
+                          <FaGithub className="w-5 h-5" />
+                        </motion.button>
+
+                        <motion.button 
+                          whileHover={{ scale: 1.05, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          type="button"
+                          onClick={handleLinkedinSignup}
+                          className="w-12 h-12 rounded-full flex items-center justify-center bg-[#0a66c2] text-white border border-[#2A2F3E] hover:bg-[#004182] hover:shadow-[0_0_15px_rgba(10,102,194,0.3)] transition-all"
+                          title="Sign up with LinkedIn"
+                        >
+                          <FaLinkedinIn className="w-5 h-5" />
+                        </motion.button>
+                      </div>
 
                       <div className="flex items-center gap-4 mb-6">
                         <div className="flex-1 h-px bg-[#2A2F3E]"></div>

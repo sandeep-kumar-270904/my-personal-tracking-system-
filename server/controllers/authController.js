@@ -294,6 +294,131 @@ const googleAuth = async (req, res) => {
   }
 };
 
+const githubAuth = async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code
+      })
+    });
+    
+    const tokenData = await tokenResponse.json();
+    if (tokenData.error) {
+      return res.status(400).json({ message: 'GitHub auth failed: ' + tokenData.error_description });
+    }
+    
+    const accessToken = tokenData.access_token;
+    
+    const userResponse = await fetch('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const userData = await userResponse.json();
+    
+    const emailResponse = await fetch('https://api.github.com/user/emails', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const emailData = await emailResponse.json();
+    const primaryEmailObj = emailData.find(e => e.primary) || emailData[0];
+    const email = primaryEmailObj?.email;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'GitHub email not accessible' });
+    }
+    
+    const name = userData.name || userData.login;
+    
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        password: crypto.randomBytes(20).toString('hex'),
+        isEmailVerified: true,
+      });
+    }
+    
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isEmailVerified: user.isEmailVerified,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error('GitHub Auth Error:', error);
+    res.status(500).json({ message: 'GitHub authentication failed' });
+  }
+};
+
+const linkedinAuth = async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    const params = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      client_id: process.env.LINKEDIN_CLIENT_ID,
+      client_secret: process.env.LINKEDIN_CLIENT_SECRET,
+      redirect_uri: `${process.env.CLIENT_URL || 'http://localhost:5173'}/oauth/callback`
+    });
+    
+    const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+    
+    const tokenData = await tokenResponse.json();
+    if (tokenData.error) {
+      return res.status(400).json({ message: 'LinkedIn auth failed: ' + tokenData.error_description });
+    }
+    
+    const accessToken = tokenData.access_token;
+    
+    const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const userData = await userResponse.json();
+    
+    const email = userData.email;
+    const name = userData.name || `${userData.given_name} ${userData.family_name}`;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'LinkedIn email not accessible' });
+    }
+    
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        password: crypto.randomBytes(20).toString('hex'),
+        isEmailVerified: true,
+      });
+    }
+    
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isEmailVerified: user.isEmailVerified,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error('LinkedIn Auth Error:', error);
+    res.status(500).json({ message: 'LinkedIn authentication failed' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -303,4 +428,6 @@ module.exports = {
   resetPassword,
   verifyEmail,
   googleAuth,
+  githubAuth,
+  linkedinAuth,
 };

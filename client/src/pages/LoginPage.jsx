@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Loader2, Target, Code2, Trophy, BadgeDollarSign, Check } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
+import { FaGithub, FaLinkedinIn } from 'react-icons/fa';
 
 // Standardized Google Icon SVG
 const GoogleIcon = () => (
@@ -57,6 +58,23 @@ const LoginPage = () => {
     },
     onError: () => setError('Google Login Failed'),
   });
+
+  const handleGithubLogin = () => {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    if (!clientId) return toast.error('GitHub Client ID is missing');
+    const redirectUri = `${window.location.origin}/oauth/callback`;
+    const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=github`;
+    window.location.href = url;
+  };
+
+  const handleLinkedinLogin = () => {
+    const clientId = import.meta.env.VITE_LINKEDIN_CLIENT_ID;
+    if (!clientId) return toast.error('LinkedIn Client ID is missing');
+    const redirectUri = `${window.location.origin}/oauth/callback`;
+    const scope = 'openid profile email';
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=linkedin`;
+    window.location.href = url;
+  };
 
   return (
     <div className="min-h-screen flex font-['Plus_Jakarta_Sans'] text-slate-200">
@@ -152,17 +170,41 @@ const LoginPage = () => {
             </motion.div>
           )}
 
-          {/* Google Auth Button */}
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 bg-white text-black border border-[#2A2F3E] rounded-lg py-[10px] px-4 font-medium hover:bg-[#F5F5F5] transition-colors mb-6"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </motion.button>
+          {/* Social Auth Buttons */}
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <motion.button 
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-white border border-[#2A2F3E] hover:bg-[#F5F5F5] hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all"
+              title="Continue with Google"
+            >
+              <GoogleIcon />
+            </motion.button>
+
+            <motion.button 
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={handleGithubLogin}
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-[#24292e] text-white border border-[#2A2F3E] hover:bg-[#2f363d] hover:shadow-[0_0_15px_rgba(36,41,46,0.3)] transition-all"
+              title="Continue with GitHub"
+            >
+              <FaGithub className="w-5 h-5" />
+            </motion.button>
+
+            <motion.button 
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={handleLinkedinLogin}
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-[#0a66c2] text-white border border-[#2A2F3E] hover:bg-[#004182] hover:shadow-[0_0_15px_rgba(10,102,194,0.3)] transition-all"
+              title="Continue with LinkedIn"
+            >
+              <FaLinkedinIn className="w-5 h-5" />
+            </motion.button>
+          </div>
 
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6">

@@ -47,8 +47,14 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data);
   };
 
+  const socialLogin = async (provider, code) => {
+    const res = await api.post(`/auth/${provider}`, { code });
+    localStorage.setItem('token', res.data.token);
+    setUser(res.data);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, googleLogin }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, googleLogin, socialLogin }}>
       {children}
     </AuthContext.Provider>
   );
