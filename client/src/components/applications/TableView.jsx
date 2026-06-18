@@ -20,7 +20,7 @@ const PRIORITY_COLORS = {
   LOW: 'bg-gray-500'
 };
 
-const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearchParams }) => {
+const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearchParams, hasEnoughDataForPrediction }) => {
   const [selectedIds, setSelectedIds] = useState([]);
   
   const handleSelectAll = () => {
@@ -98,6 +98,7 @@ const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearc
               <th className="p-4 font-bold text-slate-400">Date Applied</th>
               <th className="p-4 font-bold text-slate-400">Priority</th>
               <th className="p-4 font-bold text-slate-400">Resume</th>
+              {hasEnoughDataForPrediction && <th className="p-4 font-bold text-slate-400 text-center">Prediction</th>}
               <th className="p-4 font-bold text-slate-400 w-32">Momentum</th>
               <th className="p-4 font-bold text-slate-400 text-right">Actions</th>
             </tr>
@@ -137,6 +138,18 @@ const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearc
                     </div>
                   </td>
                   <td className="p-4 text-slate-400 text-sm">{app.resumeId?.name || 'None'}</td>
+                  {hasEnoughDataForPrediction && (
+                    <td className="p-4 text-center">
+                      {(app.status !== 'OFFER' && app.status !== 'REJECTED') ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded border border-indigo-500/20 text-xs font-bold uppercase cursor-pointer hover:bg-indigo-500/20 transition-colors" title="Click row to predict outcome">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path></svg>
+                          Predict
+                        </div>
+                      ) : (
+                        <span className="text-slate-500 text-xs">—</span>
+                      )}
+                    </td>
+                  )}
                   <td className="p-4">
                     <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden relative">
                       <div 

@@ -112,8 +112,9 @@ exports.getWeeklyReviewData = async (req, res) => {
       updatedAt: { $lt: sevenDaysAgo }
     });
 
-    // We can just fetch all data for the client wizard
-    res.json({ stagnantApps });
+    const latestReview = await WeeklyReview.findOne({ userId: req.user.id }).sort({ createdAt: -1 });
+
+    res.json({ stagnantApps, latestReview });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

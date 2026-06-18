@@ -31,10 +31,11 @@ const StatsBar = () => {
     { label: 'Response Rate', value: `${stats.responseRate}%`, icon: Activity, color: 'text-[#ff6b00]' },
     { label: 'Avg Days to Response', value: stats.avgDaysToResponse, icon: Clock, color: 'text-purple-400' },
     { label: 'Active Pipeline', value: activePipeline, icon: AlertCircle, color: 'text-green-400' },
+    { label: 'Time Invested', value: `${Math.round((stats.totalEffortMinutes || 0) / 60)} hrs`, icon: Clock, color: 'text-[#ff6b00]' },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
       {statItems.map((stat, i) => (
         <div key={i} className="bg-[#13141f] p-4 rounded-2xl border border-white/5 shadow-lg flex items-center gap-4">
           <div className={`p-3 rounded-xl bg-white/5 ${stat.color}`}>

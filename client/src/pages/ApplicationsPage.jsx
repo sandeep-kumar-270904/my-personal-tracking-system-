@@ -111,6 +111,27 @@ const ApplicationsPage = () => {
     keepPreviousData: true
   });
 
+  const { data: suggestionsData } = useQuery({
+    queryKey: ['suggestions'],
+    queryFn: async () => {
+      const res = await api.get('/applications/suggestions');
+      return res.data;
+    }
+  });
+
+  const { data: latestReviewData } = useQuery({
+    queryKey: ['latestReview'],
+    queryFn: async () => {
+      const res = await api.get('/applications/weekly-review');
+      return res.data;
+    }
+  });
+
+  const pendingSuggestionsCount = suggestionsData?.filter(s => !s.isDismissed)?.length || 0;
+  const lastReviewedAt = latestReviewData?.latestReview?.createdAt;
+  const daysSinceReview = lastReviewedAt ? Math.floor((new Date() - new Date(lastReviewedAt)) / (1000 * 60 * 60 * 24)) : 100;
+  const needsReviewNudge = daysSinceReview > 10;
+
   const applications = data?.applications || [];
   const totalCount = data?.totalCount || 0;
 
@@ -186,14 +207,30 @@ const ApplicationsPage = () => {
              </div>
           )}
 
+          {needsReviewNudge && (
+            <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-3 mb-4 flex justify-between items-center cursor-pointer hover:bg-purple-500/30 transition-colors" onClick={() => setIsWeeklyReviewOpen(true)}>
+              <div className="flex items-center gap-3">
+                <span className="text-xl">📅</span>
+                <span className="text-sm text-purple-200 font-medium">It's been a while since your last weekly review. Take 2 minutes to reflect on your progress!</span>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between items-end mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                Applications
-                <span className="text-sm font-normal text-slate-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                  {totalCount} Total
-                </span>
-              </h1>
+              <div className="flex items-center gap-4 mb-1">
+                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                  Applications
+                  <span className="text-sm font-normal text-slate-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                    {totalCount} Total
+                  </span>
+                </h1>
+                {lastReviewedAt && (
+                  <span className="text-xs text-slate-500 font-medium mt-1">
+                    Last reviewed: {new Date(lastReviewedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setIsBattlePlanOpen(true)} className="btn-secondary flex items-center gap-2 border-[#ff6b00]/30 text-[#ff6b00] hover:bg-[#ff6b00]/10">
@@ -205,9 +242,14 @@ const ApplicationsPage = () => {
                 Weekly Review
               </button>
               <div className="relative group">
-                <button className="btn-secondary flex items-center gap-2" onClick={() => setIsSuggestionsOpen(!isSuggestionsOpen)}>
+                <button className="btn-secondary flex items-center gap-2 relative" onClick={() => setIsSuggestionsOpen(!isSuggestionsOpen)}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                   Suggestions
+                  {pendingSuggestionsCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-[#1a1b26]">
+                      {pendingSuggestionsCount}
+                    </span>
+                  )}
                 </button>
                 {isSuggestionsOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-[#1a1b26] border border-white/10 rounded-xl shadow-xl z-50">
@@ -266,6 +308,7 @@ const ApplicationsPage = () => {
                 <TableView 
                   applications={displayApps} 
                   totalCount={totalCount}
+                  hasEnoughDataForPrediction={data?.hasEnoughDataForPrediction}
                   page={parseInt(page)}
                   limit={parseInt(limit)}
                   setSearchParams={setSearchParams}

@@ -54,11 +54,15 @@ const getApplications = async (req, res) => {
 
     const totalCount = await Application.countDocuments(query);
 
+    const terminalCount = await Application.countDocuments({ userId: req.user._id, status: { $in: ['OFFER', 'REJECTED'] }, deletedAt: null });
+    const hasEnoughDataForPrediction = terminalCount >= 10;
+
     res.json({
       applications,
       totalCount,
       page: parseInt(page),
-      totalPages: Math.ceil(totalCount / parseInt(limit))
+      totalPages: Math.ceil(totalCount / parseInt(limit)),
+      hasEnoughDataForPrediction
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -284,14 +288,21 @@ const getAppStats = async (req, res) => {
       { $limit: 5 }
     ]);
 
+    const effortAgg = await Application.aggregate([
+      matchStage,
+      { $group: { _id: null, totalEffort: { $sum: '$effortMinutes' } } }
+    ]);
+    const totalEffortMinutes = effortAgg[0]?.totalEffort || 0;
+
     res.json({
       totalApplications: totalCount,
       byStatus: statusCounts,
       bySource: bySource.reduce((acc, curr) => { acc[curr._id] = curr.count; return acc; }, {}),
       shortlistRate: shortlistRate.toFixed(1),
       responseRate: responseRate.toFixed(1),
-      avgDaysToResponse: 5, // placeholder, hard to calculate purely in mongo without complex timeline aggregation
-      topCompanies
+      avgDaysToResponse: 5, // placeholder
+      topCompanies,
+      totalEffortMinutes
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

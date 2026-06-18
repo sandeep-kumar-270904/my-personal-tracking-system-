@@ -24,7 +24,7 @@ const SortableAppCard = ({ app, isOverlay = false }) => {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const isDead = app.momentumScore < 20;
+  const isDead = app.momentumScore < 30;
 
   return (
     <div 
