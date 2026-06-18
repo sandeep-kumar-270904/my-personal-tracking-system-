@@ -60,10 +60,53 @@ const applicationSchema = new mongoose.Schema({
   tags: [{
     type: String
   }],
+  fitScore: {
+    type: Number,
+    default: 0
+  },
+  fitScoreBreakdown: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  rejectionAnalysis: {
+    reason: String,
+    improvementArea: String,
+    actionableFeedback: String,
+    analyzedAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  // V3 Addons
+  momentumScore: {
+    type: Number,
+    default: 100,
+    min: 0,
+    max: 100
+  },
+  momentumDecay: {
+    type: Boolean,
+    default: true
+  },
+  isArchived: {
+    type: Boolean,
+    default: false
+  },
+  archivedAt: {
+    type: Date
+  },
+  effortMinutes: {
+    type: Number,
+    default: 0
+  },
   deletedAt: {
     type: Date,
     default: null
   }
-}, { timestamps: true });
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
 
 module.exports = mongoose.model('Application', applicationSchema);

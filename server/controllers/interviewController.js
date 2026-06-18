@@ -12,13 +12,53 @@ const getInterviews = async (req, res) => {
   }
 };
 
+const Contest = require('../models/Contest');
+const Event = require('../models/Event');
+const Notification = require('../models/Notification');
+
 // @desc    Create new interview
 // @route   POST /api/interviews
 // @access  Private
 const createInterview = async (req, res) => {
-  const { company, role, scheduledAt, round, type, notes, status, interviewer, followUpDate } = req.body;
+  const { company, role, scheduledAt, round, type, notes, status, interviewer, followUpDate, ignoreWarning } = req.body;
 
   try {
+    const interviewTime = new Date(scheduledAt);
+
+    if (!ignoreWarning && scheduledAt) {
+      // 1. Check existing interviews (2 hour window)
+      const twoHoursBefore = new Date(interviewTime.getTime() - 2 * 60 * 60 * 1000);
+      const twoHoursAfter = new Date(interviewTime.getTime() + 2 * 60 * 60 * 1000);
+
+      const existingInterview = await Interview.findOne({
+        userId: req.user._id,
+        scheduledAt: { $gte: twoHoursBefore, $lte: twoHoursAfter }
+      });
+
+      if (existingInterview) {
+        return res.status(200).json({ 
+          isConflict: true, 
+          warning: `You already have an interview with ${existingInterview.company} at ${new Date(existingInterview.scheduledAt).toLocaleTimeString()} — are you sure?` 
+        });
+      }
+
+      // 2. Check contests (3 hour window)
+      const threeHoursBefore = new Date(interviewTime.getTime() - 3 * 60 * 60 * 1000);
+      const threeHoursAfter = new Date(interviewTime.getTime() + 3 * 60 * 60 * 1000);
+      
+      const existingContest = await Contest.findOne({
+        userId: req.user._id,
+        date: { $gte: threeHoursBefore, $lte: threeHoursAfter }
+      });
+
+      if (existingContest) {
+        return res.status(200).json({ 
+          isConflict: true, 
+          warning: `${existingContest.platform} contest starts within 3 hours of this interview — you may want to reschedule or skip the contest.` 
+        });
+      }
+    }
+
     const interview = await Interview.create({
       userId: req.user._id,
       company,
@@ -31,6 +71,30 @@ const createInterview = async (req, res) => {
       interviewer,
       followUpDate,
     });
+
+    if (scheduledAt) {
+      // Create Calendar event
+      await Event.create({
+        userId: req.user._id,
+        title: `Interview: ${company} - ${role}`,
+        type: 'INTERVIEW',
+        date: interviewTime,
+        description: `Round: ${round}, Type: ${type}`
+      });
+
+      // Create Notification 1 hour before
+      const notifyTime = new Date(interviewTime.getTime() - 60 * 60 * 1000);
+      if (notifyTime > new Date()) {
+        await Notification.create({
+          userId: req.user._id,
+          title: `Upcoming Interview: ${company}`,
+          message: `Your interview for ${role} is starting in 1 hour.`,
+          type: 'REMINDER',
+          scheduledFor: notifyTime,
+          isRead: false
+        });
+      }
+    }
 
     res.status(201).json(interview);
   } catch (error) {

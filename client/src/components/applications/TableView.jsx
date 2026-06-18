@@ -98,7 +98,7 @@ const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearc
               <th className="p-4 font-bold text-slate-400">Date Applied</th>
               <th className="p-4 font-bold text-slate-400">Priority</th>
               <th className="p-4 font-bold text-slate-400">Resume</th>
-              <th className="p-4 font-bold text-slate-400">Days Since</th>
+              <th className="p-4 font-bold text-slate-400 w-32">Momentum</th>
               <th className="p-4 font-bold text-slate-400 text-right">Actions</th>
             </tr>
           </thead>
@@ -137,10 +137,17 @@ const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearc
                     </div>
                   </td>
                   <td className="p-4 text-slate-400 text-sm">{app.resumeId?.name || 'None'}</td>
-                  <td className="p-4 text-sm font-medium">
-                    <span className={daysSince > 14 && app.status === 'APPLIED' ? 'text-red-400' : 'text-slate-400'}>
-                      {daysSince} days
-                    </span>
+                  <td className="p-4">
+                    <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden relative">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-1000 ${
+                          app.momentumScore >= 80 ? 'bg-emerald-500' :
+                          app.momentumScore >= 50 ? 'bg-blue-500' :
+                          app.momentumScore >= 20 ? 'bg-amber-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${app.momentumScore ?? 100}%` }}
+                      ></div>
+                    </div>
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>

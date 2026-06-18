@@ -7,9 +7,21 @@ const fs = require('fs');
 
 const getApplications = async (req, res) => {
   try {
-    const { page = 1, limit = 20, status, source, priority, search, sortBy = 'dateApplied', sortOrder = 'desc' } = req.query;
+    const { page = 1, limit = 20, status, source, priority, search, sortBy = 'dateApplied', sortOrder = 'desc', isArchived = 'false', isDead = 'false' } = req.query;
     
     let query = { userId: req.user._id, deletedAt: null };
+
+    // V3: Archive filter
+    if (isArchived === 'true') {
+      query.isArchived = true;
+    } else {
+      query.isArchived = false;
+    }
+
+    // V3: Dead filter
+    if (isDead === 'true') {
+      query.momentumScore = { $lt: 20 };
+    }
 
     if (status && status !== 'All') {
       const statusArray = status.split(',');
@@ -84,9 +96,53 @@ const getApplicationTimeline = async (req, res) => {
   }
 };
 
+const { calculateFitScore } = require('../services/fitScoreService');
+
+// Levenshtein distance helper
+const levenshtein = (a, b) => {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
+  for (let i = 0; i <= a.length; i += 1) matrix[i][0] = i;
+  for (let j = 0; j <= b.length; j += 1) matrix[0][j] = j;
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j] + 1,
+        matrix[i - 1][j - 1] + indicator
+      );
+    }
+  }
+  return matrix[a.length][b.length];
+};
+
 const createApplication = async (req, res) => {
   try {
-    const { company, role, status = 'APPLIED', dateApplied = new Date(), resumeId, jobDescriptionUrl, source = 'ONLINE', priority = 'MEDIUM', notes, tags, link } = req.body;
+    const { company, role, status = 'APPLIED', dateApplied = new Date(), resumeId, jobDescriptionUrl, source = 'ONLINE', priority = 'MEDIUM', notes, tags, link, ignoreDuplicate } = req.body;
+
+    // A4: Duplicate detection
+    if (!ignoreDuplicate) {
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      
+      const recentApps = await Application.find({ 
+        userId: req.user._id, 
+        deletedAt: null,
+        createdAt: { $gte: ninetyDaysAgo }
+      });
+      
+      const duplicate = recentApps.find(app => {
+        const compDist = levenshtein(app.company.toLowerCase(), company.toLowerCase());
+        const roleDist = levenshtein(app.role.toLowerCase(), role.toLowerCase());
+        return compDist < 3 && roleDist < 3;
+      });
+
+      if (duplicate) {
+        return res.status(200).json({ isDuplicate: true, existingApp: duplicate });
+      }
+    }
 
     const application = new Application({
       userId: req.user._id,
@@ -107,6 +163,13 @@ const createApplication = async (req, res) => {
 
     await logTimelineEvent(createdApplication._id, 'Application created', null, status, notes ? `Notes: ${notes}` : '');
 
+    // A1: Calculate Fit Score in background
+    calculateFitScore(createdApplication).then(async ({ score, breakdown }) => {
+       createdApplication.fitScore = score;
+       createdApplication.fitScoreBreakdown = breakdown;
+       await createdApplication.save();
+    });
+
     res.status(201).json(createdApplication);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -124,9 +187,13 @@ const updateApplication = async (req, res) => {
     const previousStatus = application.status;
     const { status, noteForTimeline } = req.body;
 
+    let roleOrCompanyChanged = false;
     // Handle updates
     Object.keys(req.body).forEach(key => {
       if (key !== 'noteForTimeline') {
+        if ((key === 'role' || key === 'company') && application[key] !== req.body[key]) {
+          roleOrCompanyChanged = true;
+        }
         application[key] = req.body[key];
       }
     });
@@ -137,6 +204,15 @@ const updateApplication = async (req, res) => {
       await logTimelineEvent(application._id, `Status changed to ${status}`, previousStatus, status, noteForTimeline || '');
     } else if (noteForTimeline) {
        await logTimelineEvent(application._id, `Note added`, application.status, application.status, noteForTimeline);
+    }
+
+    // A1: Recalculate fit score if role or company changed
+    if (roleOrCompanyChanged) {
+      calculateFitScore(updatedApplication).then(async ({ score, breakdown }) => {
+         updatedApplication.fitScore = score;
+         updatedApplication.fitScoreBreakdown = breakdown;
+         await updatedApplication.save();
+      });
     }
 
     res.json(updatedApplication);

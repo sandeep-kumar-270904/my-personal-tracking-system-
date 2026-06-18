@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { X, Building2, Briefcase, Calendar, Link as LinkIcon, FileText, CheckCircle2 } from 'lucide-react';
+import { X, Building2, Briefcase, Calendar, Link as LinkIcon, FileText, CheckCircle2, Edit2, AlertCircle, Wand2, Save } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
-const AddApplicationModal = ({ isOpen, onClose, editingApp }) => {
+const AddApplicationModal = ({ isOpen, onClose, editingApp, onViewExisting }) => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     company: '',
@@ -19,11 +19,24 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp }) => {
     tags: '',
     notes: ''
   });
+  
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [ignoreDuplicate, setIgnoreDuplicate] = useState(false);
+  const [jdAnalysis, setJdAnalysis] = useState(null);
+  const [isAnalyzingJD, setIsAnalyzingJD] = useState(false);
 
   const { data: resumes } = useQuery({
     queryKey: ['resumes'],
     queryFn: async () => {
       const res = await api.get('/resumes');
+      return res.data;
+    }
+  });
+
+  const { data: templates } = useQuery({
+    queryKey: ['applicationTemplates'],
+    queryFn: async () => {
+      const res = await api.get('/applications/templates');
       return res.data;
     }
   });
@@ -46,20 +59,78 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp }) => {
     }
   }, [editingApp]);
 
+  const handleTemplateSelect = (e) => {
+    const templateId = e.target.value;
+    if (!templateId) return;
+    const template = templates?.find(t => t._id === templateId);
+    if (template) {
+      setFormData(prev => ({
+        ...prev,
+        status: template.defaultStatus || prev.status,
+        source: template.defaultSource || prev.source,
+        priority: template.defaultPriority || prev.priority,
+        notes: template.defaultNotes || prev.notes,
+        tags: template.defaultTags?.length ? template.defaultTags.join(', ') : prev.tags
+      }));
+      toast.success(`Template applied: ${template.name}`);
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    try {
+      const name = prompt('Enter a name for this template:');
+      if (!name) return;
+      await api.post('/applications/templates', {
+        name,
+        defaultStatus: formData.status,
+        defaultSource: formData.source,
+        defaultPriority: formData.priority,
+        defaultNotes: formData.notes,
+        defaultTags: formData.tags.split(',').map(t => t.trim()).filter(Boolean)
+      });
+      queryClient.invalidateQueries(['applicationTemplates']);
+      toast.success('Template saved');
+    } catch (error) {
+      toast.error('Failed to save template');
+    }
+  };
+
+  const handleAnalyzeJD = async () => {
+    if (!formData.jobDescriptionUrl) {
+      return toast.error("Please enter a JD URL first.");
+    }
+    setIsAnalyzingJD(true);
+    try {
+      const res = await api.post('/applications/analyze-jd', { url: formData.jobDescriptionUrl });
+      setJdAnalysis(res.data);
+      toast.success("JD Analyzed successfully!");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Analysis failed");
+    } finally {
+      setIsAnalyzingJD(false);
+    }
+  };
+
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const mutation = useMutation({
     mutationFn: async (data) => {
-      const payload = { ...data, tags: data.tags.split(',').map(t => t.trim()).filter(Boolean) };
+      const payload = { ...data, tags: data.tags.split(',').map(t => t.trim()).filter(Boolean), ignoreDuplicate };
       if (editingApp) {
-        await api.patch(`/applications/${editingApp._id}`, payload);
+        const res = await api.patch(`/applications/${editingApp._id}`, payload);
+        return { isEdit: true, data: res.data };
       } else {
-        await api.post('/applications', payload);
+        const res = await api.post('/applications', payload);
+        return { isEdit: false, data: res.data };
       }
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (response.data.isDuplicate) {
+        setDuplicateWarning(response.data.existingApp);
+        return; // Don't close modal or invalidate yet
+      }
       queryClient.invalidateQueries(['applications']);
       queryClient.invalidateQueries(['applicationsStats']);
       if (editingApp) queryClient.invalidateQueries(['application', editingApp._id]);
@@ -109,7 +180,75 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp }) => {
           </div>
 
           <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+            {duplicateWarning ? (
+              <div className="flex flex-col items-center justify-center space-y-6 py-8">
+                <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-amber-500" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-xl font-bold text-white mb-2">Possible Duplicate Detected</h3>
+                  <p className="text-slate-400 max-w-sm">
+                    You may have already applied here. You applied to <strong className="text-white">{duplicateWarning.company}</strong> for <strong className="text-white">{duplicateWarning.role}</strong> on <strong className="text-white">{new Date(duplicateWarning.dateApplied).toLocaleDateString()}</strong>. Is this a different application?
+                  </p>
+                </div>
+                <div className="flex flex-col w-full gap-3 max-w-sm">
+                   <button 
+                    type="button"
+                    onClick={() => {
+                      setIgnoreDuplicate(true);
+                      setDuplicateWarning(null);
+                      // Let useEffect or subsequent submit handle it, or just call mutation.mutate
+                      mutation.mutate({ ...formData, ignoreDuplicate: true });
+                    }}
+                    className="w-full px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium"
+                   >
+                     Yes, add anyway
+                   </button>
+                   <button 
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      if (onViewExisting) onViewExisting(duplicateWarning);
+                    }}
+                    className="w-full px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium"
+                   >
+                     No, view existing application
+                   </button>
+                   <button 
+                    type="button"
+                    onClick={() => {
+                       // Update the existing one. For simplicity, just patch the existing one with current formData minus company/role
+                       api.patch(`/applications/${duplicateWarning._id}`, { ...formData, tags: formData.tags.split(',').map(t=>t.trim()).filter(Boolean) })
+                         .then(() => {
+                           queryClient.invalidateQueries(['applications']);
+                           toast.success('Merged successfully');
+                           onClose();
+                           if (onViewExisting) onViewExisting(duplicateWarning);
+                         });
+                    }}
+                    className="w-full px-4 py-2 bg-[#ff6b00] hover:bg-[#ff6b00]/90 rounded-xl text-white font-medium"
+                   >
+                     Merge — update existing one
+                   </button>
+                </div>
+              </div>
+            ) : (
             <form id="app-form" onSubmit={handleSubmit} className="space-y-5">
+              {!editingApp && templates?.length > 0 && (
+                <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl mb-4">
+                  <label className="text-sm font-semibold text-slate-300 block mb-2">Use Template</label>
+                  <select 
+                    onChange={handleTemplateSelect}
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#ff6b00]"
+                  >
+                    <option value="">Select a template to auto-fill fields...</option>
+                    {templates.map(t => (
+                      <option key={t._id} value={t._id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Company */}
                 <div className="space-y-2">
@@ -245,7 +384,12 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-300">Job Description Link</label>
+                  <label className="text-sm font-semibold text-slate-300 flex justify-between">
+                    Job Description Link
+                    <button type="button" onClick={handleAnalyzeJD} disabled={isAnalyzingJD || !formData.jobDescriptionUrl} className="text-xs text-[#ff6b00] flex items-center gap-1 hover:underline disabled:opacity-50">
+                      {isAnalyzingJD ? 'Analyzing...' : <><Wand2 className="w-3 h-3"/> Analyze JD</>}
+                    </button>
+                  </label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input 
@@ -258,6 +402,19 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp }) => {
                     />
                   </div>
                 </div>
+
+                {jdAnalysis && (
+                  <div className="md:col-span-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 mt-2">
+                    <h4 className="text-sm font-bold text-indigo-400 mb-2 flex items-center gap-2"><Wand2 className="w-4 h-4"/> JD Analysis Summary</h4>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="text-slate-300"><span className="text-slate-500">Role Type:</span> {jdAnalysis.roleType}</div>
+                      <div className="text-slate-300"><span className="text-slate-500">Experience:</span> {jdAnalysis.experienceLevel}</div>
+                      <div className="text-slate-300 col-span-2"><span className="text-slate-500">Req Skills:</span> {jdAnalysis.requiredSkills?.join(', ')}</div>
+                      {jdAnalysis.ctcRange && <div className="text-slate-300 col-span-2"><span className="text-slate-500">CTC:</span> {jdAnalysis.ctcRange}</div>}
+                      {jdAnalysis.redFlags?.length > 0 && <div className="text-red-400 col-span-2 font-medium">Red Flags: {jdAnalysis.redFlags.join(', ')}</div>}
+                    </div>
+                  </div>
+                )}
 
                 {/* Tags */}
                 <div className="space-y-2 md:col-span-2">
@@ -287,32 +444,44 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp }) => {
 
               </div>
             </form>
+            )}
           </div>
 
-          <div className="p-6 border-t border-white/10 bg-white/[0.02] flex gap-3 justify-end rounded-b-2xl">
+          {!duplicateWarning && (
+          <div className="p-6 border-t border-white/10 bg-white/[0.02] flex gap-3 justify-between items-center rounded-b-2xl">
             <button 
               type="button"
-              onClick={onClose} 
-              className="px-6 py-2.5 rounded-xl font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+              onClick={handleSaveTemplate}
+              className="px-4 py-2.5 rounded-xl font-medium text-slate-400 hover:text-white flex items-center gap-2"
             >
-              Cancel
+              <Save className="w-4 h-4" /> Save as template
             </button>
-            <button 
-              type="submit"
-              form="app-form"
-              disabled={mutation.isLoading}
-              className="px-6 py-2.5 rounded-xl font-semibold text-white bg-[#ff6b00] hover:bg-[#ff6b00]/90 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {mutation.isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <CheckCircle2 className="w-5 h-5" />
-                  {editingApp ? 'Save Changes' : 'Add Application'}
-                </>
-              )}
-            </button>
+            <div className="flex gap-3">
+              <button 
+                type="button"
+                onClick={onClose} 
+                className="px-6 py-2.5 rounded-xl font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                form="app-form"
+                disabled={mutation.isLoading}
+                className="px-6 py-2.5 rounded-xl font-semibold text-white bg-[#ff6b00] hover:bg-[#ff6b00]/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {mutation.isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" />
+                    {editingApp ? 'Save Changes' : 'Add Application'}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
+          )}
         </motion.div>
       </div>
     </AnimatePresence>

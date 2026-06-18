@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from 'react';
-import { User, Bell, Shield, LogOut, Save, Download, Moon, Sun } from 'lucide-react';
+import { User, Bell, Shield, LogOut, Save, Download, Moon, Sun, Activity, Trash2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ const SettingsPage = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('profile');
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeletingData, setIsDeletingData] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   
   const [formData, setFormData] = useState({
@@ -125,6 +126,28 @@ const SettingsPage = () => {
     e.target.value = ''; // reset file input
   };
 
+  const { data: auditLogs, isLoading: isLoadingAudit } = useQuery({
+    queryKey: ['auditLogs'],
+    queryFn: async () => {
+      const res = await api.get('/applications/audit-logs');
+      return res.data;
+    },
+    enabled: activeTab === 'audit'
+  });
+
+  const handleRequestDataDeletion = async () => {
+    if (!window.confirm("Are you sure you want to request data deletion? This action may be irreversible once processed.")) return;
+    setIsDeletingData(true);
+    try {
+      await api.post('/applications/request-data-deletion');
+      toast.success('Data deletion request submitted successfully. You will receive an email confirmation.');
+    } catch (error) {
+      toast.error('Failed to submit data deletion request.');
+    } finally {
+      setIsDeletingData(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 w-full max-w-5xl mx-auto h-[calc(100vh-100px)] flex flex-col pb-10">
       <div className="mb-8">
@@ -146,6 +169,9 @@ const SettingsPage = () => {
           </button>
           <button onClick={() => setActiveTab('data')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold ${activeTab === 'data' ? 'bg-emerald-500/10 text-emerald-400 shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
             <Download className="w-5 h-5" /> Data & Privacy
+          </button>
+          <button onClick={() => setActiveTab('audit')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold ${activeTab === 'audit' ? 'bg-blue-500/10 text-blue-400 shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+            <Activity className="w-5 h-5" /> Audit & Compliance
           </button>
           <button onClick={() => setActiveTab('account')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold ${activeTab === 'account' ? 'bg-red-500/10 text-red-400 shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
             <Shield className="w-5 h-5" /> Account
@@ -397,6 +423,61 @@ const SettingsPage = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+                <div className="bg-white/5 p-6 rounded-xl border border-white/10 mt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-red-500/10 rounded-lg text-red-400 shrink-0">
+                      <Trash2 className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-white">Request Data Deletion (GDPR/CCPA)</h3>
+                      <p className="text-sm text-slate-400 mt-1 mb-4 leading-relaxed">Initiate a formal request to permanently delete all your tracking data, logs, and associated information from our servers.</p>
+                      
+                      <button 
+                        onClick={handleRequestDataDeletion}
+                        disabled={isDeletingData}
+                        className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-lg transition-colors border border-red-500/20 flex items-center gap-2"
+                      >
+                        {isDeletingData ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div> : <Trash2 className="w-4 h-4" />}
+                        Request Deletion
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'audit' && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 md:p-8 rounded-2xl border border-white/5 h-full flex flex-col">
+              <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><Activity className="w-6 h-6 text-blue-400" /> Audit Log</h2>
+              <p className="text-slate-400 text-sm mb-6">A chronological history of all updates and activities on your applications for compliance tracking.</p>
+              
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
+                {isLoadingAudit ? (
+                  <div className="animate-pulse space-y-4">
+                    {[1, 2, 3, 4].map(i => <div key={i} className="h-16 bg-white/5 rounded-xl"></div>)}
+                  </div>
+                ) : !auditLogs || auditLogs.length === 0 ? (
+                  <div className="text-center p-8 text-slate-500">No audit logs found.</div>
+                ) : (
+                  auditLogs.map(log => (
+                    <div key={log._id} className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">{log.action}</span>
+                          <span className="text-xs text-slate-500">on application</span>
+                          <span className="text-xs text-slate-300 font-medium">{log.applicationId}</span>
+                        </div>
+                        <p className="text-sm text-slate-300">{log.details}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-medium text-slate-400">{new Date(log.timestamp).toLocaleDateString()}</p>
+                        <p className="text-xs text-slate-500">{new Date(log.timestamp).toLocaleTimeString()}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </motion.div>
           )}

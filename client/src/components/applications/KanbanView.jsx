@@ -24,20 +24,35 @@ const SortableAppCard = ({ app, isOverlay = false }) => {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const isDead = app.momentumScore < 20;
+
   return (
     <div 
       ref={setNodeRef} 
       style={style} 
       {...attributes} 
       {...listeners}
-      className={`bg-white/5 p-3 rounded-xl border border-white/10 shadow-sm cursor-grab active:cursor-grabbing hover:bg-white/10 transition-colors ${isOverlay ? 'scale-105 shadow-xl rotate-2' : ''}`}
+      className={`bg-white/5 p-3 rounded-xl border ${isDead ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse' : 'border-white/10 shadow-sm'} cursor-grab active:cursor-grabbing hover:bg-white/10 transition-colors ${isOverlay ? 'scale-105 shadow-xl rotate-2' : ''}`}
     >
       <div className="flex items-center gap-2 mb-2">
         <img src={`https://logo.clearbit.com/${app.company.replace(/ /g, '').toLowerCase()}.com`} alt={app.company} className="w-6 h-6 rounded bg-white/10" onError={(e) => { e.target.style.display = 'none'; }} />
         <h4 className="font-semibold text-white text-sm truncate">{app.company}</h4>
       </div>
       <p className="text-xs text-slate-400 mb-2 truncate">{app.role}</p>
-      <div className="flex justify-between items-center text-[10px] text-slate-500">
+      
+      {/* Momentum Bar */}
+      <div className="w-full bg-white/5 rounded-full h-1 mt-1 mb-2 overflow-hidden relative" title={`Momentum: ${app.momentumScore ?? 100}`}>
+        <div 
+          className={`h-full rounded-full transition-all duration-1000 ${
+            app.momentumScore >= 80 ? 'bg-emerald-500' :
+            app.momentumScore >= 50 ? 'bg-blue-500' :
+            app.momentumScore >= 20 ? 'bg-amber-500' : 'bg-red-500'
+          }`}
+          style={{ width: `${app.momentumScore ?? 100}%` }}
+        ></div>
+      </div>
+
+      <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1">
         <span>{new Date(app.dateApplied).toLocaleDateString()}</span>
         <span className={`px-1.5 py-0.5 rounded border ${app.priority === 'HIGH' ? 'border-red-500/20 text-red-500 bg-red-500/10' : app.priority === 'MEDIUM' ? 'border-amber-500/20 text-amber-500 bg-amber-500/10' : 'border-gray-500/20 text-gray-500 bg-gray-500/10'}`}>
           {app.priority}
