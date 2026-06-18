@@ -56,49 +56,73 @@ const SettingsPage = () => {
     updateProfileMutation.mutate(formData);
   };
 
-  const handleExportData = async () => {
+  const handleExportJson = async () => {
     setIsExporting(true);
     try {
-      // Gather all necessary data
-      const [apps, res, dsa, ints, net, goals, offers, events] = await Promise.all([
-        api.get('/applications'),
-        api.get('/resumes'),
-        api.get('/dsa'),
-        api.get('/interviews'),
-        api.get('/network'),
-        api.get('/goals'),
-        api.get('/offers'),
-        api.get('/events')
-      ]);
-
-      const exportData = {
-        profile: user,
-        applications: apps.data,
-        resumes: res.data,
-        dsa: dsa.data,
-        interviews: ints.data,
-        network: net.data,
-        goals: goals.data,
-        offers: offers.data,
-        events: events.data,
-        exportedAt: new Date().toISOString()
-      };
-
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", `studenttracker_export_${new Date().getTime()}.json`);
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-      
+      const response = await api.get('/data/json', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `studenttracker_export_${Date.now()}.json`);
+      document.body.appendChild(link);
+      link.click();
       toast.success('Data exported successfully');
     } catch (error) {
-      console.error(error);
-      toast.error('Failed to export data');
+      toast.error('Failed to export JSON data');
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const response = await api.get('/data/csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'applications.csv');
+      document.body.appendChild(link);
+      link.click();
+      toast.success('Applications exported as CSV');
+    } catch (error) {
+      toast.error('Failed to export CSV');
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      toast.loading('Generating PDF...', { id: 'pdf' });
+      const response = await api.get('/data/pdf', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'placement_report.pdf');
+      document.body.appendChild(link);
+      link.click();
+      toast.success('PDF report generated', { id: 'pdf' });
+    } catch (error) {
+      toast.error('Failed to generate PDF', { id: 'pdf' });
+    }
+  };
+
+  const handleImportCsv = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      toast.loading('Importing data...', { id: 'import' });
+      const { data } = await api.post('/data/import-csv', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success(`Imported ${data.count} applications`, { id: 'import' });
+      queryClient.invalidateQueries(['applications']);
+    } catch (error) {
+      toast.error('Failed to import CSV', { id: 'import' });
+    }
+    e.target.value = ''; // reset file input
   };
 
   return (
@@ -113,6 +137,9 @@ const SettingsPage = () => {
         <div className="w-full md:w-64 space-y-2 shrink-0">
           <button onClick={() => setActiveTab('profile')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold ${activeTab === 'profile' ? 'bg-[#00f0ff]/10 text-[#00f0ff] shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
             <User className="w-5 h-5" /> Profile
+          </button>
+          <button onClick={() => setActiveTab('public_profile')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold ${activeTab === 'public_profile' ? 'bg-[#ff6b00]/10 text-[#ff6b00] shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+            <User className="w-5 h-5" /> Public Profile
           </button>
           <button onClick={() => setActiveTab('preferences')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold ${activeTab === 'preferences' ? 'bg-amber-500/10 text-amber-400 shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
             <Bell className="w-5 h-5" /> Preferences
@@ -179,6 +206,96 @@ const SettingsPage = () => {
             </motion.div>
           )}
 
+          {activeTab === 'public_profile' && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 md:p-8 rounded-2xl border border-white/5 space-y-8 h-full">
+              <h2 className="text-xl font-bold text-[#ff6b00] mb-2 flex items-center gap-2"><User className="w-5 h-5"/> Public Profile Settings</h2>
+              <p className="text-sm text-slate-400 mb-6">Create a shareable link to show off your placement journey to recruiters and peers.</p>
+              
+              <form onSubmit={handleSave} className="space-y-6 flex-1 flex flex-col h-[calc(100%-80px)]">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Username</label>
+                  <div className="flex rounded-xl overflow-hidden border border-white/10 focus-within:border-[#ff6b00] transition-colors">
+                    <span className="px-4 py-2.5 bg-[#13141f]/80 text-slate-500 border-r border-white/10 select-none">studenttracker.app/u/</span>
+                    <input 
+                      type="text" 
+                      className="w-full bg-[#13141f] px-4 py-2.5 text-white focus:outline-none" 
+                      placeholder="johndoe"
+                      value={formData.username || ''} 
+                      onChange={(e) => setFormData({...formData, username: e.target.value})} 
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">This will be your unique public URL.</p>
+                </div>
+
+                <div className="flex items-center justify-between py-4 border-b border-white/5">
+                  <div>
+                    <h3 className="font-bold text-white">Enable Public Profile</h3>
+                    <p className="text-sm text-slate-400 mt-1">Allow anyone with the link to view your profile.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={formData.isPublicProfile || false}
+                      onChange={(e) => setFormData({...formData, isPublicProfile: e.target.checked})}
+                    />
+                    <div className="w-11 h-6 bg-[#13141f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ff6b00] border border-white/10"></div>
+                  </label>
+                </div>
+
+                <div className="space-y-4 pt-4 opacity-100 transition-opacity">
+                  <h3 className="font-bold text-slate-300">Visibility Settings</h3>
+                  
+                  {[
+                    { key: 'showApplicationsCount', label: 'Show Applications Count' },
+                    { key: 'showDSAStats', label: 'Show DSA Stats' },
+                    { key: 'showStreak', label: 'Show Solving Streak' },
+                    { key: 'showTargetCompanies', label: 'Show Target Companies' },
+                    { key: 'isOpenToOpportunities', label: 'Show "Open to Opportunities" Badge' }
+                  ].map(({key, label}) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-sm text-slate-400">{label}</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={formData.publicProfileSettings?.[key] ?? true}
+                          onChange={(e) => setFormData({
+                            ...formData, 
+                            publicProfileSettings: {
+                              ...formData.publicProfileSettings,
+                              [key]: e.target.checked
+                            }
+                          })}
+                        />
+                        <div className="w-9 h-5 bg-[#13141f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff6b00] border border-white/10"></div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-6 border-t border-white/5 mt-auto flex justify-between items-center">
+                  {formData.username && formData.isPublicProfile ? (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/u/${formData.username}`);
+                        toast.success('Profile link copied to clipboard!');
+                      }}
+                      className="text-sm font-bold text-[#ff6b00] hover:text-[#ff6b00]/80 transition-colors"
+                    >
+                      Copy Profile Link
+                    </button>
+                  ) : <div></div>}
+                  <button disabled={updateProfileMutation.isPending} type="submit" className="flex items-center gap-2 px-6 py-2.5 bg-[#ff6b00] hover:bg-[#ff6b00]/80 disabled:opacity-50 text-white font-bold rounded-xl transition-colors shadow-lg">
+                    {updateProfileMutation.isPending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Save className="w-5 h-5" />}
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+
           {activeTab === 'preferences' && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 md:p-8 rounded-2xl border border-white/5 space-y-8 h-full">
               <h2 className="text-xl font-bold text-white mb-6">Application Preferences</h2>
@@ -218,7 +335,7 @@ const SettingsPage = () => {
           )}
 
           {activeTab === 'data' && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 md:p-8 rounded-2xl border border-white/5 h-full">
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 md:p-8 rounded-2xl border border-white/5 h-full overflow-y-auto custom-scrollbar">
               <h2 className="text-xl font-bold text-white mb-6">Data & Privacy</h2>
               
               <div className="space-y-6">
@@ -227,17 +344,56 @@ const SettingsPage = () => {
                     <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-400 shrink-0">
                       <Download className="w-6 h-6" />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 w-full">
                       <h3 className="font-bold text-white">Export My Data</h3>
-                      <p className="text-sm text-slate-400 mt-1 mb-4 leading-relaxed">Download a complete copy of all your data stored in StudentTracker, including applications, resumes, networking contacts, goals, and offers in JSON format.</p>
-                      <button 
-                        onClick={handleExportData}
-                        disabled={isExporting}
-                        className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold rounded-lg transition-colors border border-emerald-500/30 flex items-center gap-2"
-                      >
-                        {isExporting ? <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div> : <Download className="w-4 h-4" />}
-                        {isExporting ? 'Preparing Export...' : 'Export JSON Data'}
-                      </button>
+                      <p className="text-sm text-slate-400 mt-1 mb-4 leading-relaxed">Download a copy of your data in various formats for backup or analysis.</p>
+                      
+                      <div className="flex flex-wrap gap-3">
+                        <button 
+                          onClick={handleExportJson}
+                          disabled={isExporting}
+                          className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold rounded-lg transition-colors border border-emerald-500/30 flex items-center gap-2"
+                        >
+                          {isExporting ? <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div> : <Download className="w-4 h-4" />}
+                          Export JSON
+                        </button>
+                        
+                        <button 
+                          onClick={handleExportCsv}
+                          className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-bold rounded-lg transition-colors border border-blue-500/30 flex items-center gap-2"
+                        >
+                          <Download className="w-4 h-4" /> Export CSV
+                        </button>
+                        
+                        <button 
+                          onClick={handleExportPdf}
+                          className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 font-bold rounded-lg transition-colors border border-purple-500/30 flex items-center gap-2"
+                        >
+                          <Download className="w-4 h-4" /> Export PDF Report
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-amber-500/10 rounded-lg text-amber-400 shrink-0">
+                      <Save className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-white">Import Data</h3>
+                      <p className="text-sm text-slate-400 mt-1 mb-4 leading-relaxed">Upload a CSV file of your past applications to bulk import them.</p>
+                      
+                      <label className="cursor-pointer px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 font-bold rounded-lg transition-colors border border-amber-500/30 inline-flex items-center gap-2">
+                        <Save className="w-4 h-4" /> Import CSV
+                        <input 
+                          type="file" 
+                          accept=".csv"
+                          onChange={handleImportCsv}
+                          className="hidden" 
+                        />
+                      </label>
                     </div>
                   </div>
                 </div>

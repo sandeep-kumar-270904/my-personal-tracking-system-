@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Bell, X, Briefcase, Users, Code, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import NotificationDropdown from './NotificationDropdown';
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -67,45 +68,8 @@ const Header = () => {
 
         <div className="flex items-center gap-4 ml-auto">
           {/* Notifications */}
-          <div className="relative">
-            <button 
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative p-2.5 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2.5 w-2 h-2 bg-[#ff007b] rounded-full shadow-[0_0_8px_rgba(255,0,123,0.8)]"></span>
-            </button>
-
-            <AnimatePresence>
-              {isNotificationsOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-80 glass-card z-50 overflow-hidden"
-                  >
-                    <div className="p-4 border-b border-white/5 flex justify-between items-center">
-                      <h3 className="font-bold text-white">Notifications</h3>
-                      <button className="text-xs text-[#ff6b00] hover:text-[#ff007b]">Mark all read</button>
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {dummyNotifications.map(n => (
-                        <div key={n.id} className="p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
-                          <p className="text-sm text-slate-200">{n.text}</p>
-                          <p className="text-xs text-slate-500 mt-1">{n.time}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-3 text-center bg-[#13141f]">
-                      <button className="text-sm text-slate-400 hover:text-white transition-colors">View All</button>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+          {/* Notifications */}
+          <NotificationDropdown />
         </div>
       </header>
 

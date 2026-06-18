@@ -3,6 +3,9 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import BottomNavBar from './BottomNavBar';
+import InstallPWA from './InstallPWA';
+import NotificationDropdown from './NotificationDropdown';
 
 const PageTransition = ({ children }) => {
   const location = useLocation();
@@ -43,6 +46,8 @@ const DashboardLayout = () => {
           </PageTransition>
         </main>
       </motion.div>
+      <BottomNavBar />
+      <InstallPWA />
     </div>
   );
 };

@@ -207,4 +207,5 @@ module.exports = {
   analyzeJD,
   matchResume,
   generateEmail,
+  callGemini,
 };

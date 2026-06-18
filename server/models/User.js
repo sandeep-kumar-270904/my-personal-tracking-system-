@@ -56,6 +56,22 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     }
+  },
+  username: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  isPublicProfile: {
+    type: Boolean,
+    default: false
+  },
+  publicProfileSettings: {
+    showApplicationsCount: { type: Boolean, default: true },
+    showDSAStats: { type: Boolean, default: true },
+    showStreak: { type: Boolean, default: true },
+    showTargetCompanies: { type: Boolean, default: true },
+    isOpenToOpportunities: { type: Boolean, default: true }
   }
 }, { timestamps: true });
 

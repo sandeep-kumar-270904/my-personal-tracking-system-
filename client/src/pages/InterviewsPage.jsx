@@ -22,6 +22,7 @@ const InterviewsPage = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
   const [interviewToDelete, setInterviewToDelete] = useState(null);
+  const [activeTab, setActiveTab] = useState('notes'); // 'notes' or 'prep'
 
   const [formData, setFormData] = useState({
     company: '', interviewDate: '', round: '', notes: '', status: 'Scheduled', interviewer: '', followUpDate: ''
@@ -59,6 +60,20 @@ const InterviewsPage = () => {
       setInterviewToDelete(null);
     },
     onError: () => toast.error('Failed to delete')
+  });
+
+  const generateBriefMutation = useMutation({
+    mutationFn: async (id) => {
+      const { data } = await api.post(`/interviews/${id}/prep-brief`);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['interviews']);
+      toast.success('Prep Brief generated!');
+      // Update selected interview locally to show immediately
+      setSelectedInterviewForNotes(prev => ({ ...prev, prepBrief: data.prepBrief }));
+    },
+    onError: () => toast.error('Failed to generate Prep Brief')
   });
 
   const getStatusColor = (status) => {
@@ -288,42 +303,91 @@ const InterviewsPage = () => {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
-                {isEditingNotes ? (
-                  <div className="flex-1 flex flex-col p-4 md:p-6 border-r border-white/5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
-                      Markdown Editor
-                      <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noreferrer" className="text-[#00f0ff] hover:underline normal-case font-normal text-xs">Formatting Guide</a>
-                    </label>
-                    <textarea 
-                      autoFocus
-                      value={notesValue}
-                      onChange={(e) => setNotesValue(e.target.value)}
-                      className="flex-1 w-full bg-[#0a0a0f]/50 border border-white/10 rounded-xl p-4 text-slate-200 focus:outline-none focus:border-[#ff6b00] font-mono text-sm resize-none custom-scrollbar"
-                      placeholder="# System Design Prep&#10;&#10;## Topics to cover...&#10;- [ ] Load balancing&#10;- [ ] Caching"
-                    />
-                  </div>
-                ) : null}
+              <div className="flex-1 overflow-hidden flex flex-col relative">
+                {/* Tabs */}
+                <div className="flex border-b border-white/5 bg-[#0a0a0f]/50">
+                  <button 
+                    onClick={() => setActiveTab('notes')}
+                    className={`px-6 py-3 text-sm font-bold transition-colors ${activeTab === 'notes' ? 'text-[#ff6b00] border-b-2 border-[#ff6b00]' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    My Notes
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('prep')}
+                    className={`px-6 py-3 text-sm font-bold transition-colors flex items-center gap-2 ${activeTab === 'prep' ? 'text-[#ff6b00] border-b-2 border-[#ff6b00]' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    AI Prep Brief 
+                    {selectedInterviewForNotes?.prepBrief ? <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded-full">Ready</span> : null}
+                  </button>
+                </div>
 
-                <div className={`flex-1 flex flex-col p-4 md:p-6 overflow-y-auto custom-scrollbar bg-black/20 ${!isEditingNotes && 'md:w-full'}`}>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-                    {isEditingNotes ? 'Live Preview' : 'Notes'}
-                  </label>
-                  <div className="prose prose-invert prose-orange max-w-none flex-1 w-full bg-transparent p-0">
-                    {notesValue ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {notesValue}
-                      </ReactMarkdown>
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-slate-500 opacity-60">
-                        <FileText className="w-12 h-12 mb-3" />
-                        <p>No notes written yet.</p>
-                        {!isEditingNotes && (
-                          <button onClick={() => setIsEditingNotes(true)} className="text-[#00f0ff] mt-2 hover:underline">Start writing</button>
-                        )}
+                <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
+                  {activeTab === 'notes' && (
+                    <>
+                      {isEditingNotes ? (
+                        <div className="flex-1 flex flex-col p-4 md:p-6 border-r border-white/5">
+                          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                            Markdown Editor
+                            <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noreferrer" className="text-[#00f0ff] hover:underline normal-case font-normal text-xs">Formatting Guide</a>
+                          </label>
+                          <textarea 
+                            autoFocus
+                            value={notesValue}
+                            onChange={(e) => setNotesValue(e.target.value)}
+                            className="flex-1 w-full bg-[#0a0a0f]/50 border border-white/10 rounded-xl p-4 text-slate-200 focus:outline-none focus:border-[#ff6b00] font-mono text-sm resize-none custom-scrollbar"
+                            placeholder="# System Design Prep&#10;&#10;## Topics to cover...&#10;- [ ] Load balancing&#10;- [ ] Caching"
+                          />
+                        </div>
+                      ) : null}
+
+                      <div className={`flex-1 flex flex-col p-4 md:p-6 overflow-y-auto custom-scrollbar bg-black/20 ${!isEditingNotes && 'md:w-full'}`}>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+                          {isEditingNotes ? 'Live Preview' : 'Notes'}
+                        </label>
+                        <div className="prose prose-invert prose-orange max-w-none flex-1 w-full bg-transparent p-0">
+                          {notesValue ? (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {notesValue}
+                            </ReactMarkdown>
+                          ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-500 opacity-60">
+                              <FileText className="w-12 h-12 mb-3" />
+                              <p>No notes written yet.</p>
+                              {!isEditingNotes && (
+                                <button onClick={() => setIsEditingNotes(true)} className="text-[#00f0ff] mt-2 hover:underline">Start writing</button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    </>
+                  )}
+
+                  {activeTab === 'prep' && (
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 bg-black/20">
+                      {selectedInterviewForNotes?.prepBrief ? (
+                        <div className="prose prose-invert prose-orange max-w-none">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {selectedInterviewForNotes.prepBrief}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                          <FileText className="w-16 h-16 mb-4 opacity-50" />
+                          <h3 className="text-lg font-bold text-white mb-2">Generate AI Prep Brief</h3>
+                          <p className="text-center max-w-md mb-6">Let AI analyze the company, role, and interview round to generate a customized preparation brief including common questions and behavioral tips.</p>
+                          <button 
+                            onClick={() => generateBriefMutation.mutate(selectedInterviewForNotes._id)}
+                            disabled={generateBriefMutation.isPending}
+                            className="btn-primary flex items-center gap-2"
+                          >
+                            {generateBriefMutation.isPending ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <FileText className="w-5 h-5" />}
+                            {generateBriefMutation.isPending ? 'Generating...' : 'Generate Prep Brief'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

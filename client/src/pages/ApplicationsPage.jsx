@@ -28,6 +28,7 @@ const ApplicationsPage = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [companySuggestions, setCompanySuggestions] = useState([]);
 
   const { data: applications = [], isLoading, isError } = useQuery({
     queryKey: ['applications'],
@@ -289,15 +290,44 @@ const ApplicationsPage = () => {
               
               <form onSubmit={handleFormSubmit} className="p-6 space-y-5">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative">
                     <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Company</label>
                     <input 
                       type="text" 
                       value={formData.company}
-                      onChange={(e) => setFormData({...formData, company: e.target.value})}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        setFormData({...formData, company: val});
+                        if (val.length > 1) {
+                          try {
+                            const { data } = await api.get(`/companies/lookup?q=${val}`);
+                            setCompanySuggestions(data);
+                          } catch (err) {}
+                        } else {
+                          setCompanySuggestions([]);
+                        }
+                      }}
+                      onBlur={() => setTimeout(() => setCompanySuggestions([]), 200)}
                       className="input-field py-2.5 px-4" 
                       required 
                     />
+                    {companySuggestions?.length > 0 && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#13141f] border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                        {companySuggestions.map((c, i) => (
+                          <div 
+                            key={i}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer"
+                            onMouseDown={() => {
+                              setFormData({...formData, company: c.name, link: `https://${c.website}`});
+                              setCompanySuggestions([]);
+                            }}
+                          >
+                            <img src={c.logo} alt={c.name} className="w-6 h-6 rounded bg-white/10" onError={(e) => e.target.style.display='none'} />
+                            <span className="text-sm font-medium text-white">{c.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Role</label>

@@ -13,6 +13,11 @@ const goalRoutes = require('./routes/goalRoutes');
 const offerRoutes = require('./routes/offerRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const publicRoutes = require('./routes/publicRoutes');
+const pushRoutes = require('./routes/pushRoutes');
+const exportRoutes = require('./routes/exportRoutes');
+const companyRoutes = require('./routes/companyRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { initCronJobs } = require('./cron/weeklySummary');
 const startCronJobs = require('./utils/cron');
 
@@ -47,6 +52,11 @@ app.use('/api/offers', offerRoutes);
 app.use('/api/events', calendarRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/push', pushRoutes);
+app.use('/api/data', exportRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {
   res.send('Smart Internship & Career Tracker API is running...');

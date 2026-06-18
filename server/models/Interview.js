@@ -33,8 +33,13 @@ const interviewSchema = new mongoose.Schema({
   },
   notes: {
     type: String,
-    default: '',
   },
+  prepBrief: {
+    type: String,
+  },
+  questionsAsked: [{
+    type: String
+  }],
   prepNotes: {
     type: String,
     default: '',

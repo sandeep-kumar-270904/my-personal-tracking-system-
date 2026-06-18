@@ -104,6 +104,9 @@ const getMe = async (req, res) => {
       college: user.college,
       branch: user.branch,
       gradYear: user.gradYear,
+      username: user.username,
+      isPublicProfile: user.isPublicProfile,
+      publicProfileSettings: user.publicProfileSettings
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -117,10 +120,21 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // If changing username, check if it's already taken by someone else
+    if (req.body.username && req.body.username !== user.username) {
+      const usernameExists = await User.findOne({ username: req.body.username });
+      if (usernameExists) {
+        return res.status(400).json({ message: 'Username is already taken' });
+      }
+    }
+
     user.name = req.body.name || user.name;
     user.college = req.body.college || user.college;
     user.branch = req.body.branch || user.branch;
     user.gradYear = req.body.gradYear || user.gradYear;
+    if (req.body.username !== undefined) user.username = req.body.username;
+    if (req.body.isPublicProfile !== undefined) user.isPublicProfile = req.body.isPublicProfile;
+    if (req.body.publicProfileSettings) user.publicProfileSettings = { ...user.publicProfileSettings, ...req.body.publicProfileSettings };
 
     if (req.body.password) {
       user.password = req.body.password;
@@ -135,6 +149,9 @@ const updateUser = async (req, res) => {
       college: updatedUser.college,
       branch: updatedUser.branch,
       gradYear: updatedUser.gradYear,
+      username: updatedUser.username,
+      isPublicProfile: updatedUser.isPublicProfile,
+      publicProfileSettings: updatedUser.publicProfileSettings,
       token: generateToken(updatedUser._id),
     });
   } catch (error) {

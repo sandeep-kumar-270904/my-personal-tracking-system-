@@ -25,6 +25,7 @@ import OffersPage from './pages/OffersPage';
 import ContestsPage from './pages/ContestsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import SettingsPage from './pages/SettingsPage';
+import PublicProfile from './pages/PublicProfile';
 
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -58,6 +59,7 @@ function App() {
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/u/:username" element={<PublicProfile />} />
           
           {/* Protected Dashboard Routes */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

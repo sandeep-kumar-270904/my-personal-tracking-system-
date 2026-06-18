@@ -1,0 +1,14 @@
+[
+  { "name": "Google", "website": "google.com", "logo": "https://logo.clearbit.com/google.com" },
+  { "name": "Microsoft", "website": "microsoft.com", "logo": "https://logo.clearbit.com/microsoft.com" },
+  { "name": "Amazon", "website": "amazon.com", "logo": "https://logo.clearbit.com/amazon.com" },
+  { "name": "Meta", "website": "meta.com", "logo": "https://logo.clearbit.com/meta.com" },
+  { "name": "Apple", "website": "apple.com", "logo": "https://logo.clearbit.com/apple.com" },
+  { "name": "Netflix", "website": "netflix.com", "logo": "https://logo.clearbit.com/netflix.com" },
+  { "name": "Spotify", "website": "spotify.com", "logo": "https://logo.clearbit.com/spotify.com" },
+  { "name": "Uber", "website": "uber.com", "logo": "https://logo.clearbit.com/uber.com" },
+  { "name": "Stripe", "website": "stripe.com", "logo": "https://logo.clearbit.com/stripe.com" },
+  { "name": "Airbnb", "website": "airbnb.com", "logo": "https://logo.clearbit.com/airbnb.com" },
+  { "name": "Twitter", "website": "twitter.com", "logo": "https://logo.clearbit.com/twitter.com" },
+  { "name": "Tesla", "website": "tesla.com", "logo": "https://logo.clearbit.com/tesla.com" }
+]
