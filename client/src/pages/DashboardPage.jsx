@@ -13,8 +13,10 @@ import StatCardRow from '../components/dashboard/StatCardRow';
 import PipelineKanban from '../components/dashboard/PipelineKanban';
 import GoalRings from '../components/dashboard/GoalRings';
 import UpcomingStrip from '../components/dashboard/UpcomingStrip';
+import UpcomingCampusDrivesStrip from '../components/dashboard/UpcomingCampusDrivesStrip';
 import DashboardCharts from '../components/dashboard/DashboardCharts';
 import ActivityFeed from '../components/dashboard/ActivityFeed';
+import PeerBenchmarkCard from '../components/dashboard/PeerBenchmarkCard';
 import AIInsightsBanner from '../components/dashboard/AIInsightsBanner';
 import ReadinessGauge from '../components/dashboard/ReadinessGauge';
 import StreakAlertBanner from '../components/dashboard/StreakAlertBanner';
@@ -153,9 +155,10 @@ const DashboardPage = () => {
 
       <AIInsightsBanner />
 
-      <div className={\`grid grid-cols-1 lg:grid-cols-4 \${isCompact ? 'gap-4' : 'gap-8'}\`}>
+      <div className={`grid grid-cols-1 lg:grid-cols-4 ${isCompact ? 'gap-4' : 'gap-8'}`}>
         {/* Left/Center Main Column */}
-        <div className={\`lg:col-span-3 \${isCompact ? 'space-y-4' : 'space-y-8'}\`}>
+        <div className={`lg:col-span-3 ${isCompact ? 'space-y-4' : 'space-y-8'}`}>
+          <UpcomingCampusDrivesStrip />
           <UpcomingStrip upcoming={data.upcoming} />
           <PipelineKanban pipeline={data.pipeline} />
           <GoalRings goalsData={data.stats?.weeklyGoals} />
@@ -163,7 +166,8 @@ const DashboardPage = () => {
         </div>
 
         {/* Right Sidebar Column */}
-        <div className="lg:col-span-1 relative">
+        <div className="lg:col-span-1 relative flex flex-col gap-6">
+          <PeerBenchmarkCard user={user} />
           <ActivityFeed feed={data.feed} isCompact={isCompact} />
         </div>
       </div>

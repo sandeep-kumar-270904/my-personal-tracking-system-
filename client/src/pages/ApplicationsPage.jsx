@@ -11,6 +11,7 @@ import TimelineView from '../components/applications/TimelineView';
 import ApplicationDetailDrawer from '../components/applications/ApplicationDetailDrawer';
 import ConfirmModal from '../components/ConfirmModal';
 import EmptyState from '../components/EmptyState';
+import CampusDrivesView from '../components/applications/CampusDrivesView';
 
 const fetchApplications = async () => {
   const res = await api.get('/applications');
@@ -222,12 +223,21 @@ const ApplicationsPage = () => {
             >
               <Clock className="w-4 h-4" />
             </button>
+            <div className="w-[1px] h-6 bg-white/10 mx-1"></div>
+            <button 
+              onClick={() => setViewMode('campus')}
+              className={`px-3 py-1.5 text-sm font-bold rounded-md transition-colors ${viewMode === 'campus' ? 'bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+            >
+              Campus Drives
+            </button>
           </div>
         </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
-          {filteredApps.length === 0 ? (
+          {viewMode === 'campus' ? (
+            <CampusDrivesView />
+          ) : filteredApps.length === 0 ? (
             <EmptyState 
               icon={LayoutGrid} 
               heading="No applications found" 

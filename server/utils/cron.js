@@ -111,6 +111,62 @@ const startCronJobs = () => {
         }
       }
 
+      // Peer Benchmarking Aggregation
+      console.log('Running daily peer benchmarking aggregation...');
+      const AggregatedStats = require('../models/AggregatedStats');
+      // Group users by gradYear who haven't opted out
+      const eligibleUsers = await User.find({ 
+        gradYear: { $exists: true, $ne: '' },
+        'publicProfileSettings.benchmarkOptOut': { $ne: true }
+      });
+      
+      const usersByCohort = {};
+      eligibleUsers.forEach(u => {
+        if (!usersByCohort[u.gradYear]) usersByCohort[u.gradYear] = [];
+        usersByCohort[u.gradYear].push(u._id);
+      });
+
+      for (const cohortYear of Object.keys(usersByCohort)) {
+        const cohortUserIds = usersByCohort[cohortYear];
+        const totalUsers = cohortUserIds.length;
+        if (totalUsers === 0) continue;
+
+        // Start of current month
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+        // Fetch applications for this cohort this month
+        const apps = await Application.find({
+          userId: { $in: cohortUserIds },
+          appliedDate: { $gte: startOfMonth }
+        });
+
+        // Fetch DSA for this cohort
+        const dsas = await DSA.find({ user: { $in: cohortUserIds } });
+
+        // Fetch interviews for conversion rate
+        const interviews = await Interview.find({ userId: { $in: cohortUserIds } });
+
+        const avgApps = apps.length / totalUsers;
+        const avgDSA = dsas.reduce((acc, d) => acc + (d.solvedProblems ? d.solvedProblems.length : 0), 0) / totalUsers;
+        
+        let totalInterviews = interviews.length;
+        let selectedInterviews = interviews.filter(i => i.status === 'Offer' || i.status === 'Done').length; // Assuming Done/Offer indicates success for this metric
+        const avgConversion = totalInterviews > 0 ? (selectedInterviews / totalInterviews) * 100 : 0;
+
+        await AggregatedStats.findOneAndUpdate(
+          { cohortYear, date: today },
+          {
+            cohortYear,
+            date: today,
+            avgApplications: Math.round(avgApps * 10) / 10,
+            avgDSASolved: Math.round(avgDSA * 10) / 10,
+            avgInterviewConversion: Math.round(avgConversion * 10) / 10,
+            totalUsersSampled: totalUsers
+          },
+          { upsert: true, new: true }
+        );
+      }
+
       // Send emails
       for (const userId in userReminders) {
         const user = await User.findById(userId);

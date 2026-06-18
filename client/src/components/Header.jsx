@@ -1,14 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Search, Bell, X, Briefcase, Users, Code, Calendar } from 'lucide-react';
+import { Search, Bell, X, Briefcase, Users, Code, Calendar, WifiOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import NotificationDropdown from './NotificationDropdown';
+
+const useOnline = () => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+  return isOnline;
+};
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const isOnline = useOnline();
 
   // Handle Cmd+K / Ctrl+K
   useEffect(() => {
@@ -67,6 +83,23 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-4 ml-auto">
+          {/* Connection Status */}
+          {!isOnline && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              <span className="text-xs font-bold text-amber-500">Offline</span>
+            </div>
+          )}
+          {/* Mobile Offline Icon */}
+          {!isOnline && (
+            <div className="sm:hidden flex items-center justify-center text-amber-500">
+              <WifiOff className="w-5 h-5" />
+            </div>
+          )}
+
           {/* Notifications */}
           {/* Notifications */}
           <NotificationDropdown />

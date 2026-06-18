@@ -71,7 +71,16 @@ const userSchema = new mongoose.Schema({
     showDSAStats: { type: Boolean, default: true },
     showStreak: { type: Boolean, default: true },
     showTargetCompanies: { type: Boolean, default: true },
-    isOpenToOpportunities: { type: Boolean, default: true }
+    isOpenToOpportunities: { type: Boolean, default: true },
+    benchmarkOptOut: { type: Boolean, default: false }
+  },
+  cgpa: {
+    type: Number,
+    default: 0
+  },
+  activeBacklogs: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 
