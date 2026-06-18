@@ -61,8 +61,7 @@ const SignupPage = () => {
   };
 
   const handleLinkedinSignup = () => {
-    const clientId = import.meta.env.VITE_LINKEDIN_CLIENT_ID;
-    if (!clientId) return setError('LinkedIn Client ID is missing');
+    const clientId = '777sk8quuct4a4';
     const redirectUri = `${window.location.origin}/oauth/callback`;
     const scope = 'openid profile email';
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=linkedin`;
