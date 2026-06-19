@@ -32,7 +32,7 @@ module.exports = function timelinePlugin(schema, options) {
       }
 
       await UnifiedTimeline.create({
-        userId: doc.userId,
+        userId: doc.user || doc.userId,
         sourceTable: config.sourceTable,
         sourceId: doc._id,
         eventType,
