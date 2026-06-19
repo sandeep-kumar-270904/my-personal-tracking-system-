@@ -122,6 +122,16 @@ interviewSchema.post('save', async function(doc) {
     // Fire and forget extraction
     axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/${doc._id}/extract-resume-signals`)
          .catch(err => console.error("Resume signal extraction failed:", err.message));
+         
+    // V4 IX9: 5-Step Loop
+    axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/v4/intelligence-loop/${doc._id}`)
+         .catch(err => console.error("IX9 Intelligence Loop failed:", err.message));
+  }
+  
+  if (doc.outcome === 'PASSED') {
+    // V4 IX6: Offer Signal Check
+    axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/v4/offer-signal-check`, { interviewId: doc._id })
+         .catch(err => console.error("Offer signal check failed:", err.message));
   }
   
   // V4: Activate Prep Mode
@@ -136,6 +146,16 @@ interviewSchema.post('findOneAndUpdate', async function(doc) {
   if (doc && doc.debrief && doc.debrief.length > 10) {
     axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/${doc._id}/extract-resume-signals`)
          .catch(err => console.error("Resume signal extraction failed:", err.message));
+         
+    // V4 IX9: 5-Step Loop
+    axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/v4/intelligence-loop/${doc._id}`)
+         .catch(err => console.error("IX9 Intelligence Loop failed:", err.message));
+  }
+  
+  if (doc && doc.outcome === 'PASSED') {
+    // V4 IX6: Offer Signal Check
+    axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/v4/offer-signal-check`, { interviewId: doc._id })
+         .catch(err => console.error("Offer signal check failed:", err.message));
   }
 });
 

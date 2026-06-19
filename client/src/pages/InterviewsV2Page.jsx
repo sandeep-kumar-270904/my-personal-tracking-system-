@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Filter, Plus, FileText, Brain, Target, BarChart2, BookOpen, Flag } from 'lucide-react';
+import { Calendar, Filter, Plus, FileText, Brain, Target, BarChart2, BookOpen, Flag, Building, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import LiveStatsBar from '../components/interviews/v2/LiveStatsBar';
@@ -14,6 +14,7 @@ import InsightsPanel from '../components/interviews/v2/InsightsPanel';
 import PerformanceAnalytics from '../components/interviews/v2/PerformanceAnalytics';
 import MockScheduler from '../components/interviews/v2/MockScheduler';
 import AIMockFlow from '../components/interviews/v2/AIMockFlow';
+import CompanyProcessModal from '../components/interviews/v3/CompanyProcessModal';
 
 export default function InterviewsV2Page() {
   const [activeTab, setActiveTab] = useState('pipeline'); // 'pipeline', 'list', 'analytics', 'questions'
@@ -29,6 +30,10 @@ export default function InterviewsV2Page() {
   const [insights, setInsights] = useState([]);
   const [synthesisReports, setSynthesisReports] = useState([]);
   const [showSynthesis, setShowSynthesis] = useState(false);
+  const [showCompanyProcess, setShowCompanyProcess] = useState(false);
+  const [generatingPortfolio, setGeneratingPortfolio] = useState(false);
+  const [psychProfile, setPsychProfile] = useState(null);
+  const [certifications, setCertifications] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -36,20 +41,43 @@ export default function InterviewsV2Page() {
 
   const fetchData = async () => {
     try {
-      const [statsRes, intRes, upcRes, insRes, synRes] = await Promise.all([
+      const [statsRes, intRes, upcRes, insRes, synRes, psychRes, certRes] = await Promise.all([
         axios.get('/api/interviews/stats'),
         axios.get('/api/interviews'),
         axios.get('/api/interviews/upcoming'),
         axios.get('/api/interviews/insights'),
-        axios.get('/api/interviews/synthesis')
+        axios.get('/api/interviews/synthesis'),
+        axios.get('/api/interviews/psychology-profile'),
+        axios.get('/api/interviews/certifications')
       ]);
       setStats(statsRes.data);
       setInterviews(intRes.data.interviews || []);
       setUpcoming(upcRes.data || []);
       setInsights(insRes.data || []);
       setSynthesisReports(synRes.data || []);
+      setPsychProfile(psychRes.data || null);
+      setCertifications(certRes.data || []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleGeneratePortfolio = async () => {
+    setGeneratingPortfolio(true);
+    try {
+      const res = await axios.post('/api/interviews/generate-portfolio');
+      // In real life, convert res.data.html to blob/download.
+      // For V3 mockup, we create a fake download link.
+      const blob = new Blob([res.data.html], {type: 'text/html'});
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Interview_Portfolio.html';
+      a.click();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setGeneratingPortfolio(false);
     }
   };
 
@@ -86,12 +114,34 @@ export default function InterviewsV2Page() {
               <BookOpen className="w-4 h-4 mr-2" />
               Story Bank
             </Link>
+            <Link 
+              to="/interviews/command-center"
+              className="flex items-center px-4 py-2 bg-indigo-900/30 text-indigo-400 border border-indigo-500/50 rounded-lg hover:bg-indigo-900/50 transition-colors"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              Command Center
+            </Link>
             <button 
               onClick={() => setShowSynthesis(true)}
               className="flex items-center px-4 py-2 bg-gray-800 text-amber-400 rounded-lg hover:bg-gray-700 transition-colors"
             >
               <Flag className="w-4 h-4 mr-2" />
               My Journey
+            </button>
+            <button 
+              onClick={() => setShowCompanyProcess(true)}
+              className="flex items-center px-4 py-2 bg-gray-800 text-teal-400 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <Building className="w-4 h-4 mr-2" />
+              Processes
+            </button>
+            <button 
+              onClick={handleGeneratePortfolio}
+              disabled={generatingPortfolio}
+              className="flex items-center px-4 py-2 bg-gray-800 text-fuchsia-400 rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              {generatingPortfolio ? 'Generating...' : 'Portfolio'}
             </button>
             <button 
               onClick={() => setIsMockSchedulerOpen(true)}
@@ -117,12 +167,12 @@ export default function InterviewsV2Page() {
           <div className="lg:col-span-3 space-y-6">
             
             {/* Tabs */}
-            <div className="flex space-x-1 bg-gray-900 p-1 rounded-xl border border-gray-800">
-              {['pipeline', 'list', 'analytics', 'questions'].map(tab => (
+            <div className="flex space-x-1 bg-gray-900 p-1 rounded-xl border border-gray-800 overflow-x-auto">
+              {['pipeline', 'list', 'analytics', 'questions', 'psychology', 'certifications'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
+                  className={`flex-1 py-2 px-4 whitespace-nowrap text-sm font-medium rounded-lg transition-colors capitalize ${
                     activeTab === tab ? 'bg-gray-800 text-white shadow' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
                   }`}
                 >
@@ -130,6 +180,8 @@ export default function InterviewsV2Page() {
                   {tab === 'list' && <FileText className="w-4 h-4 inline mr-2" />}
                   {tab === 'analytics' && <BarChart2 className="w-4 h-4 inline mr-2" />}
                   {tab === 'questions' && <Brain className="w-4 h-4 inline mr-2" />}
+                  {tab === 'psychology' && <Brain className="w-4 h-4 inline mr-2 text-indigo-400" />}
+                  {tab === 'certifications' && <Target className="w-4 h-4 inline mr-2 text-emerald-400" />}
                   {tab}
                 </button>
               ))}
@@ -141,6 +193,8 @@ export default function InterviewsV2Page() {
               {activeTab === 'list' && <InterviewList interviews={interviews} onCardClick={openDrawer} />}
               {activeTab === 'analytics' && <PerformanceAnalytics stats={stats} />}
               {activeTab === 'questions' && <QuestionBank />}
+              {activeTab === 'psychology' && <PsychologyProfile psychProfile={psychProfile} />}
+              {activeTab === 'certifications' && <CompetencyMatrix certifications={certifications} />}
             </div>
 
           </div>
@@ -184,6 +238,96 @@ export default function InterviewsV2Page() {
           />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showCompanyProcess && (
+          <CompanyProcessModal onClose={() => setShowCompanyProcess(false)} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function PsychologyProfile({ psychProfile }) {
+  if (!psychProfile) return <div className="text-gray-500">Loading profile...</div>;
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center border-b border-gray-800 pb-4">
+        <div>
+          <h2 className="text-2xl font-bold text-white flex items-center">
+            <Brain className="w-6 h-6 mr-2 text-indigo-500" /> My Interview Psychology
+          </h2>
+          <p className="text-gray-400 text-sm mt-1">AI-derived patterns from your past interviews.</p>
+        </div>
+        <div className="bg-indigo-900/30 text-indigo-400 border border-indigo-500/30 px-3 py-1 rounded-lg font-mono text-sm">
+          Confidence: {psychProfile.profileConfidence}%
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gray-950 p-5 rounded-xl border border-gray-800 space-y-4">
+          <h3 className="font-bold text-gray-300">Core Patterns</h3>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 text-sm">Warm-Up Pattern</span>
+            <span className="text-white bg-gray-800 px-2 py-1 rounded text-xs">{psychProfile.warmUpPattern.replace(/_/g, ' ')}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 text-sm">Endurance</span>
+            <span className="text-white bg-gray-800 px-2 py-1 rounded text-xs">{psychProfile.endurancePattern.replace(/_/g, ' ')}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 text-sm">Pressure Response</span>
+            <span className="text-white bg-gray-800 px-2 py-1 rounded text-xs">{psychProfile.pressureResponse.replace(/_/g, ' ')}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 text-sm">Interviewer Response</span>
+            <span className="text-white bg-gray-800 px-2 py-1 rounded text-xs">{psychProfile.interviewerResponsePattern.replace(/_/g, ' ')}</span>
+          </div>
+        </div>
+
+        <div className="bg-gray-950 p-5 rounded-xl border border-gray-800 space-y-4">
+          <h3 className="font-bold text-gray-300">Tactical Recommendations</h3>
+          {Object.entries(psychProfile.tacticalRecommendations || {}).map(([key, value]) => (
+            <div key={key}>
+              <span className="text-xs text-indigo-400 uppercase font-bold tracking-wider">{key}</span>
+              <p className="text-sm text-gray-300 mt-1">{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompetencyMatrix({ certifications }) {
+  if (!certifications || certifications.length === 0) return <div className="text-gray-500">No certifications yet.</div>;
+  
+  const levels = {
+    'DEVELOPING': 'bg-gray-800 text-gray-400 border-gray-700',
+    'COMPETENT': 'bg-indigo-900/30 text-indigo-400 border-indigo-500/30',
+    'PROFICIENT': 'bg-emerald-900/30 text-emerald-400 border-emerald-500/30',
+    'EXPERT': 'bg-amber-900/30 text-amber-400 border-amber-500/30'
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="border-b border-gray-800 pb-4">
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <Target className="w-6 h-6 mr-2 text-emerald-500" /> Skill Certifications
+        </h2>
+        <p className="text-gray-400 text-sm mt-1">Verified competencies based on consistent interview performance.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {certifications.map(c => (
+          <div key={c._id || c.competency} className={`p-4 rounded-xl border ${levels[c.level]} flex flex-col justify-between min-h-[120px]`}>
+            <span className="text-sm font-bold block mb-2">{c.competency.replace(/_/g, ' ')}</span>
+            <div className="flex justify-between items-end">
+              <span className="text-xs uppercase tracking-wider font-bold opacity-80">{c.level}</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

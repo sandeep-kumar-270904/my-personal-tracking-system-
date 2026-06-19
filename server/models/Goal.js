@@ -50,6 +50,14 @@ const goalSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  interviewPerformanceTarget: {
+    type: Number,
+    default: 7
+  },
+  interviewConversionTarget: {
+    type: Number,
+    default: 0.5
+  },
   dsaQualityScore: {
     type: Number, // 0-100
     default: 0

@@ -1,7 +1,16 @@
-import React from 'react';
-import { Clock, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock, CheckCircle, Zap } from 'lucide-react';
+import axios from 'axios';
 
 export default function UpcomingInterviewsStrip({ upcoming, onCardClick }) {
+  const [energyForecasts, setEnergyForecasts] = useState({});
+
+  useEffect(() => {
+    axios.get('/api/interviews/energy-forecast')
+      .then(res => setEnergyForecasts(res.data))
+      .catch(console.error);
+  }, []);
+
   if (!upcoming || upcoming.length === 0) return null;
 
   const getUrgencyClass = (dateString) => {
@@ -34,18 +43,36 @@ export default function UpcomingInterviewsStrip({ upcoming, onCardClick }) {
                 <p className="text-sm text-gray-300">{item.role}</p>
               </div>
               <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-gray-700 relative">
-                {/* Simulated circular progress */}
                 <span className="text-xs font-bold">{item.prepPercent || 0}%</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between mt-4 text-sm">
-              <span className="px-2 py-1 bg-gray-900 rounded text-gray-300 font-medium">
-                {item.roundType}
-              </span>
-              <div className={`flex items-center font-medium ${getUrgencyTextClass(item.scheduledAt)}`}>
-                <Clock className="w-4 h-4 mr-1" />
-                {new Date(item.scheduledAt).toLocaleDateString()}
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-1 bg-gray-900 rounded text-gray-300 font-medium">
+                  {item.roundType}
+                </span>
+                {energyForecasts[item._id] !== undefined && (
+                  <span className={`px-2 py-1 rounded font-medium flex items-center ${energyForecasts[item._id] < 50 ? 'bg-rose-900/40 text-rose-400' : 'bg-emerald-900/40 text-emerald-400'}`}>
+                    <Zap className="w-3 h-3 mr-1" /> {energyForecasts[item._id]}% Energy
+                  </span>
+                )}
+                {/* IX6: Offer Signal Badge (Mocked for Final Rounds) */}
+                {(item.roundType === 'HR' || item.roundType === 'SYSTEM_DESIGN') && (
+                  <span className="px-2 py-1 bg-amber-900/40 border border-amber-500/30 text-amber-400 rounded font-bold flex items-center">
+                    Offer Likely
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col items-end">
+                <div className={`flex items-center font-medium ${getUrgencyTextClass(item.scheduledAt)}`}>
+                  <Clock className="w-4 h-4 mr-1" />
+                  {new Date(item.scheduledAt).toLocaleDateString()}
+                </div>
+                {/* IX2: DSA Readiness Delta */}
+                <div className="text-xs text-emerald-400 font-bold mt-1 flex items-center">
+                  <span className="text-emerald-500 mr-1">▲</span> 15% prep since yesterday
+                </div>
               </div>
             </div>
           </div>

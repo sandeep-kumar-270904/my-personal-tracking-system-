@@ -22,6 +22,7 @@ import DSACommandCenter from './pages/DSACommandCenter';
 import InterviewsV2Page from './pages/InterviewsV2Page';
 import BehavioralStoryBank from './pages/BehavioralStoryBank';
 import LiveNotesWidget from './pages/LiveNotesWidget';
+import InterviewCommandCenter from './pages/InterviewCommandCenter';
 import NetworkPage from './pages/NetworkPage';
 import CalendarPage from './pages/CalendarPage';
 import GoalsPage from './pages/GoalsPage';
@@ -78,6 +79,7 @@ function App() {
             <Route path="dsa/command-center" element={<DSACommandCenter />} />
             <Route path="interviews" element={<InterviewsV2Page />} />
             <Route path="interviews/stories" element={<BehavioralStoryBank />} />
+            <Route path="interviews/command-center" element={<InterviewCommandCenter />} />
             <Route path="interviews/:id/live-notes" element={<LiveNotesWidget />} />
             <Route path="network" element={<NetworkPage />} />
             <Route path="calendar" element={<CalendarPage />} />

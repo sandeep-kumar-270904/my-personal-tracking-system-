@@ -48,4 +48,22 @@ const interviewQuestionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+const axios = require('axios');
+
+interviewQuestionSchema.post('save', async function(doc) {
+  if (doc.wasAnsweredWell) {
+    axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/v4/resume-signal-amplification`, {
+      questionId: doc._id
+    }).catch(err => console.error("Resume signal amplification failed:", err.message));
+  }
+});
+
+interviewQuestionSchema.post('findOneAndUpdate', async function(doc) {
+  if (doc && doc.wasAnsweredWell) {
+    axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/v4/resume-signal-amplification`, {
+      questionId: doc._id
+    }).catch(err => console.error("Resume signal amplification failed:", err.message));
+  }
+});
+
 module.exports = mongoose.model('InterviewQuestion', interviewQuestionSchema);

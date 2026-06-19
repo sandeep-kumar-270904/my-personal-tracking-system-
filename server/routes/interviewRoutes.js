@@ -32,6 +32,29 @@ const {
   generatePrepSchedule
 } = require('../controllers/interviewAddonsController');
 
+const {
+  getPsychologyProfile, updatePsychologyProfile,
+  getCompanyProcesses, aggregateCompanyProcesses,
+  getAnswerFrameworks,
+  getOutcomePrediction,
+  getEnergyForecast,
+  analyzeRejection,
+  getCertifications, evaluateCertifications,
+  saveSimulationSession, getSimulations,
+  generatePortfolio
+} = require('../controllers/interviewV3Controller');
+
+const {
+  resumeSignalAmplification,
+  getApplicationContext,
+  getNetworkingContext,
+  offerSignalCheck,
+  getCalendarIntelligence,
+  extractResourceNeeds,
+  intelligenceLoop,
+  getCommandCenter
+} = require('../controllers/interviewV4Controller');
+
 router.use(protect);
 
 // Action endpoints
@@ -44,6 +67,20 @@ router.get('/upcoming', getUpcoming);
 router.get('/timeline', getTimeline);
 router.post('/analyze-patterns', analyzePatterns);
 router.post('/mock', createMockSession);
+
+// V3 Addons: Global routes
+router.get('/psychology-profile', getPsychologyProfile);
+router.post('/update-psychology-profile', updatePsychologyProfile);
+router.get('/company-processes', getCompanyProcesses);
+router.post('/aggregate-company-processes', aggregateCompanyProcesses);
+router.get('/answer-frameworks', getAnswerFrameworks);
+router.get('/energy-forecast', getEnergyForecast);
+router.get('/certifications', getCertifications);
+router.post('/evaluate-certifications', evaluateCertifications);
+router.route('/simulations')
+  .get(getSimulations)
+  .post(saveSimulationSession);
+router.post('/generate-portfolio', generatePortfolio);
 
 // V2 Addons: Global routes
 router.route('/stories')
@@ -75,5 +112,51 @@ router.post('/:id/interviewer-intel', generateInterviewerIntel);
 router.post('/:id/negotiation-prep', generateNegotiationPrep);
 router.post('/:id/live-notes', syncLiveNotes);
 router.post('/:id/generate-prep-schedule', generatePrepSchedule);
+
+// V3 Addons: Specific interview routes
+router.get('/:id/outcome-prediction', getOutcomePrediction);
+router.post('/:id/rejection-analysis', analyzeRejection);
+
+// V4 Addons: Global routes
+router.post('/v4/resume-signal-amplification', resumeSignalAmplification);
+router.post('/v4/offer-signal-check', offerSignalCheck);
+router.get('/v4/calendar-intelligence', getCalendarIntelligence);
+router.post('/v4/extract-resource-needs', extractResourceNeeds);
+router.get('/v4/command-center', getCommandCenter);
+router.get('/application-context/:applicationId', getApplicationContext);
+
+const {
+  evalOpeningRitual, evalTalkWhileCoding, evalStuckRecovery,
+  getQuestionBank, addQuestionToBank, logSkillCalibration, updateSkillCalibration,
+  evalFollowUpDepth, logTimeAllocation, evalStoryNaturalness,
+  startColdSimulation, answerColdSimulation, evalWrongAnswerRecovery,
+  getSignalVocabulary, evalDetailCalibration, getPreInterviewProtocol, generatePreInterviewProtocol,
+  getMemoryCaptureQuestions, submitMemoryCapture, getPerformanceDashboard
+} = require('../controllers/interviewV5Controller');
+
+// V4 Addons: Specific interview routes
+router.post('/v4/intelligence-loop/:id', intelligenceLoop);
+router.post('/:id/networking-context', getNetworkingContext);
+
+// V5 Addons: Training Hub routes
+router.post('/training/opening-ritual', evalOpeningRitual);
+router.post('/training/talk-while-coding', evalTalkWhileCoding);
+router.post('/training/stuck-recovery', evalStuckRecovery);
+router.route('/training/question-bank').get(getQuestionBank).post(addQuestionToBank);
+router.post('/training/skill-calibration', logSkillCalibration);
+router.patch('/training/skill-calibration/:interviewId', updateSkillCalibration);
+router.post('/training/follow-up-depth', evalFollowUpDepth);
+router.post('/training/time-allocation', logTimeAllocation);
+router.post('/training/story-naturalness', evalStoryNaturalness);
+router.post('/training/cold-simulation', startColdSimulation);
+router.post('/training/cold-simulation/:sessionId/answer', answerColdSimulation);
+router.post('/training/wrong-answer-recovery', evalWrongAnswerRecovery);
+router.get('/training/signal-vocabulary', getSignalVocabulary);
+router.post('/training/detail-calibration', evalDetailCalibration);
+router.get('/training/pre-interview-protocol', getPreInterviewProtocol);
+router.post('/training/pre-interview-protocol/generate', generatePreInterviewProtocol);
+router.post('/training/memory-capture', getMemoryCaptureQuestions);
+router.post('/training/memory-capture/:interviewId/submit', submitMemoryCapture);
+router.get('/training/performance-dashboard', getPerformanceDashboard);
 
 module.exports = router;

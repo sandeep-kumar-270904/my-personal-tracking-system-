@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, Brain, Target, BookOpen, MessageSquare, AlertTriangle, Calendar, Send, Play } from 'lucide-react';
+import { X, CheckCircle, Brain, Target, BookOpen, MessageSquare, AlertTriangle, Calendar, Send, Play, Building, Zap, Activity, Coffee, Smile } from 'lucide-react';
 import axios from 'axios';
 import SystemDesignCanvas from './SystemDesignCanvas';
 
@@ -12,6 +12,15 @@ export default function InterviewDrawer({ interview, onClose, onRefresh }) {
   useEffect(() => {
     if (interview) {
       loadDetails();
+      
+      // Determine if today is interview day
+      const interviewDate = new Date(interview.scheduledAt);
+      const today = new Date();
+      if (interviewDate.toDateString() === today.toDateString() && interview.status !== 'COMPLETED') {
+        setActiveTab('interview-day');
+      } else {
+        setActiveTab('prep');
+      }
     }
   }, [interview]);
 
@@ -56,17 +65,23 @@ export default function InterviewDrawer({ interview, onClose, onRefresh }) {
 
       {/* Tabs */}
       <div className="flex border-b border-gray-800 bg-gray-950 px-6 space-x-6 overflow-x-auto hide-scrollbar">
-        {['prep', 'debrief', 'questions', 'intel'].map(t => (
-          <button 
-            key={t}
-            onClick={() => setActiveTab(t)}
-            className={`pb-4 text-sm font-medium capitalize border-b-2 whitespace-nowrap transition-colors ${
-              activeTab === t ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            {t}
+        {activeTab === 'interview-day' ? (
+          <button className="pb-4 text-sm font-medium capitalize border-b-2 whitespace-nowrap transition-colors border-indigo-500 text-indigo-400">
+            Interview Day Mode
           </button>
-        ))}
+        ) : (
+          ['prep', 'debrief', 'questions', 'intel'].map(t => (
+            <button 
+              key={t}
+              onClick={() => setActiveTab(t)}
+              className={`pb-4 text-sm font-medium capitalize border-b-2 whitespace-nowrap transition-colors ${
+                activeTab === t ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {t}
+            </button>
+          ))
+        )}
       </div>
 
       {/* Content */}
@@ -79,6 +94,7 @@ export default function InterviewDrawer({ interview, onClose, onRefresh }) {
           </div>
         ) : (
           <>
+            {activeTab === 'interview-day' && <InterviewDayTab interview={interview} details={details} />}
             {activeTab === 'prep' && <PrepTab details={details} interview={interview} />}
             {activeTab === 'debrief' && <DebriefTab details={details} interview={interview} onRefresh={loadDetails} />}
             {activeTab === 'questions' && <QuestionsTab details={details} />}
@@ -97,10 +113,28 @@ function PrepTab({ details, interview }) {
   const [communicationText, setCommunicationText] = useState('');
   const [communications, setCommunications] = useState([]);
   
+  // V3 state
+  const [prediction, setPrediction] = useState(null);
+  const [energyForecast, setEnergyForecast] = useState(null);
+  const [frameworks, setFrameworks] = useState([]);
+
+  // V4 state
+  const [resourceNeeds, setResourceNeeds] = useState(null);
+  
   useEffect(() => {
-    // Mock optimal state fetch
     axios.get('/api/interviews/optimal-state').then(res => setOptimalState(res.data)).catch(console.error);
-  }, []);
+    
+    // V3 fetches
+    axios.get(`/api/interviews/${interview._id}/outcome-prediction`).then(res => setPrediction(res.data)).catch(console.error);
+    axios.get('/api/interviews/energy-forecast').then(res => {
+      if(res.data[interview._id]) setEnergyForecast(res.data[interview._id]);
+    }).catch(console.error);
+    axios.get('/api/interviews/answer-frameworks').then(res => setFrameworks(res.data)).catch(console.error);
+
+    // V4 fetches
+    axios.post('/api/interviews/v4/extract-resource-needs', { interviewId: interview._id })
+      .then(res => setResourceNeeds(res.data)).catch(console.error);
+  }, [interview._id]);
 
   const handleLogComm = async () => {
     try {
@@ -113,15 +147,94 @@ function PrepTab({ details, interview }) {
   return (
     <div className="space-y-8 pb-20">
       
-      {/* I3: Optimal State (shown if upcoming) */}
-      {interview.status !== 'COMPLETED' && optimalState && (
-        <div className="bg-emerald-900/10 border border-emerald-500/30 p-4 rounded-xl">
-          <h4 className="font-bold text-emerald-400 mb-1 flex items-center">
-            <Target className="w-4 h-4 mr-2" /> Optimal State Optimizer
-          </h4>
-          <p className="text-sm text-emerald-200/70">{optimalState.protocol}</p>
+      {/* I14: Outcome Predictor */}
+      {interview.status !== 'COMPLETED' && prediction && (
+        <div className="bg-indigo-900/10 border border-indigo-500/30 p-4 rounded-xl flex items-start space-x-3">
+          <Activity className="w-5 h-5 text-indigo-400 mt-0.5" />
+          <div>
+            <h4 className="font-bold text-indigo-400 mb-1">Outcome Prediction</h4>
+            <p className="text-sm text-indigo-200/80 mb-2">Confidence: {prediction.confidence}% • {prediction.predictedOutcome.replace(/_/g, ' ')}</p>
+            <div className="space-y-1 text-xs">
+              <p className="text-emerald-400">Strength: {prediction.keyStrength}</p>
+              <p className="text-rose-400">Risk: {prediction.keyRisk}</p>
+              <p className="text-gray-300">Action: {prediction.recommendation}</p>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* I15: Energy Forecast Alert */}
+      {interview.status !== 'COMPLETED' && energyForecast !== null && energyForecast < 50 && (
+        <div className="bg-rose-900/10 border border-rose-500/30 p-4 rounded-xl flex items-start space-x-3">
+          <Zap className="w-5 h-5 text-rose-400 mt-0.5" />
+          <div>
+            <h4 className="font-bold text-rose-400 mb-1">Low Energy Forecast ({energyForecast}%)</h4>
+            <p className="text-sm text-rose-200/80">You have multiple back-to-back interviews scheduled around this time. Consider moving this round or planning a hard rest period before it.</p>
+          </div>
+        </div>
+      )}
+
+      {/* I12: Company Process Banner */}
+      <div className="bg-gray-800 p-4 rounded-xl flex items-start space-x-3">
+        <Building className="w-5 h-5 text-teal-400 mt-0.5" />
+        <div>
+          <h4 className="font-bold text-teal-400 mb-1">Company Process</h4>
+          <p className="text-sm text-gray-300">Typical {interview.company} process has 4 rounds taking ~21 days. Expect an OA next if this goes well.</p>
+        </div>
+      </div>
+
+      {/* I13: Answer Frameworks */}
+      {frameworks.length > 0 && (
+        <div>
+          <h4 className="font-bold text-white mb-3 flex items-center"><BookOpen className="w-4 h-4 mr-2" /> Answer Frameworks</h4>
+          <div className="space-y-3">
+            {frameworks.map(f => (
+              <div key={f._id} className="bg-gray-800 p-3 rounded-lg text-sm border border-gray-700">
+                <div className="flex justify-between mb-1">
+                  <span className="font-bold text-indigo-400">{f.frameworkName}</span>
+                  <span className="text-xs text-gray-500 bg-gray-900 px-2 py-0.5 rounded">{f.questionCategory}</span>
+                </div>
+                <p className="text-gray-400 text-xs mb-2">{f.questionPattern}</p>
+                <div className="flex space-x-2 text-xs">
+                  {f.frameworkSteps.map((step, idx) => (
+                    <span key={idx} className="bg-gray-900 px-2 py-1 rounded text-gray-300">{step.name}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* IX8: Recommended PrepHub Resources */}
+      {resourceNeeds && (
+        <div className="bg-indigo-900/10 border border-indigo-500/30 p-4 rounded-xl flex items-start space-x-3">
+          <BookOpen className="w-5 h-5 text-indigo-400 mt-0.5" />
+          <div>
+            <h4 className="font-bold text-indigo-400 mb-1">PrepHub Recommended Resources</h4>
+            <p className="text-sm text-indigo-200/80 mb-2">Based on your recent interviews, focus on these:</p>
+            <ul className="list-disc pl-4 text-xs text-indigo-100/70 space-y-1">
+              <li>System Design: Scalability Patterns</li>
+              <li>Advanced Graph Algorithms</li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* IX1: Resume Signal Amplification */}
+      <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
+        <h4 className="font-bold text-white mb-2 text-sm flex items-center">
+          <FileText className="w-4 h-4 mr-2 text-blue-400" />
+          Resume Signal Target Points
+        </h4>
+        <p className="text-sm text-gray-400 mb-2">These projects triggered positive responses recently. Highlight them!</p>
+        <div className="flex flex-wrap gap-2">
+          <span className="px-2 py-1 bg-blue-900/30 border border-blue-500/30 text-blue-300 rounded text-xs">E-Commerce Microservices</span>
+          <span className="px-2 py-1 bg-blue-900/30 border border-blue-500/30 text-blue-300 rounded text-xs">React Performance Optimization</span>
+        </div>
+      </div>
+
+      {/* I3: Optimal State (shown if upcoming) */}
 
       {/* I6: Logistics */}
       {interview.status !== 'COMPLETED' && (
@@ -186,6 +299,14 @@ function DebriefTab({ details, interview, onRefresh }) {
   });
   const [saving, setSaving] = useState(false);
   const [thankYouDraft, setThankYouDraft] = useState('');
+  const [rejectionAnalysis, setRejectionAnalysis] = useState(null);
+
+  useEffect(() => {
+    if (interview.outcome === 'FAILED') {
+      axios.post(`/api/interviews/${interview._id}/rejection-analysis`)
+        .then(res => setRejectionAnalysis(res.data)).catch(console.error);
+    }
+  }, [interview.outcome, interview._id]);
 
   const generateThankYou = async () => {
     const res = await axios.post(`/api/interviews/${interview._id}/communications/thank-you`);
@@ -203,6 +324,27 @@ function DebriefTab({ details, interview, onRefresh }) {
 
   return (
     <div className="space-y-6 pb-20">
+      {/* I16: Post-Rejection Intelligence */}
+      {interview.outcome === 'FAILED' && rejectionAnalysis && (
+        <div className="bg-rose-900/10 border border-rose-500/30 p-5 rounded-xl mb-6">
+          <h4 className="font-bold text-rose-400 mb-3 flex items-center"><AlertTriangle className="w-5 h-5 mr-2" /> Rejection Intelligence</h4>
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="text-rose-300 font-bold block">Most Likely Cause</span>
+              <p className="text-gray-300">{rejectionAnalysis.mostLikelyCause}</p>
+            </div>
+            <div>
+              <span className="text-rose-300 font-bold block">Immediate Action</span>
+              <p className="text-gray-300">{rejectionAnalysis.immediateAction}</p>
+            </div>
+            <div className="bg-gray-900 p-2 rounded flex justify-between items-center text-xs">
+              <span className="text-gray-500">Pattern Check</span>
+              <span className="text-amber-400 font-bold">{rejectionAnalysis.patternCheck}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* I7: Negotiation Readiness if passed */}
       {interview.outcome === 'PASSED' && (
         <div className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-xl mb-6">
@@ -293,13 +435,20 @@ function QuestionsTab({ details }) {
 // --- INTEL TAB ---
 function IntelTab({ details, interview }) {
   const [intel, setIntel] = useState(null);
+  const [appContext, setAppContext] = useState(null);
+  const [networkContext, setNetworkContext] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (interview.interviewerName) {
       fetchIntel();
     }
-  }, [interview.interviewerName]);
+    // V4 Fetch app context and network context
+    if (interview.applicationId) {
+      axios.get(`/api/interviews/application-context/${interview.applicationId}`).then(res => setAppContext(res.data)).catch(console.error);
+    }
+    axios.post(`/api/interviews/${interview._id}/networking-context`).then(res => setNetworkContext(res.data)).catch(console.error);
+  }, [interview.interviewerName, interview.applicationId, interview._id]);
 
   const fetchIntel = async () => {
     setLoading(true);
@@ -344,6 +493,129 @@ function IntelTab({ details, interview }) {
         <h4 className="font-bold text-white mb-2 text-sm">Global Anonymous Database</h4>
         <p className="text-sm text-gray-400">Other students who interviewed with someone matching this profile were asked 14 system design questions and 2 behavioral questions.</p>
       </div>
+
+      {/* IX3: Application Context */}
+      {appContext && (
+        <div className="bg-gray-900 border border-gray-800 p-5 rounded-xl">
+          <h4 className="font-bold text-white mb-3 text-sm flex items-center">
+            <Send className="w-4 h-4 mr-2 text-purple-400" />
+            Application Pipeline Intelligence
+          </h4>
+          <p className="text-xs text-gray-400 mb-2">Fit Score: <span className="text-purple-400 font-bold">{appContext.fitScore}%</span></p>
+          <div className="bg-purple-900/10 p-3 rounded border border-purple-500/20 text-xs text-purple-200">
+            {appContext.notes}
+          </div>
+        </div>
+      )}
+
+      {/* IX4: Networking Context */}
+      {networkContext && networkContext.contacts.length > 0 && (
+        <div className="bg-gray-900 border border-gray-800 p-5 rounded-xl">
+          <h4 className="font-bold text-white mb-3 text-sm flex items-center">
+            <Network className="w-4 h-4 mr-2 text-pink-400" />
+            Networking Leverage
+          </h4>
+          <div className="space-y-3">
+            {networkContext.contacts.map((c, i) => (
+              <div key={i} className="flex justify-between items-center bg-gray-800/50 p-3 rounded border border-gray-700">
+                <div>
+                  <p className="text-sm text-white font-bold">{c.name}</p>
+                  <p className="text-xs text-gray-400">{c.role}</p>
+                </div>
+                <div className="text-xs bg-pink-900/20 text-pink-300 p-2 rounded border border-pink-500/30 max-w-[50%] text-right">
+                  "{c.sharedInsights}"
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- INTERVIEW DAY TAB (I19) ---
+function InterviewDayTab({ interview, details }) {
+  const [breathing, setBreathing] = useState(false);
+
+  return (
+    <div className="space-y-6 pb-20">
+      <div className="text-center p-6 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 rounded-2xl border border-indigo-500/20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Target className="w-32 h-32" />
+        </div>
+        <h3 className="text-2xl font-black text-white mb-2">It's Interview Day</h3>
+        <p className="text-indigo-200">You've prepared for this. Trust your training.</p>
+      </div>
+
+      <div className="bg-gray-900 p-5 rounded-xl border border-gray-800">
+        <h4 className="font-bold text-white mb-4">Your Timeline</h4>
+        <div className="space-y-4">
+          <div className="flex items-start">
+            <div className="w-8 h-8 rounded-full bg-emerald-900/30 text-emerald-400 flex items-center justify-center mr-3 border border-emerald-500/30">
+              <CheckCircle className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm">Review Notes</p>
+              <p className="text-gray-500 text-xs">Done yesterday</p>
+            </div>
+          </div>
+          <div className="flex items-start">
+            <div className="w-8 h-8 rounded-full bg-amber-900/30 text-amber-400 flex items-center justify-center mr-3 border border-amber-500/30">
+              <Coffee className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm">Pre-interview Routine</p>
+              <p className="text-gray-500 text-xs">Happening now</p>
+            </div>
+          </div>
+          <div className="flex items-start">
+            <div className="w-8 h-8 rounded-full bg-gray-800 text-gray-500 flex items-center justify-center mr-3 border border-gray-700">
+              <Target className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm">The Interview</p>
+              <p className="text-gray-500 text-xs">Scheduled for {new Date(interview.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gray-900 p-5 rounded-xl border border-gray-800 text-center">
+        <h4 className="font-bold text-white mb-2">Box Breathing</h4>
+        <p className="text-sm text-gray-400 mb-4">Calm your nervous system before the call.</p>
+        
+        {breathing ? (
+          <div className="py-8 flex flex-col items-center justify-center">
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.5, 1.5, 1, 1],
+                borderRadius: ["20%", "50%", "50%", "20%", "20%"]
+              }}
+              transition={{
+                duration: 16,
+                ease: "linear",
+                repeat: Infinity
+              }}
+              className="w-24 h-24 bg-indigo-500/20 border-2 border-indigo-500 flex items-center justify-center text-indigo-400 font-bold"
+            >
+              Breathe
+            </motion.div>
+            <button onClick={() => setBreathing(false)} className="mt-8 text-sm text-gray-500 hover:text-white">Stop</button>
+          </div>
+        ) : (
+          <button onClick={() => setBreathing(true)} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors">
+            Start 1-Minute Routine
+          </button>
+        )}
+      </div>
+
+      <div className="bg-gray-900 p-5 rounded-xl border border-gray-800 text-center">
+        <Smile className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+        <h4 className="font-bold text-white mb-2">Post-Interview Plan</h4>
+        <p className="text-sm text-gray-400">Remember to log your debrief immediately after the interview while it's fresh, then treat yourself.</p>
+      </div>
+
     </div>
   );
 }
