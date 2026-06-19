@@ -16,8 +16,7 @@ const {
   compareResumes,
   previewResume,
   bulkTagResumes,
-  uploadResumeVersion,
-  copyResume
+  uploadResumeVersion
 } = require('../controllers/resumeController');
 const {
   rewriteSectionStream,
@@ -162,7 +161,6 @@ router.get('/:id/prephub-gaps', protect, getPrepHubGaps);
 router.post('/bulk-tag', protect, bulkTagResumes);
 router.get('/stats', protect, getResumeStats);
 router.get('/cover-letters', protect, getCoverLetters);
-router.post('/:id/copy', protect, copyResume);
 
 router.route('/:id')
   .get(protect, getResumeById)
