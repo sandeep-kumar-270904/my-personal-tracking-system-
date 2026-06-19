@@ -30,6 +30,10 @@ const applicationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Resume'
   },
+  abTestId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ResumeABTest'
+  },
   notes: {
     type: String,
     default: ''
@@ -111,5 +115,30 @@ const applicationSchema = new mongoose.Schema({
 });
 
 applicationSchema.plugin(timelinePlugin);
+
+const axios = require('axios');
+
+applicationSchema.post('save', async function(doc) {
+  // Terminal states: OFFER, REJECTED
+  if (doc.status === 'OFFER' || doc.status === 'REJECTED') {
+    if (doc.resumeId) {
+      axios.post(`http://localhost:${process.env.PORT || 5000}/api/resumes/${doc.resumeId}/outcome-learning/process`, {
+        applicationId: doc._id,
+        status: doc.status
+      }).catch(err => console.error("Outcome learning failed:", err.message));
+    }
+  }
+});
+
+applicationSchema.post('findOneAndUpdate', async function(doc) {
+  if (doc && (doc.status === 'OFFER' || doc.status === 'REJECTED')) {
+    if (doc.resumeId) {
+      axios.post(`http://localhost:${process.env.PORT || 5000}/api/resumes/${doc.resumeId}/outcome-learning/process`, {
+        applicationId: doc._id,
+        status: doc.status
+      }).catch(err => console.error("Outcome learning failed:", err.message));
+    }
+  }
+});
 
 module.exports = mongoose.model('Application', applicationSchema);

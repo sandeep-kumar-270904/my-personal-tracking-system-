@@ -8,11 +8,10 @@ const Network = require('../models/Network');
 const User = require('../models/User');
 const { GoogleGenAI } = require('@google/genai');
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 // Helper to interact with Gemini
 const callGemini = async (prompt) => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,

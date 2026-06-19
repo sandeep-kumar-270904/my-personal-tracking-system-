@@ -49,6 +49,11 @@ const resumeSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  importSource: {
+    type: String,
+    enum: ['MANUAL_UPLOAD', 'LINKEDIN_IMPORT', 'AI_GENERATED'],
+    default: 'MANUAL_UPLOAD'
+  },
   pageCount: {
     type: Number
   },

@@ -42,12 +42,22 @@ const getGoalsAndProgress = async (req, res) => {
       createdAt: { $gte: startOfWeek }
     });
 
+    const ResumeJDScore = require('../models/ResumeJDScore');
+    // Calculate resumes with >= 80 score this week
+    const highScoringJDs = await ResumeJDScore.find({
+      createdAt: { $gte: startOfWeek },
+      overallScore: { $gte: 80 }
+    });
+    // Count unique resumes
+    const uniqueHighScoringResumes = new Set(highScoringJDs.map(score => score.resumeId.toString())).size;
+
     res.json({
       goal,
       progress: {
         applications: applicationsCount,
         dsa: dsaCount,
-        networking: networkCount
+        networking: networkCount,
+        resumeHealth: uniqueHighScoringResumes
       }
     });
   } catch (error) {
@@ -60,7 +70,7 @@ const getGoalsAndProgress = async (req, res) => {
 // @access  Private
 const updateGoals = async (req, res) => {
   try {
-    const { applicationsTarget, dsaTarget, networkingTarget } = req.body;
+    const { applicationsTarget, dsaTarget, networkingTarget, resumeHealthTarget } = req.body;
     
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -75,12 +85,14 @@ const updateGoals = async (req, res) => {
         weekStartDate: startOfWeek,
         applicationsTarget: applicationsTarget || 10,
         dsaTarget: dsaTarget || 5,
-        networkingTarget: networkingTarget || 3
+        networkingTarget: networkingTarget || 3,
+        resumeHealthTarget: resumeHealthTarget || 2
       });
     } else {
       if (applicationsTarget !== undefined) goal.applicationsTarget = applicationsTarget;
       if (dsaTarget !== undefined) goal.dsaTarget = dsaTarget;
       if (networkingTarget !== undefined) goal.networkingTarget = networkingTarget;
+      if (resumeHealthTarget !== undefined) goal.resumeHealthTarget = resumeHealthTarget;
       await goal.save();
     }
 

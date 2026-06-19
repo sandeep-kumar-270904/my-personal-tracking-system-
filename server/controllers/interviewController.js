@@ -182,10 +182,97 @@ const generatePrepBrief = async (req, res) => {
   }
 };
 
+// @desc    V4 RX2: Extract resume signals from interview debrief
+// @route   POST /api/interviews/:id/extract-resume-signals
+// @access  Internal hook
+const extractResumeSignals = async (req, res) => {
+  try {
+    const interviewId = req.params.id;
+    const interview = await Interview.findById(interviewId);
+    if (!interview || !interview.debrief || !interview.applicationId) return res.json({ message: 'No debrief or application linked' });
+
+    const Application = require('../models/Application');
+    const ResumeSection = require('../models/ResumeSection');
+    const InterviewResumeSignal = require('../models/InterviewResumeSignal');
+    
+    const application = await Application.findById(interview.applicationId);
+    if (!application || !application.resumeId) return res.json({ message: 'No resume linked to this interview application' });
+
+    const resumeId = application.resumeId;
+    const sections = await ResumeSection.find({ resumeId });
+    if (!sections.length) return res.json({ message: 'Resume has no sections' });
+
+    // Check if we already extracted signals for this interview to prevent infinite loops from saves
+    const existingSignals = await InterviewResumeSignal.countDocuments({ interviewId });
+    if (existingSignals > 0) return res.json({ message: 'Signals already extracted for this interview' });
+
+    const { ai } = require('../../aiService'); // We will use the common google/genai implementation from other files
+    // The prompt says we should send debrief text to LLM and get signals.
+    const prompt = `Analyze this interview debrief against the candidate's resume sections.
+Debrief: "${interview.debrief}"
+Resume Sections: ${JSON.stringify(sections.map(s => s.content))}
+
+Identify any signals from the interviewer about the candidate's resume.
+Return JSON ONLY with these arrays (empty if none):
+{
+  "positiveSignals": ["things praised that are on resume"],
+  "negativeSignals": ["things criticized that are on resume"],
+  "missingSkills": ["things asked about that weren't on resume"],
+  "strengthConfirmations": ["resume claims validated"]
+}
+Only output valid JSON.`;
+
+    const { GoogleGenAI } = require('@google/genai');
+    const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    let rawJson = response.text.trim();
+    if (rawJson.startsWith('```json')) rawJson = rawJson.slice(7, -3).trim();
+
+    let result;
+    try {
+      result = JSON.parse(rawJson);
+    } catch(e) {
+      return res.json({ message: 'Failed to parse LLM response' });
+    }
+
+    const newSignals = [];
+
+    if (result.positiveSignals) result.positiveSignals.forEach(content => newSignals.push({ interviewId, resumeId, userId: interview.userId, signalType: 'POSITIVE', content }));
+    if (result.negativeSignals) result.negativeSignals.forEach(content => newSignals.push({ interviewId, resumeId, userId: interview.userId, signalType: 'NEGATIVE', content }));
+    if (result.missingSkills) result.missingSkills.forEach(content => newSignals.push({ interviewId, resumeId, userId: interview.userId, signalType: 'MISSING_SKILL', content }));
+    if (result.strengthConfirmations) result.strengthConfirmations.forEach(content => newSignals.push({ interviewId, resumeId, userId: interview.userId, signalType: 'STRENGTH_CONFIRMED', content }));
+
+    if (newSignals.length > 0) {
+      await InterviewResumeSignal.insertMany(newSignals);
+      
+      const UnifiedTimeline = require('../models/UnifiedTimeline');
+      if (UnifiedTimeline) {
+        await UnifiedTimeline.create({
+          userId: interview.userId,
+          eventType: 'INTERVIEW_RESUME_SIGNAL',
+          content: `Extracted ${newSignals.length} intelligence signals from your ${interview.company} interview debrief.`,
+          metadata: { resumeId }
+        });
+      }
+    }
+
+    res.json({ message: 'Extracted successfully', extracted: newSignals.length });
+  } catch (error) {
+    console.error('Signal Extraction Error:', error);
+    res.status(500).json({ message: 'Extraction failed' });
+  }
+};
+
 module.exports = {
   getInterviews,
   createInterview,
   updateInterview,
   deleteInterview,
-  generatePrepBrief
+  generatePrepBrief,
+  extractResumeSignals
 };

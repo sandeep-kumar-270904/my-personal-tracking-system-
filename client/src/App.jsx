@@ -16,6 +16,7 @@ import ApplicationsPage from './pages/ApplicationsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout';
 import ResumesPage from './pages/ResumesPage';
+import ResumeIntelligenceDashboard from './pages/ResumeIntelligenceDashboard';
 import DSAPage from './pages/DSAPage';
 import InterviewsPage from './pages/InterviewsPage';
 import NetworkPage from './pages/NetworkPage';
@@ -26,6 +27,7 @@ import ContestsPage from './pages/ContestsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import SettingsPage from './pages/SettingsPage';
 import PublicProfile from './pages/PublicProfile';
+import ReviewPage from './pages/ReviewPage';
 import JourneyPage from './pages/JourneyPage';
 
 import { Toaster } from 'react-hot-toast';
@@ -61,12 +63,14 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/u/:username" element={<PublicProfile />} />
+          <Route path="/review/resume/:token" element={<ReviewPage />} />
           
           {/* Protected Dashboard Routes */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="applications" element={<ApplicationsPage />} />
             <Route path="resumes" element={<ResumesPage />} />
+            <Route path="resumes/intelligence" element={<ResumeIntelligenceDashboard />} />
             <Route path="dsa" element={<DSAPage />} />
             <Route path="interviews" element={<InterviewsPage />} />
             <Route path="network" element={<NetworkPage />} />

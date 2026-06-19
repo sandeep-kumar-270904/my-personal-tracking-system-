@@ -12,4 +12,6 @@ router.route('/')
 router.route('/:id')
   .delete(deleteEvent);
 
+router.post('/resume-schedule', require('../controllers/eventController').scheduleResumeRevamp);
+
 module.exports = router;

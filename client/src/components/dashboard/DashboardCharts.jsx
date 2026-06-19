@@ -1,6 +1,6 @@
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend, PieChart, Pie, Cell } from 'recharts';
 
-const DashboardCharts = ({ charts, heatmap }) => {
+const DashboardCharts = ({ charts, heatmap, roi, isCompact = false }) => {
   const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981', '#6366f1', '#14b8a6'];
 
   // Format pipeline data for PieChart

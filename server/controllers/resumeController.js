@@ -1,4 +1,4 @@
-﻿const Resume = require('../models/Resume');
+const Resume = require('../models/Resume');
 const ResumeVersion = require('../models/ResumeVersion');
 const ResumeAnalysis = require('../models/ResumeAnalysis');
 const ResumeSection = require('../models/ResumeSection');
@@ -58,14 +58,14 @@ const uploadResume = async (req, res) => {
         try { parsedTags = JSON.parse(tags); } catch(e) { parsedTags = tags.split(','); }
     }
 
-    const fullPath = path.join(__dirname, '../', \/uploads/resumes/\\);
+    const fullPath = path.join(__dirname, '../', 'uploads/resumes', req.file.filename);
     const { text, pageCount } = await extractTextFromPDF(fullPath);
 
     const resume = await Resume.create({
       user: req.user._id,
       filename: req.file.filename,
       originalName: req.file.originalname,
-      filePath: \/uploads/resumes/\\,
+      filePath: `/uploads/resumes/${req.file.filename}`,
       size: req.file.size,
       versionTag: versionTag || 'v1',
       isPrimary: isPrimary === 'true' || isPrimary === true,
@@ -105,16 +105,16 @@ const uploadResumeVersion = async (req, res) => {
         const { changeNote, thumbnailUrl } = req.body;
         const newVersionNum = parent.version + 1;
 
-        const fullPath = path.join(__dirname, '../', \/uploads/resumes/\\);
+        const fullPath = path.join(__dirname, '../', 'uploads/resumes', req.file.filename);
         const { text, pageCount } = await extractTextFromPDF(fullPath);
 
         const newResume = await Resume.create({
             user: req.user._id,
             filename: req.file.filename,
             originalName: req.file.originalname,
-            filePath: \/uploads/resumes/\\,
+            filePath: `/uploads/resumes/${req.file.filename}`,
             size: req.file.size,
-            versionTag: \\\,
+            versionTag: `v${newVersionNum}`,
             isPrimary: parent.isPrimary,
             name: parent.name,
             tags: parent.tags,
@@ -414,7 +414,7 @@ const previewResume = async (req, res) => {
         if (!fs.existsSync(fullPath)) return res.status(404).send('File missing');
 
         res.contentType('application/pdf');
-        res.setHeader('Content-Disposition', \inline; filename="\"\);
+        res.setHeader('Content-Disposition', `inline; filename="${resume.originalName || resume.filename}"`);
         fs.createReadStream(fullPath).pipe(res);
     } catch (e) {
         res.status(500).send('Error');

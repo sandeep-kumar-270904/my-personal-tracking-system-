@@ -41,6 +41,14 @@ const goalSchema = new mongoose.Schema({
   networkingCompleted: {
     type: Number,
     default: 0
+  },
+  resumeHealthTarget: {
+    type: Number,
+    default: 2
+  },
+  resumeHealthCompleted: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 

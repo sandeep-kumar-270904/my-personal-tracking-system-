@@ -24,6 +24,22 @@ const aggregatedStatsSchema = new mongoose.Schema({
   totalUsersSampled: {
     type: Number,
     default: 0
+  },
+  avgATSScore: {
+    type: Number,
+    default: 0
+  },
+  avgQuantifiedAchievements: {
+    type: Number,
+    default: 0
+  },
+  avgSkillsCount: {
+    type: Number,
+    default: 0
+  },
+  avgSectionCompleteness: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 

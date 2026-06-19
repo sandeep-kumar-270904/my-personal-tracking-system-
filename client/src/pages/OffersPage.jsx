@@ -7,6 +7,7 @@ import confetti from 'canvas-confetti';
 import api from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
 import EmptyState from '../components/EmptyState';
+import OfferLeverageCard from '../components/offers/OfferLeverageCard';
 
 const fetchOffers = async () => {
   const { data } = await api.get('/offers');
@@ -236,6 +237,10 @@ const OffersPage = () => {
                         "{offer.notes}"
                       </p>
                     )}
+
+                    {offer.status === 'Negotiating' || offer.status === 'Pending' || offer.status === 'Accepted' ? (
+                      <OfferLeverageCard offer={offer} />
+                    ) : null}
                   </motion.div>
                 );
               })}
