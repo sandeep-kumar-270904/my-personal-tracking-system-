@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
-import { Target, Clock, ArrowRight, Brain, AlertTriangle } from 'lucide-react';
+import { Target, Clock, ArrowRight, Brain, AlertTriangle, Briefcase, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AdaptiveDifficultyBadge from './AdaptiveDifficultyBadge';
 
@@ -58,6 +58,16 @@ const TodaysMission = ({ onLogProblem, onReviewProblem, onStartSession }) => {
                     {rec.difficulty && (
                       <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-500/10 text-red-400">
                         {rec.difficulty}
+                      </span>
+                    )}
+                    {rec.source === 'JD_SIGNAL' && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 flex items-center gap-1" title="Required by a target company's job description">
+                        <Briefcase className="w-3 h-3"/> JD Match
+                      </span>
+                    )}
+                    {rec.source === 'LEARNING_REINFORCEMENT' && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 flex items-center gap-1" title="Practice recent PrepHub learning">
+                        <Activity className="w-3 h-3"/> PrepHub Concept
                       </span>
                     )}
                   </div>

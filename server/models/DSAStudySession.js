@@ -32,8 +32,13 @@ const dsaStudySessionSchema = new mongoose.Schema({
     default: []
   },
   focusScore: {
-    type: Number, // 0-100
-    default: 0
+    type: Number,
+    default: null
+  },
+  calendarEventId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Event',
+    default: null
   },
   notes: {
     type: String,

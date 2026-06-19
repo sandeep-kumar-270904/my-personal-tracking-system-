@@ -89,6 +89,10 @@ const userSchema = new mongoose.Schema({
   activeBacklogs: {
     type: Number,
     default: 0
+  },
+  newProblemLock: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

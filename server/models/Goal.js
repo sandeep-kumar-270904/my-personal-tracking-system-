@@ -49,7 +49,16 @@ const goalSchema = new mongoose.Schema({
   resumeHealthCompleted: {
     type: Number,
     default: 0
-  }
+  },
+  dsaQualityScore: {
+    type: Number, // 0-100
+    default: 0
+  },
+  patternGoals: [{
+    pattern: String,
+    targetMasteryLevel: String,
+    targetDate: Date
+  }]
 }, { timestamps: true });
 
 goalSchema.plugin(timelinePlugin);

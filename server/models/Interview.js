@@ -1,6 +1,20 @@
 const mongoose = require('mongoose');
 const timelinePlugin = require('../utils/timelinePlugin');
 
+const questionSchema = new mongoose.Schema({
+  question: { type: String, required: true },
+  category: { 
+    type: String, 
+    enum: ['TECHNICAL', 'BEHAVIORAL', 'DSA', 'SYSTEM_DESIGN', 'HR'] 
+  },
+  difficulty: { 
+    type: String, 
+    enum: ['EASY', 'MEDIUM', 'HARD'] 
+  },
+  userAnswer: { type: String },
+  wasAnsweredWell: { type: Boolean, default: false }
+});
+
 const interviewSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -27,20 +41,48 @@ const interviewSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  roundType: {
+    type: String,
+    enum: ['ONLINE_ASSESSMENT', 'TECHNICAL', 'SYSTEM_DESIGN', 'BEHAVIORAL', 'HR', 'CASE_STUDY', 'GROUP_DISCUSSION', 'APTITUDE'],
+    default: 'TECHNICAL'
+  },
   type: {
     type: String,
     enum: ['ONLINE', 'INPERSON', 'VIDEO'],
     default: 'VIDEO'
   },
+  interviewer: {
+    type: String,
+    default: '',
+  },
+  interviewerName: { type: String, default: '' },
+  interviewerRole: { type: String, default: '' },
+  interviewerLinkedIn: { type: String, default: '' },
+  durationMinutes: { type: Number, default: 60 },
+  platform: {
+    type: String,
+    enum: ['ZOOM', 'MEET', 'TEAMS', 'PHONE', 'IN_PERSON', 'HACKERRANK', 'CODEPAIR', 'OTHER'],
+    default: 'ZOOM'
+  },
+  meetingUrl: { type: String, default: '' },
+  address: { type: String, default: '' },
+  commuteTimeEstimate: { type: Number, default: 0 },
+  liveNotes: [{
+    timestamp: Date,
+    text: String,
+    tag: {
+      type: String,
+      enum: ['GREEN', 'RED', 'YELLOW', 'BLUE']
+    }
+  }],
   notes: {
     type: String,
   },
   prepBrief: {
     type: String,
   },
-  questionsAsked: [{
-    type: String
-  }],
+  // We keep mixed to support legacy strings or the new object format
+  questionsAsked: [mongoose.Schema.Types.Mixed],
   prepNotes: {
     type: String,
     default: '',
@@ -49,13 +91,21 @@ const interviewSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
-  interviewer: {
+  outcome: {
     type: String,
-    default: '',
+    enum: ['PENDING', 'PASSED', 'FAILED', 'CANCELLED', 'NO_SHOW', 'AWAITING_RESULT'],
+    default: 'PENDING'
   },
+  feedbackReceived: { type: String, default: '' },
+  offerMade: { type: Boolean, default: false },
+  ctcDiscussed: { type: Number },
   followUpDate: {
     type: Date,
   },
+  confidenceLevel: { type: Number, min: 1, max: 10 },
+  performanceRating: { type: Number, min: 1, max: 10 },
+  stressLevel: { type: Number, min: 1, max: 10 },
+  linkedinConnected: { type: Boolean, default: false },
   status: {
     type: String,
     enum: ['SCHEDULED', 'COMPLETED', 'CANCELLED'],
@@ -73,6 +123,13 @@ interviewSchema.post('save', async function(doc) {
     axios.post(`http://localhost:${process.env.PORT || 5000}/api/interviews/${doc._id}/extract-resume-signals`)
          .catch(err => console.error("Resume signal extraction failed:", err.message));
   }
+  
+  // V4: Activate Prep Mode
+  axios.post(`http://localhost:${process.env.PORT || 5000}/api/dsa/interviews/${doc._id}/activate-prep-mode`, {
+    companyName: doc.company,
+    interviewDate: doc.scheduledAt,
+    userId: doc.userId
+  }).catch(err => console.error("DSA prep mode activation failed:", err.message));
 });
 
 interviewSchema.post('findOneAndUpdate', async function(doc) {

@@ -15,6 +15,7 @@ const QuickLogModal = ({ isOpen, onClose, initialTitle }) => {
     topic: 'Arrays',
     difficulty: 'MEDIUM',
     platform: 'LEETCODE',
+    timeToApproach: '',
     timeToSolve: '',
     confidenceLevel: 'OKAY',
     notes: ''
@@ -130,9 +131,19 @@ const QuickLogModal = ({ isOpen, onClose, initialTitle }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Time to Solve (min)</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1" title="Time to first correct approach">Approach (min)</label>
+                <input 
+                  type="number" 
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                  value={formData.timeToApproach}
+                  onChange={e => setFormData({...formData, timeToApproach: e.target.value})}
+                  placeholder="e.g. 5"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Total Time (min)</label>
                 <input 
                   type="number" 
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 transition-colors"

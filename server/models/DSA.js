@@ -63,6 +63,11 @@ const dsaSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  prephubResourceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PrepSyllabus',
+    default: null
+  },
   lastReviewedAt: {
     type: Date,
     default: null

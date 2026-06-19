@@ -37,6 +37,13 @@ const networkSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  lastContacted: {
+    type: Date
+  },
+  dsaInsightsShared: {
+    type: String,
+    default: ''
+  },
   notes: {
     type: String,
     default: ''
@@ -51,5 +58,27 @@ const networkSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 networkSchema.plugin(timelinePlugin);
+
+const axios = require('axios');
+
+networkSchema.post('save', async function(doc) {
+  if (doc.dsaInsightsShared && doc.dsaInsightsShared.length > 5) {
+    axios.post(`http://localhost:${process.env.PORT || 5000}/api/dsa/signals/from-contact`, {
+      textShared: doc.dsaInsightsShared,
+      companyName: doc.company,
+      userId: doc.user
+    }).catch(err => console.error("DSA contact signals failed:", err.message));
+  }
+});
+
+networkSchema.post('findOneAndUpdate', async function(doc) {
+  if (doc && doc.dsaInsightsShared && doc.dsaInsightsShared.length > 5) {
+    axios.post(`http://localhost:${process.env.PORT || 5000}/api/dsa/signals/from-contact`, {
+      textShared: doc.dsaInsightsShared,
+      companyName: doc.company,
+      userId: doc.user
+    }).catch(err => console.error("DSA contact signals failed:", err.message));
+  }
+});
 
 module.exports = mongoose.model('Network', networkSchema);

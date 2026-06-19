@@ -49,6 +49,50 @@ const {
   recalibrateCurriculum
 } = require('../controllers/dsaV3Controller');
 
+const {
+  extractResumeSignals,
+  activateInterviewPrepMode,
+  getApplicationIntelligence,
+  generatePreContestBrief,
+  scheduleStudyBlocks,
+  extractNetworkingSignals,
+  processPrepHubCompletion,
+  getCommandCenterData
+} = require('../controllers/dsaV4Controller');
+
+const {
+  submitDiagnostic,
+  getConceptModules,
+  getConceptModuleById,
+  completeConceptModule,
+  logThinkingVelocity,
+  getThinkingVelocityTrend,
+  logBlindImplementation,
+  submitORCA,
+  evaluateRubberDuck,
+  evaluateSolutionQuality,
+  checkCalibrationEligible,
+  startCalibration,
+  submitCalibration,
+  submitStuckProtocol,
+  startPressureMode,
+  submitPressureMode,
+  getPressureGap,
+  getNextPatternDisguise,
+  submitPatternDisguise,
+  getPatternRecognitionAccuracy,
+  getDailyBrief,
+  completeDailyBriefTask,
+  getAvoidanceLocks,
+  checkAvoidanceUnlock,
+  getActiveRecallDue,
+  submitActiveRecallAnswer,
+  getWeeklyHonestReport,
+  getPlacementSentence,
+  getCompanyReadiness,
+  activateInterviewEve
+} = require('../controllers/dsaV5Controller');
+
 const { protect } = require('../middleware/authMiddleware');
 
 router.use(protect);
@@ -100,5 +144,47 @@ router.post('/interviews/:id/extract-dsa-signals', extractDSASignals);
 router.post('/generate-curriculum', generateCurriculum);
 router.get('/curriculum', getCurriculum);
 router.post('/curriculum/recalibrate', recalibrateCurriculum);
+
+// --- V4 Addons ---
+router.post('/signals/from-resume-jd', extractResumeSignals);
+router.post('/interviews/:id/activate-prep-mode', activateInterviewPrepMode);
+router.get('/application-intelligence', getApplicationIntelligence);
+router.post('/contests/:id/pre-contest-brief', generatePreContestBrief);
+router.post('/schedule-study-blocks', scheduleStudyBlocks);
+router.post('/signals/from-contact', extractNetworkingSignals);
+router.post('/signals/from-prephub', processPrepHubCompletion);
+router.get('/command-center', getCommandCenterData);
+
+// --- V5 Addons ---
+router.post('/diagnostic', submitDiagnostic);
+router.get('/concept-modules', getConceptModules);
+router.get('/concept-modules/:id', getConceptModuleById);
+router.post('/concept-modules/:id/complete', completeConceptModule);
+router.post('/problems/:id/thinking-velocity', logThinkingVelocity);
+router.get('/thinking-velocity', getThinkingVelocityTrend);
+router.post('/problems/:id/blind-implementation', logBlindImplementation);
+router.post('/problems/:id/orca', submitORCA);
+router.post('/problems/:id/rubber-duck', evaluateRubberDuck);
+router.post('/problems/:id/solution-quality', evaluateSolutionQuality);
+router.get('/calibration/eligible', checkCalibrationEligible);
+router.post('/calibration/start', startCalibration);
+router.post('/calibration/submit', submitCalibration);
+router.post('/problems/:id/stuck-protocol', submitStuckProtocol);
+router.post('/pressure-mode/start', startPressureMode);
+router.post('/pressure-mode/submit', submitPressureMode);
+router.get('/pressure-gap', getPressureGap);
+router.get('/pattern-disguise/next', getNextPatternDisguise);
+router.post('/pattern-disguise/submit', submitPatternDisguise);
+router.get('/pattern-recognition-accuracy', getPatternRecognitionAccuracy);
+router.get('/daily-brief', getDailyBrief);
+router.post('/daily-brief/complete-task', completeDailyBriefTask);
+router.get('/avoidance-locks', getAvoidanceLocks);
+router.post('/avoidance-locks/check-unlock', checkAvoidanceUnlock);
+router.get('/active-recall/due', getActiveRecallDue);
+router.post('/active-recall/:noteId/answer', submitActiveRecallAnswer);
+router.get('/weekly-honest-report', getWeeklyHonestReport);
+router.get('/placement-sentence', getPlacementSentence);
+router.get('/company-readiness/:companyName', getCompanyReadiness);
+router.post('/interview-eve/activate', activateInterviewEve);
 
 module.exports = router;

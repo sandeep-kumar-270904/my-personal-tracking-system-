@@ -7,6 +7,7 @@ import BottomNavBar from './BottomNavBar';
 import InstallPWA from './InstallPWA';
 import NotificationDropdown from './NotificationDropdown';
 import CommandCenter from './CommandCenter';
+import DailyBriefModal from './dsa/v5/DailyBriefModal';
 
 const PageTransition = ({ children }) => {
   const location = useLocation();
@@ -50,6 +51,7 @@ const DashboardLayout = () => {
       <BottomNavBar />
       <InstallPWA />
       <CommandCenter />
+      <DailyBriefModal />
     </div>
   );
 };

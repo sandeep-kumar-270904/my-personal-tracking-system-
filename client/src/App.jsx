@@ -18,7 +18,10 @@ import DashboardLayout from './components/DashboardLayout';
 import ResumesPage from './pages/ResumesPage';
 import ResumeIntelligenceDashboard from './pages/ResumeIntelligenceDashboard';
 import DSAPage from './pages/DSAPage';
-import InterviewsPage from './pages/InterviewsPage';
+import DSACommandCenter from './pages/DSACommandCenter';
+import InterviewsV2Page from './pages/InterviewsV2Page';
+import BehavioralStoryBank from './pages/BehavioralStoryBank';
+import LiveNotesWidget from './pages/LiveNotesWidget';
 import NetworkPage from './pages/NetworkPage';
 import CalendarPage from './pages/CalendarPage';
 import GoalsPage from './pages/GoalsPage';
@@ -72,7 +75,10 @@ function App() {
             <Route path="resumes" element={<ResumesPage />} />
             <Route path="resumes/intelligence" element={<ResumeIntelligenceDashboard />} />
             <Route path="dsa" element={<DSAPage />} />
-            <Route path="interviews" element={<InterviewsPage />} />
+            <Route path="dsa/command-center" element={<DSACommandCenter />} />
+            <Route path="interviews" element={<InterviewsV2Page />} />
+            <Route path="interviews/stories" element={<BehavioralStoryBank />} />
+            <Route path="interviews/:id/live-notes" element={<LiveNotesWidget />} />
             <Route path="network" element={<NetworkPage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="goals" element={<GoalsPage />} />

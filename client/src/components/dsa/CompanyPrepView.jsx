@@ -5,10 +5,10 @@ import api from '../../services/api';
 import { motion } from 'framer-motion';
 
 const CompanyPrepView = () => {
-  const { data: companyPatterns, isLoading } = useQuery({
-    queryKey: ['dsa', 'company-patterns'],
+  const { data: appIntelligence, isLoading } = useQuery({
+    queryKey: ['dsa', 'application-intelligence'],
     queryFn: async () => {
-      const res = await api.get('/dsa/company-patterns');
+      const res = await api.get('/dsa/application-intelligence');
       return res.data;
     }
   });
@@ -21,31 +21,28 @@ const CompanyPrepView = () => {
     <div className="mb-10 bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl p-6">
       <div className="flex items-center gap-2 mb-4">
         <Briefcase className="w-5 h-5 text-emerald-500" />
-        <h2 className="text-lg font-bold text-white">Target Company Prep</h2>
+        <h2 className="text-lg font-bold text-white">Application Portfolio Intelligence</h2>
       </div>
+      <p className="text-xs text-gray-400 mb-4">Ranked DSA patterns across all your active applications based on interview urgency and fit score.</p>
       
-      {companyPatterns?.length > 0 ? (
-        <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
-          {companyPatterns.map((cp, idx) => (
+      {appIntelligence?.rankedPatterns?.length > 0 ? (
+        <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+          {appIntelligence.rankedPatterns.map((rp, idx) => (
             <motion.div 
               key={idx}
-              whileHover={{ scale: 1.02 }}
-              className="min-w-[250px] bg-gray-800/80 rounded-xl p-4 border border-gray-700"
+              className="bg-gray-800/80 rounded-xl p-4 border border-gray-700 flex flex-col gap-2"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Building className="w-4 h-4 text-gray-400" />
-                <h3 className="font-semibold text-white">{cp.company}</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-white flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                  {rp.pattern}
+                </h3>
+                <span className="text-xs font-bold text-gray-400">Score: {rp.score}</span>
               </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Readiness</p>
-                  <p className="text-xl font-bold text-emerald-400">{cp.readinessScore}%</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-400 mb-1">Top Pattern</p>
-                  <p className="text-sm font-medium text-gray-200">{cp.patterns[0]?.pattern.replace(/_/g, ' ')}</p>
-                </div>
-              </div>
+              <p className="text-xs text-gray-300">
+                {rp.pattern} appears in <span className="text-white font-bold">{rp.applications.length}</span> of your active applications ({rp.applications.join(', ')}). 
+                {idx === 0 && <span className="text-rose-400 font-medium ml-1">Highest priority.</span>}
+              </p>
             </motion.div>
           ))}
         </div>

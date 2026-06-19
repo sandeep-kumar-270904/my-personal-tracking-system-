@@ -6,30 +6,44 @@ const mockInterviewSchema = new mongoose.Schema({
     required: true,
     ref: 'User',
   },
-  interviewType: {
-    type: Number, // e.g., 45, 60, 90 (minutes)
-    required: true,
-  },
   targetCompany: {
     type: String,
     default: ''
   },
-  problemsAttempted: {
-    type: Array, // Array of problem objects { title, difficulty, userApproach, timeComplexity, spaceComplexity }
-    default: []
+  targetRole: {
+    type: String,
+    default: ''
   },
-  overallScore: {
+  roundType: {
+    type: String,
+    enum: ['ONLINE_ASSESSMENT', 'TECHNICAL', 'SYSTEM_DESIGN', 'BEHAVIORAL', 'HR', 'CASE_STUDY', 'GROUP_DISCUSSION', 'APTITUDE'],
+    default: 'TECHNICAL'
+  },
+  scheduledAt: {
+    type: Date,
+    default: Date.now
+  },
+  conductedWith: {
+    type: String,
+    enum: ['SELF', 'PEER', 'MENTOR', 'AI'],
+    default: 'SELF'
+  },
+  performanceScore: {
     type: Number, // 0-100
     default: 0
   },
-  weaknessesExposed: {
-    type: [String], // Array of strings (e.g., 'Time Complexity Analysis', 'Dynamic Programming Optimization')
-    default: []
+  feedbackNotes: {
+    type: String,
+    default: ''
   },
-  completedAt: {
-    type: Date,
-    default: Date.now
-  }
+  questionsUsed: [{
+    type: mongoose.Schema.Types.Mixed // Array of question objects
+  }],
+  // Legacy fields
+  interviewType: { type: Number },
+  problemsAttempted: { type: Array, default: [] },
+  weaknessesExposed: { type: [String], default: [] },
+  completedAt: { type: Date }
 }, { timestamps: true });
 
 module.exports = mongoose.model('MockInterview', mockInterviewSchema);

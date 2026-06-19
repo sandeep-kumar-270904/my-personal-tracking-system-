@@ -14,6 +14,10 @@ const resumeSectionSchema = new mongoose.Schema({
   content: {
     type: String,
   },
+  skillEvidence: {
+    type: Object,
+    default: {}
+  },
   orderIndex: {
     type: Number,
     default: 0,
