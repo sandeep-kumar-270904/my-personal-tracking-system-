@@ -192,7 +192,7 @@ export default function ResumesPage() {
             <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                style={{ width: \`\${Math.min(100, ((goalData.progress?.resumeHealth || 0) / (goalData.goal.resumeHealthTarget || 2)) * 100)}%\` }}
+                style={{ width: `${Math.min(100, ((goalData.progress?.resumeHealth || 0) / (goalData.goal.resumeHealthTarget || 2)) * 100)}%` }}
               />
             </div>
           </div>
