@@ -40,6 +40,26 @@ const aggregatedStatsSchema = new mongoose.Schema({
   avgSectionCompleteness: {
     type: Number,
     default: 0
+  },
+  medianProblemsPerWeek: {
+    type: Number,
+    default: 0
+  },
+  medianStreakLength: {
+    type: Number,
+    default: 0
+  },
+  medianTopicsCovered: {
+    type: Number,
+    default: 0
+  },
+  medianPatternsMastered: {
+    type: Number,
+    default: 0
+  },
+  topPercentileProblemsTotal: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 

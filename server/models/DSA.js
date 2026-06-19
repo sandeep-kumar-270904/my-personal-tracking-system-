@@ -18,7 +18,7 @@ const dsaSchema = new mongoose.Schema({
   },
   platform: {
     type: String,
-    enum: ['LEETCODE', 'GFG', 'CODEFORCES'],
+    enum: ['LEETCODE', 'GFG', 'CODEFORCES', 'OTHER'],
     default: 'LEETCODE'
   },
   solvedAt: {
@@ -29,7 +29,7 @@ const dsaSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  url: {
+  url: { // Acts as problemUrl
     type: String,
     default: '',
   },
@@ -37,6 +37,61 @@ const dsaSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  
+  // V4 Additions for Intelligence System
+  title: {
+    type: String,
+  },
+  timeToSolve: {
+    type: Number, // in minutes
+    default: null
+  },
+  personalDifficulty: {
+    type: Number, // 1-10 scale
+    default: null
+  },
+  attemptCount: {
+    type: Number,
+    default: 1
+  },
+  confidenceLevel: {
+    type: String,
+    enum: ['SHAKY', 'OKAY', 'SOLID', 'MASTERED'],
+    default: 'OKAY'
+  },
+  reviewDue: {
+    type: Date,
+    default: null
+  },
+  lastReviewedAt: {
+    type: Date,
+    default: null
+  },
+  reviewInterval: {
+    type: Number, // internal for spaced repetition
+    default: null
+  },
+  patternTags: {
+    type: [String],
+    default: []
+  },
+  isStarred: {
+    type: Boolean,
+    default: false
+  },
+  solvedDuringContest: {
+    type: Boolean,
+    default: false
+  },
+  contestId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Contest',
+    default: null
+  },
+  autoImported: {
+    type: Boolean,
+    default: false
+  }
 }, { timestamps: true });
 
 const axios = require('axios');
@@ -46,9 +101,6 @@ dsaSchema.plugin(timelinePlugin);
 dsaSchema.post('save', async function(doc) {
   try {
     // Fire and forget background sync
-    // In production, you'd use a message queue, but here we call the local endpoint or logic
-    // Since we're in the same app, it's safer to just require the controller logic directly if possible,
-    // or make an HTTP request. Let's make an HTTP request to the new endpoint.
     axios.post(`http://localhost:${process.env.PORT || 5000}/api/resumes/sync-dsa-skills`, {
       userId: doc.userId,
       topic: doc.topic

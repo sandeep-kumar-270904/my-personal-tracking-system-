@@ -62,6 +62,14 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
+  leetcodeUsername: {
+    type: String,
+    default: ''
+  },
+  gfgUsername: {
+    type: String,
+    default: ''
+  },
   isPublicProfile: {
     type: Boolean,
     default: false
