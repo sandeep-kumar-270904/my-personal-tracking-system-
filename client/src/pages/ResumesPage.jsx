@@ -44,7 +44,7 @@ export default function ResumesPage() {
       const res = await api.get('/resumes');
       return res.data;
     },
-    refetchInterval: (data) => data?.some(r => r.isAnalyzing) ? 3000 : false
+    refetchInterval: (query) => query.state.data?.some(r => r.isAnalyzing) ? 3000 : false
   });
 
   const { data: stats, isLoading: statsLoading } = useQuery({
