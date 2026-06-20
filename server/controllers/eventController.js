@@ -2,7 +2,7 @@ const Event = require('../models/Event');
 const User = require('../models/User');
 const Interview = require('../models/Interview');
 const Application = require('../models/Application');
-const { utcToLocalTime, localTimeToUTC } = require('../utils/timezoneHelper');
+
 const { pushEventToGoogle, deleteEventFromGoogle, getAuthUrl, exchangeCode, pullEventsFromGoogle } = require('../utils/googleSync');
 const Notification = require('../models/Notification');
 
