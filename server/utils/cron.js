@@ -215,6 +215,109 @@ const startCronJobs = () => {
       console.error('Error running cron job:', error);
     }
   });
+
+  // 1-minute cron job for Event Reminders
+  cron.schedule('* * * * *', async () => {
+    try {
+      const now = new Date();
+      // Find events that have active reminders and haven't sent yet
+      const eventsWithReminders = await Event.find({
+        reminder_minutes_before: { $ne: null },
+        reminderSent: false,
+        status: 'upcoming'
+      });
+
+      const Notification = require('../models/Notification');
+
+      for (const event of eventsWithReminders) {
+        const eventDate = new Date(event.date);
+        
+        // Set time part
+        if (event.start_time && !event.is_all_day) {
+          const [h, m] = event.start_time.split(':').map(Number);
+          eventDate.setHours(h, m, 0, 0);
+        } else {
+          // All-day default 9:00 AM local time
+          eventDate.setHours(9, 0, 0, 0);
+        }
+
+        const triggerTime = new Date(eventDate.getTime() - event.reminder_minutes_before * 60000);
+
+        if (now >= triggerTime) {
+          // Send notification
+          let icon = '🗓️';
+          if (event.type === 'interview') icon = '🎯';
+          else if (event.type === 'application_deadline' || event.type === 'deadline') icon = '⏳';
+          else if (event.type === 'offer_deadline') icon = '💸';
+
+          // Determine dayString (today / tomorrow / date)
+          const todayDate = new Date();
+          todayDate.setHours(0,0,0,0);
+          const compDate = new Date(event.date);
+          compDate.setHours(0,0,0,0);
+          
+          const diffDays = Math.round((compDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          let dayString = `on ${eventDate.toLocaleDateString()}`;
+          if (diffDays === 0) dayString = 'today';
+          else if (diffDays === 1) dayString = 'tomorrow';
+
+          const timeString = event.is_all_day ? 'all day' : `at ${event.start_time}`;
+
+          await Notification.create({
+            userId: event.user,
+            title: `Reminder: ${event.title}`,
+            message: `${icon} ${event.title} — ${timeString} ${dayString}`,
+            type: 'CALENDAR',
+            link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
+          });
+
+          // Mark reminder as sent
+          event.reminderSent = true;
+          await event.save();
+        }
+      }
+    } catch (err) {
+      console.error('Error running 1-minute reminder cron job:', err);
+    }
+  });
+
+  // Daily status tracker (marks past events as missed at 12:01 AM everyday)
+  cron.schedule('1 0 * * *', async () => {
+    try {
+      console.log('Running daily missed status updater...');
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      const result = await Event.updateMany(
+        {
+          date: { $lt: today },
+          status: 'upcoming',
+          type: { $in: ['interview', 'application_deadline', 'offer_deadline', 'deadline'] }
+        },
+        { $set: { status: 'missed' } }
+      );
+      console.log(`Updated ${result.modifiedCount} past events to 'missed' status.`);
+    } catch (err) {
+      console.error('Error running daily status cron job:', err);
+    }
+  });
+
+  // 15-minute cron job to pull Google Calendar events for connected users
+  cron.schedule('*/15 * * * *', async () => {
+    try {
+      console.log('Running 15-minute Google Calendar pull worker...');
+      const User = require('../models/User');
+      const { pullEventsFromGoogle } = require('./googleSync');
+      
+      const users = await User.find({ 'googleCalendarSync.connected': true });
+      for (const user of users) {
+        await pullEventsFromGoogle(user);
+      }
+    } catch (err) {
+      console.error('Error running 15-minute Google Calendar pull worker:', err);
+    }
+  });
 };
 
 module.exports = startCronJobs;

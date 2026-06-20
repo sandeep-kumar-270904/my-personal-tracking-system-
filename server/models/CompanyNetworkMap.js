@@ -33,6 +33,18 @@ const companyNetworkMapSchema = new mongoose.Schema({
   lastUpdated: {
     type: Date,
     default: Date.now
+  },
+  // Networking V7 Fields
+  hasReferralBonus: {
+    type: Boolean,
+    default: false
+  },
+  referralBonusAmount: {
+    type: String
+  },
+  bonusContributedByCount: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 

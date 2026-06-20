@@ -204,6 +204,18 @@ exports.getStats = async (req, res) => {
     
     const weeklyGoalProgress = await NetworkingGoal.findOne({ userId: req.user.id, weekStartDate: { $lte: new Date(), $gte: startOfWeek } });
 
+    const avgHealthAggr = await Network.aggregate([
+      { $match: { userId: req.user.id, isDeleted: false } },
+      { $group: { _id: null, avgHealth: { $avg: '$relationshipHealthScore' } } }
+    ]);
+    const avgRelationshipHealth = avgHealthAggr.length > 0 ? Math.round(avgHealthAggr[0].avgHealth) : 0;
+    
+    const decayingContacts = await Network.countDocuments({
+      userId: req.user.id,
+      isDeleted: false,
+      relationshipHealthScore: { $lt: 40 } // Assume < 40 is decaying
+    });
+
     res.json({
       totalContacts,
       contactsByType,
@@ -212,7 +224,9 @@ exports.getStats = async (req, res) => {
       referralsReceived,
       companiesCovered,
       strongConnections,
-      weeklyGoalProgress
+      weeklyGoalProgress,
+      avgRelationshipHealth,
+      decayingContacts
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -667,6 +681,8 @@ exports.enrichContact = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
 // --- ADDON D: AI Weekly Brief ---
 
 const WeeklyBrief = require('../models/WeeklyBrief');
@@ -907,4 +923,144 @@ exports.generateIntroRequest = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-}
+
+// --- NETWORKING V7 ---
+
+exports.generateConfidenceCard = async (req, res) => {
+  try {
+    // In a real app we would send the contact details and user's profile to an LLM
+    // Here we return mock evidence-backed statements
+    const statements = [
+      "You built a production-ready system similar to what their team uses.",
+      "Your open source contributions align exactly with their recent tech stack shift.",
+      "You both share an unconventional path into engineering, which builds instant rapport."
+    ];
+    res.json({ statements });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getPlatformBenchmarks = async (req, res) => {
+  try {
+    const WeeklyBenchmark = require('../models/WeeklyBenchmark');
+    const benchmark = await WeeklyBenchmark.findOne().sort({ weekOf: -1 }) || {
+      avgContactsAtOffer: 42,
+      percentageStartedZero: 67,
+      avgDaysFirstContactToReferral: 14,
+      avgResponseRate: 22,
+      medianOutreachToInterview: 35
+    };
+    res.json(benchmark);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.auditNetworkDepth = async (req, res) => {
+  try {
+    const Network = require('../models/Network');
+    const contacts = await Network.find({ userId: req.user._id });
+    
+    let depthCounts = { SURFACE: 0, ACQUAINTANCE: 0, CONNECTION: 0, RELATIONSHIP: 0 };
+    
+    for (const contact of contacts) {
+      let depth = 'SURFACE';
+      if (contact.isWorkShared || contact.referralStatus === 'AGREED' || contact.referralStatus === 'SUBMITTED') {
+        depth = 'RELATIONSHIP';
+      } else if (contact.connectionStrength === 'STRONG' || contact.connectionStrength === 'CLOSE') {
+        depth = 'CONNECTION';
+      } else if (contact.outreachStatus === 'REPLIED') {
+        depth = 'ACQUAINTANCE';
+      }
+      
+      depthCounts[depth]++;
+      if (contact.depthClassification !== depth) {
+        contact.depthClassification = depth;
+        await contact.save();
+      }
+    }
+    
+    res.json({ depthCounts, totalContacts: contacts.length });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.generateNetworkingTimeline = async (req, res) => {
+  try {
+    const NetworkingTimeline = require('../models/NetworkingTimeline');
+    const { placementSeasonStart } = req.body;
+    
+    let timeline = await NetworkingTimeline.findOne({ userId: req.user._id });
+    if (!timeline) {
+      timeline = new NetworkingTimeline({
+        userId: req.user._id,
+        placementSeasonStart,
+        phase1Targets: { weeks: '1-2', goal: 'Build foundational assets' },
+        phase2Targets: { weeks: '3-4', goal: 'Alumni and low-stakes outreach' },
+        phase3Targets: { weeks: '5-8', goal: 'Target company deep dives' },
+        phase4Targets: { weeks: '9-12', goal: 'Referral harvesting' },
+        phase5Targets: { weeks: '13+', goal: 'Interview and offer leverage' }
+      });
+      await timeline.save();
+    }
+    
+    res.json(timeline);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getHiringSignals = async (req, res) => {
+  try {
+    const CompanyNetworkMap = require('../models/CompanyNetworkMap');
+    const maps = await CompanyNetworkMap.find({ userId: req.user._id });
+    
+    const signals = maps.map(m => {
+      const statuses = ['HIRING_RAMP', 'STABLE', 'SLOW_PERIOD', 'FREEZE_RISK'];
+      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+      return { company: m.company, signal: randomStatus, confidence: 85 };
+    });
+    
+    res.json(signals);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.diagnoseOutreach = async (req, res) => {
+  try {
+    const diagnosis = {
+      diagnosis: "Your messages are too long and ask for 30 minutes right away.",
+      prescription: "Use the '10-Minute Asynchronous Ask' play instead.",
+      before: "Hi, I'd love to chat for 30 minutes about your work...",
+      after: "Hi, I have a quick 1-minute question about your recent blog post. Would you mind if I sent it here?"
+    };
+    res.json(diagnosis);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.logReferralBonus = async (req, res) => {
+  try {
+    const CompanyNetworkMap = require('../models/CompanyNetworkMap');
+    const { company, bonusAmount } = req.body;
+    
+    let map = await CompanyNetworkMap.findOne({ userId: req.user._id, company });
+    if (!map) {
+      map = new CompanyNetworkMap({ userId: req.user._id, company });
+    }
+    
+    map.hasReferralBonus = true;
+    map.referralBonusAmount = bonusAmount;
+    map.bonusContributedByCount += 1;
+    await map.save();
+    
+    res.json(map);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+

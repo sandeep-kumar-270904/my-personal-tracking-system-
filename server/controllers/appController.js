@@ -1,4 +1,5 @@
 const Application = require('../models/Application');
+const { syncEventFromSource, removeEventForSource } = require('../utils/calendarSync');
 const ApplicationTimeline = require('../models/ApplicationTimeline');
 const Interview = require('../models/Interview');
 const { logTimelineEvent } = require('../services/timelineService');
@@ -21,6 +22,14 @@ const getApplications = async (req, res) => {
     // V3: Dead filter
     if (isDead === 'true') {
       query.momentumScore = { $lt: 20 };
+    }
+
+    // V5: No Network filter
+    if (req.query.noNetwork === 'true') {
+      const Network = require('../models/Network');
+      const contacts = await Network.find({ userId: req.user._id, isDeleted: false }).select('company');
+      const companiesWithContacts = [...new Set(contacts.map(c => c.company))];
+      query.company = { $nin: companiesWithContacts };
     }
 
     if (status && status !== 'All') {
@@ -57,8 +66,32 @@ const getApplications = async (req, res) => {
     const terminalCount = await Application.countDocuments({ userId: req.user._id, status: { $in: ['OFFER', 'REJECTED'] }, deletedAt: null });
     const hasEnoughDataForPrediction = terminalCount >= 10;
 
+    const Network = require('../models/Network');
+
+    // Attach networking data
+    const appCompanies = applications.map(a => a.company);
+    const networkContacts = await Network.find({
+      userId: req.user._id,
+      company: { $in: appCompanies },
+      isDeleted: false
+    });
+
+    const applicationsWithNetworking = applications.map(app => {
+      const companyContacts = networkContacts.filter(c => c.company === app.company);
+      const referralContact = companyContacts.find(c => ['ASKED', 'AGREED', 'SUBMITTED'].includes(c.referralStatus));
+      
+      return {
+        ...app.toObject(),
+        network: {
+          contactCount: companyContacts.length,
+          hasReferralBoost: !!referralContact,
+          referralStatus: referralContact ? referralContact.referralStatus : null
+        }
+      };
+    });
+
     res.json({
-      applications,
+      applications: applicationsWithNetworking,
       totalCount,
       page: parseInt(page),
       totalPages: Math.ceil(totalCount / parseInt(limit)),
@@ -124,7 +157,7 @@ const levenshtein = (a, b) => {
 
 const createApplication = async (req, res) => {
   try {
-    const { company, role, status = 'APPLIED', dateApplied = new Date(), resumeId, jobDescriptionUrl, source = 'ONLINE', priority = 'MEDIUM', notes, tags, link, ignoreDuplicate } = req.body;
+    const { company, role, status = 'APPLIED', dateApplied = new Date(), resumeId, jobDescriptionUrl, source = 'ONLINE', priority = 'MEDIUM', notes, tags, link, ignoreDuplicate, deadline } = req.body;
 
     // A4: Duplicate detection
     if (!ignoreDuplicate) {
@@ -160,10 +193,13 @@ const createApplication = async (req, res) => {
       priority,
       notes,
       tags,
-      link
+      link,
+      deadline
     });
 
     const createdApplication = await application.save();
+
+    await syncEventFromSource('application', createdApplication);
 
     await logTimelineEvent(createdApplication._id, 'Application created', null, status, notes ? `Notes: ${notes}` : '');
 
@@ -204,6 +240,8 @@ const updateApplication = async (req, res) => {
 
     const updatedApplication = await application.save();
 
+    await syncEventFromSource('application', updatedApplication);
+
     if (status && status !== previousStatus) {
       await logTimelineEvent(application._id, `Status changed to ${status}`, previousStatus, status, noteForTimeline || '');
       
@@ -243,6 +281,8 @@ const deleteApplication = async (req, res) => {
 
     application.deletedAt = new Date();
     await application.save();
+    
+    await removeEventForSource('application', req.params.id);
     
     await logTimelineEvent(application._id, 'Application deleted', application.status, 'DELETED');
 

@@ -1,12 +1,33 @@
 const Interview = require('../models/Interview');
+const { syncEventFromSource, removeEventForSource } = require('../utils/calendarSync');
 
 // @desc    Get user interviews
 // @route   GET /api/interviews
 // @access  Private
 const getInterviews = async (req, res) => {
   try {
-    const interviews = await Interview.find({ userId: req.user._id }).sort({ scheduledAt: 1 });
-    res.status(200).json(interviews);
+    const interviews = await Interview.find({ userId: req.user._id }).sort({ scheduledAt: 1 }).lean();
+    
+    // Attach network data
+    const Network = require('../models/Network');
+    const interviewCompanies = interviews.map(i => i.company);
+    const networkContacts = await Network.find({
+      userId: req.user._id,
+      company: { $in: interviewCompanies },
+      isDeleted: false
+    });
+
+    const interviewsWithNetworking = interviews.map(interview => {
+      const companyContacts = networkContacts.filter(c => c.company === interview.company);
+      return {
+        ...interview,
+        network: {
+          contactCount: companyContacts.length
+        }
+      };
+    });
+
+    res.status(200).json(interviewsWithNetworking);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -73,27 +94,7 @@ const createInterview = async (req, res) => {
     });
 
     if (scheduledAt) {
-      // Create Calendar event
-      await Event.create({
-        userId: req.user._id,
-        title: `Interview: ${company} - ${role}`,
-        type: 'INTERVIEW',
-        date: interviewTime,
-        description: `Round: ${round}, Type: ${type}`
-      });
-
-      // Create Notification 1 hour before
-      const notifyTime = new Date(interviewTime.getTime() - 60 * 60 * 1000);
-      if (notifyTime > new Date()) {
-        await Notification.create({
-          userId: req.user._id,
-          title: `Upcoming Interview: ${company}`,
-          message: `Your interview for ${role} is starting in 1 hour.`,
-          type: 'REMINDER',
-          scheduledFor: notifyTime,
-          isRead: false
-        });
-      }
+      await syncEventFromSource('interview', interview);
     }
 
     res.status(201).json(interview);
@@ -122,6 +123,10 @@ const updateInterview = async (req, res) => {
       runValidators: true,
     });
 
+    if (updatedInterview) {
+      await syncEventFromSource('interview', updatedInterview);
+    }
+
     res.status(200).json(updatedInterview);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -137,6 +142,9 @@ const deleteInterview = async (req, res) => {
     if (!interview) {
       return res.status(404).json({ message: 'Interview not found' });
     }
+    
+    await removeEventForSource('interview', req.params.id);
+    
     res.status(200).json({ message: 'Interview removed' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to delete interview', error: error.message });

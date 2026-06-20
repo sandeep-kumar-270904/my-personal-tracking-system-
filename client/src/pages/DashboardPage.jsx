@@ -23,6 +23,8 @@ import StreakAlertBanner from '../components/dashboard/StreakAlertBanner';
 import OnboardingFlow from '../components/dashboard/OnboardingFlow';
 import { QuickAddModals } from '../components/dashboard/QuickAddModals';
 import ShortcutHintCard from '../components/dashboard/ShortcutHintCard';
+import DashboardCoverageAlerts from '../components/dashboard/DashboardCoverageAlerts';
+import DashboardNetworkRecommendations from '../components/dashboard/DashboardNetworkRecommendations';
 
 // Hooks
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
@@ -182,13 +184,21 @@ const DashboardPage = () => {
 
       <AIInsightsBanner />
 
+      <DashboardCoverageAlerts onAddContact={(company) => {
+        // Need to pass via quick add modal or directly
+        // For now, redirect to networking add
+        window.location.href = `/networking?action=add&company=${encodeURIComponent(company)}`;
+      }} />
+
+      <DashboardNetworkRecommendations />
+
       <div className={`grid grid-cols-1 lg:grid-cols-4 ${isCompact ? 'gap-4' : 'gap-8'}`}>
         {/* Left/Center Main Column */}
         <div className={`lg:col-span-3 ${isCompact ? 'space-y-4' : 'space-y-8'}`}>
           <UpcomingCampusDrivesStrip />
           <UpcomingStrip upcoming={data.upcoming} />
           <PipelineKanban pipeline={data.pipeline} />
-          <GoalRings goalsData={data.stats?.weeklyGoals} />
+          <GoalRings goalsData={data.stats?.weeklyGoals} stats={data.stats} />
           <DashboardCharts charts={data.charts} heatmap={data.heatmap} roi={data.roi} isCompact={isCompact} />
         </div>
 

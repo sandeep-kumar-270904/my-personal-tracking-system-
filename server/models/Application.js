@@ -52,6 +52,9 @@ const applicationSchema = new mongoose.Schema({
   followUpDate: {
     type: Date,
   },
+  deadline: {
+    type: Date,
+  },
   source: {
     type: String,
     enum: ['CAMPUS', 'ONLINE', 'REFERRAL', 'COLD_EMAIL', 'LINKEDIN', 'JOB_PORTAL'],

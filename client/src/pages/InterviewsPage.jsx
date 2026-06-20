@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Plus, Trash2, User, Clock, FileText, X, Maximize2, Minimize2, Edit2 } from 'lucide-react';
+import { Calendar, Plus, Trash2, User, Clock, FileText, X, Maximize2, Minimize2, Edit2, Users, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import api from '../services/api';
 import EmptyState from '../components/EmptyState';
 import ConfirmModal from '../components/ConfirmModal';
+import { NetworkIntelCard } from '../components/networking/shared';
 
 const fetchInterviews = async () => {
   const { data } = await api.get('/interviews');
@@ -182,6 +183,28 @@ const InterviewsPage = () => {
                   )}
                 </div>
 
+                {interview.network?.contactCount > 0 && new Date(interview.interviewDate) > new Date() && (
+                  <div 
+                    onClick={() => window.location.href = `/networking?company=${encodeURIComponent(interview.company)}`}
+                    className="mb-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 cursor-pointer hover:bg-indigo-500/20 transition-colors flex items-center justify-between group/network"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                        <Users className="w-4 h-4 text-indigo-400" />
+                      </div>
+                      <div>
+                        {Math.ceil((new Date(interview.interviewDate) - new Date()) / (1000 * 60 * 60 * 24)) <= 3 ? (
+                           <p className="text-sm font-bold text-amber-400">Ask contacts for tips!</p>
+                        ) : (
+                           <p className="text-sm font-bold text-indigo-300">Your contacts can help</p>
+                        )}
+                        <p className="text-xs text-indigo-400/70">{interview.network.contactCount} contact{interview.network.contactCount > 1 ? 's' : ''} at {interview.company}</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-indigo-400 opacity-0 group-hover/network:opacity-100 transition-opacity" />
+                  </div>
+                )}
+
                 <div 
                   className="mb-6 bg-[#13141f] border border-white/5 rounded-xl p-3 cursor-pointer hover:border-white/20 transition-colors flex items-start gap-3 group/notes flex-1 min-h-[80px]"
                   onClick={() => handleOpenNotes(interview)}
@@ -305,23 +328,51 @@ const InterviewsPage = () => {
 
               <div className="flex-1 overflow-hidden flex flex-col relative">
                 {/* Tabs */}
-                <div className="flex border-b border-white/5 bg-[#0a0a0f]/50">
+                <div className="flex border-b border-white/5 bg-[#0a0a0f]/50 overflow-x-auto custom-scrollbar shrink-0">
                   <button 
                     onClick={() => setActiveTab('notes')}
-                    className={`px-6 py-3 text-sm font-bold transition-colors ${activeTab === 'notes' ? 'text-[#ff6b00] border-b-2 border-[#ff6b00]' : 'text-slate-400 hover:text-white'}`}
+                    className={`px-6 py-3 text-sm font-bold transition-colors shrink-0 ${activeTab === 'notes' ? 'text-[#ff6b00] border-b-2 border-[#ff6b00]' : 'text-slate-400 hover:text-white'}`}
                   >
                     My Notes
                   </button>
                   <button 
                     onClick={() => setActiveTab('prep')}
-                    className={`px-6 py-3 text-sm font-bold transition-colors flex items-center gap-2 ${activeTab === 'prep' ? 'text-[#ff6b00] border-b-2 border-[#ff6b00]' : 'text-slate-400 hover:text-white'}`}
+                    className={`px-6 py-3 text-sm font-bold transition-colors flex items-center gap-2 shrink-0 ${activeTab === 'prep' ? 'text-[#ff6b00] border-b-2 border-[#ff6b00]' : 'text-slate-400 hover:text-white'}`}
                   >
                     AI Prep Brief 
                     {selectedInterviewForNotes?.prepBrief ? <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded-full">Ready</span> : null}
                   </button>
+                  <button 
+                    onClick={() => setActiveTab('network')}
+                    className={`px-6 py-3 text-sm font-bold transition-colors flex items-center gap-2 shrink-0 ${activeTab === 'network' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Network Intel
+                  </button>
                 </div>
 
                 <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
+                  {activeTab === 'network' && (
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 bg-black/20 flex flex-col gap-6">
+                      <div className="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
+                        <div>
+                          <h3 className="text-white font-bold mb-1">Post-Interview Follow-Up</h3>
+                          <p className="text-sm text-slate-400">Send a thank you note to your interviewer and contacts who helped you prepare.</p>
+                        </div>
+                        <button 
+                          onClick={() => window.location.href = `/networking?tab=messages&type=thank_you&company=${encodeURIComponent(selectedInterviewForNotes.company)}`}
+                          className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shrink-0"
+                        >
+                          Draft Thank You Email
+                        </button>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-lg font-bold text-white mb-4">Company Network Intelligence</h3>
+                        <NetworkIntelCard company={selectedInterviewForNotes.company} />
+                      </div>
+                    </div>
+                  )}
+
                   {activeTab === 'notes' && (
                     <>
                       {isEditingNotes ? (

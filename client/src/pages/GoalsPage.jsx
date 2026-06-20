@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Target, Edit2, Check, TrendingUp, Briefcase, Code, Users } from 'lucide-react';
+import { Target, Edit2, Check, TrendingUp, Briefcase, Code, Users, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
+import confetti from 'canvas-confetti';
 
 const fetchGoals = async () => {
   const { data } = await api.get('/goals');
@@ -130,6 +131,25 @@ const GoalsPage = () => {
     calculatePercentage(safeData.progress.dsa, safeData.goal.targetDSA) +
     calculatePercentage(safeData.progress.networking, safeData.goal.targetNetworking)) / 3;
 
+  // Confetti for Networking Goal
+  useEffect(() => {
+    if (safeData.progress.networking >= safeData.goal.targetNetworking && safeData.goal.targetNetworking > 0) {
+      const hasFired = localStorage.getItem(`networking_confetti_${safeData.goal._id}`);
+      if (!hasFired) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#f59e0b', '#fcd34d', '#fbbf24']
+        });
+        localStorage.setItem(`networking_confetti_${safeData.goal._id}`, 'true');
+      }
+    }
+  }, [safeData.progress.networking, safeData.goal.targetNetworking, safeData.goal._id]);
+
+  // Mock Cross-goal Streak
+  const hasCrossGoalStreak = safeData.progress.networking >= safeData.goal.targetNetworking && safeData.progress.dsa >= safeData.goal.targetDSA;
+
   return (
     <div className="max-w-6xl mx-auto p-8">
       <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-white/5 pb-6">
@@ -201,8 +221,15 @@ const GoalsPage = () => {
         <div className="w-20 h-20 rounded-full bg-[#13141f] flex items-center justify-center shrink-0 border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.2)] relative z-10">
           <TrendingUp className="w-10 h-10 text-emerald-400" />
         </div>
-        <div className="relative z-10">
-          <h3 className="text-2xl font-bold text-white mb-2">Keep up the momentum!</h3>
+        <div className="relative z-10 flex-1">
+          <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+            Keep up the momentum!
+            {hasCrossGoalStreak && (
+              <span className="text-xs px-2.5 py-1 bg-gradient-to-r from-amber-500/20 to-purple-500/20 border border-amber-500/30 text-amber-400 rounded-full flex items-center gap-1 shadow-lg">
+                <Zap className="w-3 h-3" /> Networking + DSA Streak Active!
+              </span>
+            )}
+          </h3>
           <p className="text-slate-400 leading-relaxed text-lg">
             Small consistent steps every week lead to massive results over time. You are currently hitting 
             <strong className="text-emerald-400 mx-1"> {Math.round(totalProgress || 0)}% </strong> 

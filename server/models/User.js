@@ -93,6 +93,16 @@ const userSchema = new mongoose.Schema({
   newProblemLock: {
     type: Boolean,
     default: false
+  },
+  googleCalendarSync: {
+    connected: { type: Boolean, default: false },
+    accessToken: { type: String, default: '' },
+    refreshToken: { type: String, default: '' },
+    expiryDate: { type: Number, default: 0 },
+    syncDirection: { type: String, enum: ['push', 'pull', 'both'], default: 'both' },
+    calendarId: { type: String, default: '' },
+    googleCalendarId: { type: String, default: 'primary' },
+    lastSyncTime: { type: Date }
   }
 }, { timestamps: true });
 

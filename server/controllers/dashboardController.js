@@ -129,6 +129,18 @@ const getDashboardStats = async (req, res) => {
     weeklyGoals.networkingCompleted = networkingCompleted;
     await weeklyGoals.save();
 
+    // Average Network Health
+    const avgHealthAggr = await Network.aggregate([
+      { $match: { userId: userId, isDeleted: false } },
+      { $group: { _id: null, avgHealth: { $avg: '$relationshipHealthScore' } } }
+    ]);
+    const avgNetworkHealth = avgHealthAggr.length > 0 ? Math.round(avgHealthAggr[0].avgHealth) : 0;
+    const decayingContacts = await Network.countDocuments({
+      userId: userId,
+      isDeleted: false,
+      relationshipHealthScore: { $lt: 40 }
+    });
+
     res.json({
       totalApplications,
       activeInterviews,
@@ -136,6 +148,8 @@ const getDashboardStats = async (req, res) => {
       dsaTopicsTracked,
       currentStreak,
       weeklyGoals,
+      avgNetworkHealth,
+      decayingContacts,
       hasLoggedDSAToday: dsaSolves.some(d => {
         const dDate = new Date(d.solvedAt);
         dDate.setHours(0,0,0,0);

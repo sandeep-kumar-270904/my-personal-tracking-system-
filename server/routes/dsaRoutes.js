@@ -15,7 +15,8 @@ const {
   startSession,
   endSession,
   getCompanyPatterns,
-  getProgressReport
+  getProgressReport,
+  importFromContact
 } = require('../controllers/dsaController');
 
 const {
@@ -186,5 +187,8 @@ router.get('/weekly-honest-report', getWeeklyHonestReport);
 router.get('/placement-sentence', getPlacementSentence);
 router.get('/company-readiness/:companyName', getCompanyReadiness);
 router.post('/interview-eve/activate', activateInterviewEve);
+
+// Networking V5: DSA Insights from Contacts
+router.post('/insights/import-from-contact', importFromContact);
 
 module.exports = router;

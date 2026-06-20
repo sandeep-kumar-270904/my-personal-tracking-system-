@@ -27,7 +27,7 @@ const AlumniSuggestionsCard = () => {
   if (!suggestions || suggestions.length === 0) return null;
 
   return (
-    <div className="bg-[#13141f] border border-white/5 rounded-xl p-5">
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
       <h3 className="font-bold text-white flex items-center gap-2 mb-4">
         <GraduationCap className="text-emerald-400" /> Alumni Network Engine
       </h3>

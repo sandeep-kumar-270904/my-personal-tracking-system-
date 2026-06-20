@@ -101,7 +101,9 @@ const ApplicationsPage = () => {
     }
   };
 
-  const queryParams = { page, limit, status: statusFilter, source: sourceFilter, priority: priorityFilter, search: searchQuery, sortBy, sortOrder, isDead, isArchived };
+  const noNetwork = searchParams.get('noNetwork') === 'true';
+
+  const queryParams = { page, limit, status: statusFilter, source: sourceFilter, priority: priorityFilter, search: searchQuery, sortBy, sortOrder, isDead, isArchived, noNetwork };
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['applications', queryParams],

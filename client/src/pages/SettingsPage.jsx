@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from 'react';
-import { User, Bell, Shield, LogOut, Save, Download, Moon, Sun, Activity, Trash2 } from 'lucide-react';
+import { User, Bell, Shield, LogOut, Save, Download, Moon, Sun, Activity, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -51,6 +51,84 @@ const SettingsPage = () => {
     },
     onError: () => toast.error('Failed to update profile')
   });
+
+  const handleConnectGoogle = async () => {
+    try {
+      const { data } = await api.get('/events/sync/google/auth-url');
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    } catch (err) {
+      toast.error('Failed to get Google authorization URL');
+    }
+  };
+
+  const handleManualSync = async () => {
+    const loadToast = toast.loading('Syncing with Google Calendar...');
+    try {
+      await api.post('/events/sync/google/trigger');
+      toast.success('Sync completed successfully!', { id: loadToast });
+    } catch (err) {
+      toast.error('Sync failed', { id: loadToast });
+    }
+  };
+
+  const handleUpdateSyncSettings = async (settings) => {
+    const loadToast = toast.loading('Saving sync preferences...');
+    try {
+      const res = await api.post('/events/sync/google/settings', {
+        syncDirection: settings.syncDirection !== undefined ? settings.syncDirection : user.googleCalendarSync?.syncDirection,
+        googleCalendarId: settings.googleCalendarId !== undefined ? settings.googleCalendarId : user.googleCalendarSync?.googleCalendarId
+      });
+      setUser(prev => ({ ...prev, googleCalendarSync: res.data.settings }));
+      toast.success('Preferences saved', { id: loadToast });
+    } catch (err) {
+      toast.error('Failed to save preferences', { id: loadToast });
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    const removeEvents = window.confirm("Do you want to delete all previously pushed StudentTracker events from your Google Calendar?");
+    const loadToast = toast.loading('Disconnecting Google Calendar...');
+    try {
+      await api.post(`/events/sync/google/disconnect?removeEvents=${removeEvents}`);
+      setUser(prev => ({
+        ...prev,
+        googleCalendarSync: {
+          connected: false,
+          accessToken: '',
+          refreshToken: '',
+          expiryDate: 0,
+          syncDirection: 'both',
+          calendarId: '',
+          googleCalendarId: 'primary'
+        }
+      }));
+      toast.success('Google Calendar disconnected successfully', { id: loadToast });
+    } catch (err) {
+      toast.error('Failed to disconnect Google Calendar', { id: loadToast });
+    }
+  };
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      const connectCalendar = async () => {
+        const loadToast = toast.loading('Connecting Google Calendar...');
+        try {
+          const res = await api.post('/events/sync/google/callback', { code });
+          setUser(prev => ({ ...prev, googleCalendarSync: res.data.settings }));
+          toast.success('Google Calendar connected successfully!', { id: loadToast });
+          setActiveTab('preferences');
+        } catch (err) {
+          toast.error('Failed to connect Google Calendar', { id: loadToast });
+        }
+      };
+      connectCalendar();
+    }
+  }, [setUser]);
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -356,6 +434,96 @@ const SettingsPage = () => {
                   <input type="checkbox" className="sr-only peer" defaultChecked />
                   <div className="w-11 h-6 bg-[#13141f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00f0ff] border border-white/10"></div>
                 </label>
+              </div>
+
+              {/* Google Calendar Sync */}
+              <div className="pt-6 border-t border-white/5 space-y-6">
+                <div>
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    <CalendarIcon className="w-5 h-5 text-[#00f0ff]" />
+                    Google Calendar Integration
+                  </h3>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Synchronize your StudentTracker placement events with your personal Google Calendar.
+                  </p>
+                </div>
+
+                {!user?.googleCalendarSync?.connected ? (
+                  <div className="bg-white/5 p-6 rounded-xl border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h4 className="font-bold text-white text-sm">Not Connected</h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Connect your Google account to sync interviews and deadlines.
+                      </p>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={handleConnectGoogle}
+                      className="px-5 py-2.5 bg-[#00f0ff] hover:bg-blue-400 text-slate-900 font-bold rounded-xl text-sm transition-colors flex items-center gap-2 shrink-0 self-start md:self-center"
+                    >
+                      Connect Google Calendar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-white/5 p-6 rounded-xl border border-white/10 space-y-6">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                          <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Connected to Google Calendar
+                          </h4>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Dedicated Calendar: <strong className="text-white">StudentTracker</strong>
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            type="button"
+                            onClick={handleManualSync}
+                            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg text-xs font-bold transition-colors border border-white/10 flex items-center gap-1.5"
+                          >
+                            Sync Now
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={handleDisconnectGoogle}
+                            className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold transition-colors border border-red-500/20"
+                          >
+                            Disconnect
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Sync Direction Settings */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Sync Direction</label>
+                          <select 
+                            value={user.googleCalendarSync?.syncDirection || 'both'}
+                            onChange={(e) => handleUpdateSyncSettings({ syncDirection: e.target.value })}
+                            className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff] text-sm appearance-none"
+                          >
+                            <option value="both">Two-Way Sync (Push & Pull)</option>
+                            <option value="push">Push Only (StudentTracker ➔ Google)</option>
+                            <option value="pull">Pull Only (Google ➔ StudentTracker)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Google Source Calendar</label>
+                          <input 
+                            type="text"
+                            placeholder="primary"
+                            value={user.googleCalendarSync?.googleCalendarId || 'primary'}
+                            onBlur={(e) => handleUpdateSyncSettings({ googleCalendarId: e.target.value })}
+                            className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff] text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, Target, Users } from 'lucide-react';
+import { AlertCircle, Target, Users, Flame } from 'lucide-react';
 
 const CompanyNetworkMap = ({ companies, onCreateContact }) => {
   if (!companies) return null;
@@ -38,11 +38,16 @@ const CompanyNetworkMap = ({ companies, onCreateContact }) => {
           return (
             <motion.div
               key={comp.company}
-              whileHover={{ y: -2 }}
-              className={`bg-[#13141f] rounded-xl p-4 border relative ${isGap ? 'border-red-500/50' : 'border-white/10'}`}
+              whileHover={{ y: -2, scale: 1.02 }}
+              className={`bg-white/5 backdrop-blur-xl rounded-2xl p-4 border relative transition-all shadow-[0_8px_30px_rgb(0,0,0,0.5)] ${isGap ? 'border-red-500/50 hover:bg-red-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/10'}`}
             >
               {comp.hasInsiderIntel && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#13141f]" title="Has Insider Intel" />
+              )}
+              {comp.referralBonusActive && (
+                <div className="absolute -top-2 -left-2 w-5 h-5 bg-orange-500 rounded-full border-2 border-[#13141f] flex items-center justify-center shadow-[0_0_10px_rgba(249,115,22,0.8)]" title="Hiring Signal: Referral Bonus Active">
+                  <Flame size={12} className="text-white" />
+                </div>
               )}
               <h4 className="font-semibold text-white truncate text-sm" title={comp.company}>{comp.company}</h4>
               

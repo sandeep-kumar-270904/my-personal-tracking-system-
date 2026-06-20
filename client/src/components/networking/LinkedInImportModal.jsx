@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, Check, AlertTriangle, Users } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 const LinkedInImportModal = ({ onClose, onImportComplete }) => {

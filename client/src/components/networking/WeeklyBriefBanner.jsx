@@ -45,7 +45,7 @@ const WeeklyBriefBanner = () => {
         exit={{ opacity: 0, y: -20, height: 0 }}
         className="mb-6 overflow-hidden"
       >
-        <div className="bg-gradient-to-r from-blue-900/40 via-[#13141f] to-indigo-900/30 border border-blue-500/20 rounded-xl p-5 relative shadow-lg">
+        <div className="bg-gradient-to-r from-[#ff6b00]/20 via-[#1a110b] to-orange-900/30 border border-[#ff6b00]/30 rounded-xl p-6 relative shadow-[0_0_40px_-10px_rgba(255,107,0,0.3)] backdrop-blur-xl">
           <button 
             onClick={() => dismissMutation.mutate(brief._id)}
             className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
@@ -54,25 +54,25 @@ const WeeklyBriefBanner = () => {
           </button>
           
           <div className="flex items-start gap-4">
-            <div className="bg-blue-500/20 p-3 rounded-xl shrink-0 mt-1">
-              <Sparkles className="text-blue-400" size={24} />
+            <div className="bg-[#ff6b00]/20 p-3 rounded-xl shrink-0 mt-1 shadow-[0_0_20px_rgba(255,107,0,0.4)]">
+              <Sparkles className="text-[#ff6b00]" size={24} />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-white mb-2">
-                Your week in networking — week of {new Date(brief.weekStartDate).toLocaleDateString()}
+              <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
+                Your AI Weekly Brief <span className="text-slate-400 font-normal text-sm ml-2">— Week of {new Date(brief.weekStartDate).toLocaleDateString()}</span>
               </h3>
-              <p className="text-sm text-slate-300 leading-relaxed max-w-4xl whitespace-pre-line mb-4">
+              <p className="text-sm text-slate-300 leading-relaxed max-w-4xl whitespace-pre-line mb-5">
                 {formatBriefText(brief.briefContent)}
               </p>
               
               <div className="flex flex-wrap gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium rounded-lg transition-colors border border-white/10">
+                <button className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-medium rounded-lg transition-colors border border-white/10 backdrop-blur-sm">
                   <Users size={14} /> Review contacts to follow up
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium rounded-lg transition-colors border border-white/10">
+                <button className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-medium rounded-lg transition-colors border border-white/10 backdrop-blur-sm">
                   <TrendingUp size={14} /> See response rate trend
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-xs font-medium rounded-lg transition-colors border border-blue-500/20">
+                <button className="flex items-center gap-2 px-4 py-2 bg-[#ff6b00]/20 hover:bg-[#ff6b00]/40 text-[#ffaa66] text-xs font-medium rounded-lg transition-colors border border-[#ff6b00]/40 shadow-[0_0_15px_rgba(255,107,0,0.2)]">
                   <Target size={14} /> Set this week's goals
                 </button>
               </div>

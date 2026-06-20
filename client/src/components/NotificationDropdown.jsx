@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCircle2, Clock, Calendar, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -12,6 +13,7 @@ const fetchNotifications = async () => {
 
 const NotificationDropdown = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   const { data: notifications = [] } = useQuery({
@@ -103,7 +105,16 @@ const NotificationDropdown = () => {
                     {notifications.map((notif) => (
                       <div 
                         key={notif._id}
-                        className={`p-4 border-b border-white/5 flex gap-3 hover:bg-white/5 transition-colors ${notif.read ? 'opacity-60' : 'bg-[#ff6b00]/5'}`}
+                        onClick={() => {
+                          if (notif.link) {
+                            navigate(notif.link);
+                            setIsOpen(false);
+                          }
+                          if (!notif.read) {
+                            markAsReadMutation.mutate(notif._id);
+                          }
+                        }}
+                        className={`p-4 border-b border-white/5 flex gap-3 hover:bg-white/5 transition-colors cursor-pointer ${notif.read ? 'opacity-60' : 'bg-[#ff6b00]/5'}`}
                       >
                         <div className="shrink-0 mt-1">
                           {getIcon(notif.type)}

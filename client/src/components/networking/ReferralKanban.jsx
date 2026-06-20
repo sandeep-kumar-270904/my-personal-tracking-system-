@@ -32,6 +32,18 @@ const KanbanColumn = ({ id, title, items, onAction }) => {
                 Role: {item.applicationId ? item.applicationId.role : 'General'}
               </div>
 
+              {/* Networking V7: Team Alignment Checker */}
+              {item.contactId?.isWorkShared && (
+                <div className="text-[10px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/20 px-2 py-1 rounded mb-2 truncate">
+                  High Leverage (Work Shared)
+                </div>
+              )}
+              {(!item.contactId?.jdFocus || !item.contactId?.realityFocus) && (
+                <div className="text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded mb-2">
+                  ⚠️ Team Alignment Unknown
+                </div>
+              )}
+
               {id === 'PLANNING' && (
                 <button onClick={() => onAction(item, 'REQUESTED')} className="w-full py-1 text-[10px] font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-white rounded transition-colors">
                   Send Request

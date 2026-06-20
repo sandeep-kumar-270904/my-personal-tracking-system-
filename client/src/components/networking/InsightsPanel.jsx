@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, TrendingUp, Users, Target, Clock, X } from 'lucide-react';
+import { AlertCircle, TrendingUp, Users, Target, Clock, X, ShieldAlert } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const InsightsPanel = ({ insights, onDismiss }) => {
   if (!insights || insights.length === 0) return null;
@@ -59,9 +60,20 @@ const InsightsPanel = ({ insights, onDismiss }) => {
                   </div>
                   <p className="text-sm text-slate-200 mb-2">{insight.content}</p>
                   {insight.actionableStep && (
-                    <p className="text-xs text-slate-400 border-t border-white/5 pt-2">
+                    <p className="text-xs text-slate-400 border-t border-white/5 pt-2 mb-2">
                       <span className="font-semibold text-slate-300">Action:</span> {insight.actionableStep}
                     </p>
+                  )}
+                  {insight.insightType === 'REJECTION_STREAK' && (
+                    <button 
+                      onClick={() => {
+                        toast.success('Opening Rejection Protocol...');
+                        document.dispatchEvent(new CustomEvent('open-diagnosis-modal'));
+                      }}
+                      className="w-full mt-2 py-1.5 text-[10px] uppercase font-bold tracking-wider bg-red-500/20 text-red-300 rounded hover:bg-red-500/30 transition-colors"
+                    >
+                      Run Diagnosis Protocol
+                    </button>
                   )}
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trophy, Calendar, Clock, ExternalLink, Code2, Search, Bell } from 'lucide-react';
+import { Trophy, Calendar, Clock, ExternalLink, Code2, Search, Bell, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
@@ -238,22 +238,44 @@ const ContestsPage = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-3 mt-auto">
+                    <div className="flex flex-col gap-3 mt-auto">
+                      {/* Networking V5: Find Teammates */}
                       <button 
-                        onClick={() => saveEventMutation.mutate({ title: contest.name, type: 'Event', date: contest.start_time, description: `URL: ${contest.url}`, emailReminder: true })}
-                        className="flex items-center justify-center p-3.5 bg-white/5 text-slate-300 font-bold rounded-xl transition-all border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-400 group"
-                        title="Add to Calendar"
+                        onClick={() => window.location.href = `/networking?tab=messages&type=find_teammates&contest=${encodeURIComponent(contest.name)}`}
+                        className="w-full py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
                       >
-                        <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <Users className="w-4 h-4" /> Find Teammates in Network
                       </button>
-                      <a 
-                        href={contest.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className={`flex-1 py-3.5 px-4 bg-[#13141f] text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-white/10 hover:border-white/30 hover:bg-white/5`}
+
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => saveEventMutation.mutate({ title: contest.name, type: 'Event', date: contest.start_time, description: `URL: ${contest.url}`, emailReminder: true })}
+                          className="flex items-center justify-center p-3.5 bg-white/5 text-slate-300 font-bold rounded-xl transition-all border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-400 group"
+                          title="Add to Calendar"
+                        >
+                          <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        </button>
+                        <a 
+                          href={contest.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className={`flex-1 py-3.5 px-4 bg-[#13141f] text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-white/10 hover:border-white/30 hover:bg-white/5`}
+                        >
+                          Compete <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+
+                      {/* Networking V5: Shareable Completion */}
+                      <button 
+                        onClick={() => {
+                          const message = `I just registered for ${contest.name}! Who else is competing? Let's discuss problems afterwards.`;
+                          navigator.clipboard.writeText(message);
+                          toast.success('Shareable message copied to clipboard!');
+                        }}
+                        className="w-full py-2 mt-1 text-slate-400 hover:text-white text-xs transition-colors flex items-center justify-center gap-1 underline decoration-white/30 underline-offset-4"
                       >
-                        Compete <ExternalLink className="w-4 h-4" />
-                      </a>
+                        Generate Shareable Status
+                      </button>
                     </div>
                   </motion.div>
                 );

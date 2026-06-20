@@ -238,9 +238,29 @@ const OffersPage = () => {
                       </p>
                     )}
 
-                    {offer.status === 'Negotiating' || offer.status === 'Pending' || offer.status === 'Accepted' ? (
+                    {offer.status === 'Negotiating' || offer.status === 'Pending' ? (
                       <OfferLeverageCard offer={offer} />
                     ) : null}
+
+                    {/* Networking V5: Thank your network prompt */}
+                    {offer.status === 'Accepted' && (
+                      <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                        <div className="flex flex-col gap-3">
+                          <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
+                            🎉 Time to share the good news!
+                          </h4>
+                          <p className="text-xs text-emerald-200/80">
+                            Don't forget to reach out and thank the connections who helped you along the way. A simple message goes a long way.
+                          </p>
+                          <button 
+                            onClick={() => window.location.href = `/networking?tab=messages&type=thank_you&company=${encodeURIComponent(offer.company)}`}
+                            className="w-full py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg text-xs font-bold transition-colors"
+                          >
+                            Draft Thank You Messages
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}

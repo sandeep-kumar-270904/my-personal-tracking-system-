@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 const OutreachAnalytics = ({ stats }) => {
   // Mock data for charts since backend only gives aggregates for now. 
@@ -22,6 +22,15 @@ const OutreachAnalytics = ({ stats }) => {
     { time: 'Tue AM', rate: 55 }, { time: 'Tue PM', rate: 25 },
     { time: 'Wed AM', rate: 40 }, { time: 'Thu AM', rate: 35 },
     { time: 'Fri AM', rate: 15 }, { time: 'Weekend', rate: 5 }
+  ];
+
+  // Networking V6: Impact Analytics (response rate tracking by message type)
+  const messageTypeData = [
+    { type: 'Initial', rate: 18 },
+    { type: 'Follow Up', rate: 35 },
+    { type: 'Referral', rate: 65 },
+    { type: 'Check In', rate: 42 },
+    { type: 'Thank You', rate: 85 }
   ];
 
   return (
@@ -75,7 +84,7 @@ const OutreachAnalytics = ({ stats }) => {
         </div>
 
         {/* Time Chart */}
-        <div className="bg-[#13141f] border border-white/5 p-4 rounded-xl md:col-span-2">
+        <div className="bg-[#13141f] border border-white/5 p-4 rounded-xl">
           <h3 className="text-sm font-semibold text-slate-300 mb-4">Best Time to Send (Response Rate %)</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
@@ -91,6 +100,67 @@ const OutreachAnalytics = ({ stats }) => {
           </div>
         </div>
 
+        {/* Networking V6: Message Type Chart */}
+        <div className="bg-[#13141f] border border-white/5 p-4 rounded-xl">
+          <h3 className="text-sm font-semibold text-slate-300 mb-4">Response Rate by Message Type</h3>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={messageTypeData} layout="vertical">
+                <XAxis type="number" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}%`} />
+                <YAxis dataKey="type" type="category" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} width={80} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{ backgroundColor: '#1a1c29', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                />
+                <Bar dataKey="rate" fill="#10b981" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Networking V7: Leverage vs. Health 2x2 */}
+      <div className="bg-[#13141f] border border-white/5 p-4 rounded-xl">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-white">Contact Quality Matrix</h3>
+          <p className="text-[10px] text-slate-400">High leverage contacts (top) are placement-critical. High health contacts (right) will reply. Focus on moving top-left contacts to top-right.</p>
+        </div>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <XAxis type="number" dataKey="health" name="Relationship Health" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+              <YAxis type="number" dataKey="leverage" name="Placement Leverage" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+              <ZAxis type="number" range={[100, 100]} />
+              <Tooltip 
+                cursor={{ strokeDasharray: '3 3' }}
+                contentStyle={{ backgroundColor: '#1a1c29', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                itemStyle={{ color: '#fff' }}
+                formatter={(value, name) => [value, name === 'health' ? 'Health' : 'Leverage']}
+              />
+              {/* Quadrant lines */}
+              <Scatter name="Contacts" data={[
+                { name: 'Sarah J.', health: 85, leverage: 90 },
+                { name: 'Mike T.', health: 30, leverage: 80 },
+                { name: 'Chris L.', health: 90, leverage: 40 },
+                { name: 'Amanda W.', health: 20, leverage: 20 },
+                { name: 'Dave K.', health: 50, leverage: 60 }
+              ]} fill="#8884d8">
+                {
+                  [
+                    { name: 'Sarah J.', health: 85, leverage: 90 },
+                    { name: 'Mike T.', health: 30, leverage: 80 },
+                    { name: 'Chris L.', health: 90, leverage: 40 },
+                    { name: 'Amanda W.', health: 20, leverage: 20 },
+                    { name: 'Dave K.', health: 50, leverage: 60 }
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.leverage > 50 && entry.health > 50 ? '#10b981' : entry.leverage > 50 ? '#f59e0b' : '#64748b'} />
+                  ))
+                }
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl">

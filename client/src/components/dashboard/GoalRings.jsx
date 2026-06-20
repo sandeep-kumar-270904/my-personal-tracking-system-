@@ -52,7 +52,7 @@ const GoalRing = ({ label, target, completed, colorClass, strokeColor }) => {
   );
 };
 
-const GoalRings = ({ goalsData }) => {
+const GoalRings = ({ goalsData, stats }) => {
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
 
@@ -62,6 +62,12 @@ const GoalRings = ({ goalsData }) => {
   const dsaCompleted = goalsData?.dsaCompleted || 0;
   const networkingTarget = goalsData?.networkingTarget || 3;
   const networkingCompleted = goalsData?.networkingCompleted || 0;
+
+  const avgNetworkHealth = stats?.avgNetworkHealth || 0;
+  const decayingContacts = stats?.decayingContacts || 0;
+
+  const healthColor = avgNetworkHealth >= 70 ? 'text-emerald-400' : avgNetworkHealth >= 40 ? 'text-amber-400' : 'text-rose-400';
+  const healthStroke = avgNetworkHealth >= 70 ? '#34d399' : avgNetworkHealth >= 40 ? '#fbbf24' : '#fb7185';
 
   const [form, setForm] = useState({
     applicationsTarget,
@@ -102,7 +108,7 @@ const GoalRings = ({ goalsData }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
         <GoalRing 
           label="JOB APPLICATIONS" 
           target={applicationsTarget} 
@@ -124,6 +130,19 @@ const GoalRings = ({ goalsData }) => {
           colorClass="text-teal-400" 
           strokeColor="#2dd4bf" 
         />
+        <div className="group relative">
+          <GoalRing 
+            label="NETWORK HEALTH" 
+            target={100} 
+            completed={avgNetworkHealth} 
+            colorClass={healthColor} 
+            strokeColor={healthStroke} 
+          />
+          <div className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-black/90 border border-white/10 text-slate-300 text-xs px-3 py-2 rounded-lg whitespace-nowrap transition-opacity z-10 pointer-events-none">
+            Average relationship health. <br/>
+            {decayingContacts > 0 ? <span className="text-rose-400">{decayingContacts} decaying contacts.</span> : 'All healthy.'}
+          </div>
+        </div>
       </div>
 
       {/* Edit Modal */}

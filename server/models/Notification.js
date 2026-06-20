@@ -16,8 +16,12 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['INTERVIEW', 'APPLICATION_STALE', 'DSA_REMINDER', 'SYSTEM'],
+    enum: ['INTERVIEW', 'APPLICATION_STALE', 'DSA_REMINDER', 'SYSTEM', 'CALENDAR'],
     default: 'SYSTEM',
+  },
+  link: {
+    type: String,
+    default: '',
   },
   read: {
     type: Boolean,

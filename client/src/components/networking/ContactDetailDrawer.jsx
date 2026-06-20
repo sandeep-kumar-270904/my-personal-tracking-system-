@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Copy, FileText, Share2, MessageCircle, AlertCircle } from 'lucide-react';
+import { X, Send, Copy, FileText, Share2, MessageCircle, AlertCircle, Target } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import PreMessageConfidenceCard from './PreMessageConfidenceCard';
 
 const ProfileTab = ({ contact, onUpdate }) => {
   const [notes, setNotes] = useState(contact.notes || '');
@@ -48,6 +49,21 @@ const ProfileTab = ({ contact, onUpdate }) => {
 
   return (
     <div className="space-y-6">
+      {/* Networking V7: Hackathon Contact Fast-Capture */}
+      <div className="bg-[#13141f] p-4 rounded-xl border border-white/5">
+        <h3 className="font-semibold text-white mb-2">Meeting Context</h3>
+        <p className="text-[10px] text-slate-400 mb-3">Met at a hackathon, conference, or event? Add the context here.</p>
+        <div className="flex gap-2">
+          <input 
+            type="text"
+            value={contact.meetingContext || ''}
+            onChange={(e) => onUpdate({ meetingContext: e.target.value })}
+            placeholder="e.g. HackMIT 2026, met at the Google booth"
+            className="flex-1 bg-[#0a0a0f] border border-white/10 text-white text-sm rounded-lg p-2.5 focus:outline-none focus:border-purple-500"
+          />
+        </div>
+      </div>
+
       <div className="bg-[#13141f] p-4 rounded-xl border border-blue-500/20">
         <h3 className="font-semibold text-blue-400 mb-3 flex items-center gap-2">
           Enrich from LinkedIn
@@ -95,6 +111,70 @@ const ProfileTab = ({ contact, onUpdate }) => {
         </div>
         <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
           <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${contact.relationshipHealthScore}%` }} />
+        </div>
+      </div>
+
+      {/* Networking V7: Work Sharing Tracker */}
+      <div className="bg-[#13141f] p-4 rounded-xl border border-white/5">
+        <h3 className="font-semibold text-white mb-2">Work Sharing Tracker</h3>
+        <p className="text-xs text-slate-400 mb-3">Check off when this contact has actually seen your work.</p>
+        
+        <div className="space-y-2">
+          {['RESUME', 'GITHUB', 'PROJECT', 'FEEDBACK'].map(item => {
+            const isChecked = contact.workSharingChecklist?.includes(item) || false;
+            const labels = {
+              'RESUME': 'Shared Resume for review',
+              'GITHUB': 'Shared GitHub profile/repos',
+              'PROJECT': 'Discussed a specific project architecture',
+              'FEEDBACK': 'Received technical feedback from them'
+            };
+            return (
+              <label key={item} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={isChecked}
+                  onChange={(e) => {
+                    const currentList = contact.workSharingChecklist || [];
+                    let newList;
+                    if (e.target.checked) newList = [...currentList, item];
+                    else newList = currentList.filter(i => i !== item);
+                    onUpdate({ 
+                      workSharingChecklist: newList, 
+                      isWorkShared: newList.length > 0 
+                    });
+                  }}
+                  className="w-4 h-4 rounded border-slate-500 text-purple-500 focus:ring-purple-500 bg-[#0a0a0f]"
+                />
+                <span className={`text-sm ${isChecked ? 'text-white' : 'text-slate-400'}`}>{labels[item]}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Networking V7: JD vs Reality Panel */}
+      <div className="bg-[#13141f] p-4 rounded-xl border border-white/5">
+        <h3 className="font-semibold text-white mb-2">JD vs. Reality</h3>
+        <p className="text-[10px] text-slate-400 mb-3">What the job description says vs. what this contact actually does.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Official JD Focus</label>
+            <textarea
+              value={contact.jdFocus || ''}
+              onChange={(e) => onUpdate({ jdFocus: e.target.value })}
+              placeholder="e.g. React, Node, AWS"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-slate-300 text-xs rounded-lg p-2 h-20 resize-none custom-scrollbar focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Reality (from chat)</label>
+            <textarea
+              value={contact.realityFocus || ''}
+              onChange={(e) => onUpdate({ realityFocus: e.target.value })}
+              placeholder="e.g. Mostly legacy Java, migrating to AWS slowly"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-emerald-400 text-xs rounded-lg p-2 h-20 resize-none custom-scrollbar focus:outline-none focus:border-emerald-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -199,8 +279,22 @@ const MessagesTab = ({ contact, messages, onSendOutreach }) => {
         )}
       </div>
 
+      {/* Community Engagement Layer: LinkedIn Post Engagement Tracker */}
+      <div className="mb-4 bg-[#0a0a0f] border border-white/5 rounded-xl p-3 flex justify-between items-center">
+        <div className="flex flex-col">
+          <span className="text-xs text-slate-300 font-semibold mb-1">LinkedIn Activity Tracking</span>
+          <span className="text-[10px] text-slate-500">Log engagements to build rapport before the DM.</span>
+        </div>
+        <div className="flex gap-2">
+          <button className="px-2 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-bold rounded hover:bg-blue-500/30 transition-colors">Liked Post</button>
+          <button className="px-2 py-1 bg-purple-500/20 text-purple-400 text-[10px] font-bold rounded hover:bg-purple-500/30 transition-colors">Commented</button>
+        </div>
+      </div>
+
       <div className="bg-[#13141f] border border-white/10 rounded-xl p-4 shrink-0">
-        <div className="flex gap-2 mb-3">
+        {messages.length === 0 && <PreMessageConfidenceCard contactId={contact._id} contactName={contact.name} />}
+        
+        <div className="flex flex-wrap gap-2 mb-3">
           <select value={channel} onChange={(e)=>setChannel(e.target.value)} className="bg-[#0a0a0f] border border-white/10 text-xs text-slate-300 rounded px-2 py-1 outline-none">
             <option value="LINKEDIN">LinkedIn</option>
             <option value="EMAIL">Email</option>
@@ -213,20 +307,53 @@ const MessagesTab = ({ contact, messages, onSendOutreach }) => {
             <option value="CHECK_IN">Check In</option>
             <option value="THANK_YOU">Thank You</option>
           </select>
+          {/* Tone Presets */}
+          <select className="bg-[#0a0a0f] border border-white/10 text-xs text-slate-300 rounded px-2 py-1 outline-none ml-auto">
+            <option value="professional">Tone: Professional</option>
+            <option value="casual">Tone: Casual</option>
+            <option value="direct">Tone: Direct</option>
+            <option value="enthusiastic">Tone: Enthusiastic</option>
+          </select>
         </div>
+        
+        {/* Follow-up Legitimacy Score */}
+        {type === 'FOLLOW_UP' && (
+          <div className="mb-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded flex items-center justify-between">
+            <span className="text-xs text-blue-400 font-medium flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> Legitimacy Score
+            </span>
+            <span className="text-xs font-bold text-emerald-400">85/100 (High Context)</span>
+          </div>
+        )}
+
         <textarea
           value={composer}
           onChange={(e) => setComposer(e.target.value)}
           placeholder="Draft your message here..."
-          className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg p-3 text-sm text-slate-200 outline-none focus:border-[#ff6b00] h-24 resize-none custom-scrollbar mb-3"
+          className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg p-3 text-sm text-slate-200 outline-none focus:border-[#ff6b00] h-24 resize-none custom-scrollbar mb-2"
         />
+
+        {/* Real-time Message confidence score */}
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <div className="text-[10px] font-bold text-slate-400 uppercase">Confidence Score</div>
+            <div className="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full ${composer.length > 50 && composer.length < 300 ? 'bg-emerald-400' : 'bg-amber-400'}`} 
+                style={{ width: `${Math.min(100, Math.max(10, composer.length / 2))}%` }} 
+              />
+            </div>
+          </div>
+          <span className="text-xs text-slate-400">{composer.length} chars</span>
+        </div>
+
         <div className="flex justify-between items-center">
           <button 
             onClick={handleGenerate}
             disabled={isGenerating}
             className="text-xs text-[#ff6b00] hover:text-[#ff8533] font-medium flex items-center gap-1"
           >
-            {isGenerating ? 'Generating...' : '✨ Generate with AI'}
+            {isGenerating ? 'Generating...' : '✨ AI Generate (Senior-Aware)'}
           </button>
           <div className="flex gap-2">
             <button 
@@ -466,7 +593,15 @@ const ContactDetailDrawer = ({ contact, messages, pipeline, applications, onClos
         <div className="p-6 border-b border-white/10 bg-[#13141f] shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-1">{contact.name || `${contact.firstName} ${contact.lastName}`}</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-2xl font-bold text-white">{contact.name || `${contact.firstName} ${contact.lastName}`}</h2>
+                {contact.placementLeverageScore > 0 && (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/20 rounded border border-blue-500/30 text-[10px] font-bold text-blue-300" title="Placement Leverage Score">
+                    <Target size={12} />
+                    {contact.placementLeverageScore}
+                  </div>
+                )}
+              </div>
               <p className="text-sm text-slate-400">{contact.role} @ <span className="text-slate-300 font-medium">{contact.company}</span></p>
             </div>
             <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">

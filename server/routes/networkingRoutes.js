@@ -31,8 +31,39 @@ const {
   batchGenerateOutreach,
   bulkSendOutreach,
   getAlumniSuggestions,
-  generateIntroRequest
+  generateIntroRequest,
+  
+  // Networking V7
+  generateConfidenceCard,
+  getPlatformBenchmarks,
+  auditNetworkDepth,
+  generateNetworkingTimeline,
+  getHiringSignals,
+  diagnoseOutreach,
+  logReferralBonus
 } = require('../controllers/networkingController');
+
+const playsController = require('../controllers/networkingPlaysController');
+
+// Networking V7 - Plays
+router.get('/plays', protect, playsController.getPlays);
+router.get('/plays/contextual', protect, playsController.getContextualPlays);
+router.get('/plays/saved', protect, playsController.getSavedPlays);
+router.get('/plays/:id', protect, playsController.getPlay);
+router.post('/plays/:id/save', protect, playsController.savePlay);
+router.delete('/plays/:id/save', protect, playsController.unsavePlay);
+router.post('/plays/:id/use', protect, playsController.logUsage);
+router.patch('/plays/usage/:id', protect, playsController.updateUsage);
+router.post('/plays/community', protect, playsController.submitCommunityPlay);
+
+// Networking V7 - Features
+router.post('/confidence/generate', protect, generateConfidenceCard);
+router.get('/benchmarks', protect, getPlatformBenchmarks);
+router.post('/audit/depth', protect, auditNetworkDepth);
+router.post('/timeline/generate', protect, generateNetworkingTimeline);
+router.get('/company-map/hiring-signals', protect, getHiringSignals);
+router.post('/outreach/diagnose', protect, diagnoseOutreach);
+router.post('/referral-bonus', protect, logReferralBonus);
 
 router.post('/contacts/import', protect, importDeduplication);
 router.post('/contacts/bulk-create', protect, bulkCreateContacts);

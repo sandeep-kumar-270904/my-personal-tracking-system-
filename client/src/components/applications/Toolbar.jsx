@@ -1,4 +1,4 @@
-import { Search, LayoutGrid, List, AlertCircle } from 'lucide-react';
+import { Search, LayoutGrid, List, AlertCircle, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const Toolbar = ({ searchParams, setSearchParams, viewMode, setViewMode }) => {
@@ -35,6 +35,7 @@ const Toolbar = ({ searchParams, setSearchParams, viewMode, setViewMode }) => {
   const needsFollowUp = searchParams.get('needsFollowUp') === 'true';
   const isDead = searchParams.get('isDead') === 'true';
   const isArchived = searchParams.get('isArchived') === 'true';
+  const noNetwork = searchParams.get('noNetwork') === 'true';
 
   return (
     <div className="flex flex-col gap-4 bg-[#13141f] p-4 rounded-2xl border border-white/5 shadow-lg">
@@ -161,6 +162,13 @@ const Toolbar = ({ searchParams, setSearchParams, viewMode, setViewMode }) => {
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
           Show Archived
+        </button>
+        <button 
+          onClick={() => updateFilter('noNetwork', noNetwork ? null : 'true')}
+          className={`px-3 py-1.5 flex items-center gap-2 rounded-full text-xs font-medium transition-colors border ${noNetwork ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'bg-white/5 text-slate-400 border-white/10 hover:text-white hover:bg-white/10'}`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          No Network Coverage
         </button>
       </div>
     </div>

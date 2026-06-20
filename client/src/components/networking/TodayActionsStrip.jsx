@@ -15,7 +15,7 @@ const TodayActionsStrip = ({ recommendations, onActionClick }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="bg-gradient-to-br from-[#1a1c29] to-[#13141f] border border-white/10 rounded-xl p-4 flex flex-col justify-between hover:border-white/20 transition-all"
+            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col justify-between hover:border-white/20 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
           >
             <div>
               <div className="flex justify-between items-start mb-2">

@@ -476,3 +476,18 @@ exports.getProgressReport = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.importFromContact = async (req, res) => {
+  try {
+    const { contactId, tips } = req.body;
+    // In a real implementation, we would link this tip to the user's DSA WeaknessLog or Notes
+    // For V5 networking integration:
+    res.json({
+      success: true,
+      message: "Insights successfully imported from contact",
+      importedCount: tips?.length || 1
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -44,6 +44,10 @@ const networkSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  meetingContext: {
+    type: String,
+    default: ''
+  },
   notes: {
     type: String,
     default: ''
@@ -81,7 +85,15 @@ const networkSchema = new mongoose.Schema({
   isMentor: { type: Boolean, default: false },
   tags: [{ type: String }],
   isDeleted: { type: Boolean, default: false },
-  deletedAt: { type: Date }
+  deletedAt: { type: Date },
+  
+  // Networking V7 Fields
+  placementLeverageScore: { type: Number, default: 0 },
+  workSharingChecklist: [{ type: String }], // ['RESUME', 'GITHUB', 'PROJECT', 'FEEDBACK']
+  isWorkShared: { type: Boolean, default: false },
+  depthClassification: { type: String, enum: ['SURFACE', 'ACQUAINTANCE', 'CONNECTION', 'RELATIONSHIP'], default: 'SURFACE' },
+  hackathonEvent: { type: String },
+  hackathonRole: { type: String }
 }, { timestamps: true });
 
 networkSchema.plugin(timelinePlugin);

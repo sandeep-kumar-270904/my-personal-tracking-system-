@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Edit2, Trash2, Calendar, Link as LinkIcon, Building2, Briefcase, FileText, CheckCircle2, History, AlertCircle, FilePlus, Mail, Globe, Wand2, TrendingUp, Info } from 'lucide-react';
+import { X, Edit2, Trash2, Calendar, Link as LinkIcon, Building2, Briefcase, FileText, CheckCircle2, History, AlertCircle, FilePlus, Mail, Globe, Wand2, TrendingUp, Info, Users } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
@@ -90,56 +90,36 @@ const ResumeSelector = ({ app }) => {
   );
 };
 
+import { ContactMiniCard, ReferralStatusBadge } from '../networking/shared';
+
 const NetworkContacts = ({ app }) => {
   const queryClient = useQueryClient();
-  const [isSearching, setIsSearching] = useState(false);
-  const [suggestedContacts, setSuggestedContacts] = useState([]);
 
-  const { data: contacts = [] } = useQuery({
-    queryKey: ['network'],
+  const { data: contactsResponse, isLoading } = useQuery({
+    queryKey: ['network', app.company],
     queryFn: async () => {
-      const res = await api.get('/network');
+      // Assuming a generic /networking endpoint gets all contacts, or we can fetch by company
+      const res = await api.get(`/networking?company=${encodeURIComponent(app.company)}`);
       return res.data;
     }
   });
 
-  const addContactMutation = useMutation({
-    mutationFn: async (contact) => {
-      await api.post('/network', contact);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['network']);
-      toast.success('Contact added to Network!');
-    }
-  });
+  const companyContacts = contactsResponse?.contacts || [];
 
-  const handleFindContacts = async () => {
-    setIsSearching(true);
-    try {
-      const res = await api.get(`/network/search?company=${encodeURIComponent(app.company)}`);
-      setSuggestedContacts(res.data.suggestions || []);
-    } catch (error) {
-      toast.error('Failed to find contacts');
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  if (isLoading) return <div className="text-sm text-slate-500 p-4">Loading network...</div>;
 
-  const companyContacts = contacts.filter(c => c.company.toLowerCase() === app.company.toLowerCase());
-
-  if (companyContacts.length === 0 && suggestedContacts.length === 0) {
+  if (companyContacts.length === 0) {
     return (
-      <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center">
-        <Users className="w-8 h-8 text-slate-500 mb-2" />
-        <h3 className="text-sm font-semibold text-white mb-1">No Network Contacts</h3>
-        <p className="text-xs text-slate-400 mb-3">You don't have any contacts at {app.company} yet.</p>
+      <div className="bg-[#ff6b00]/5 border border-[#ff6b00]/20 p-4 rounded-xl flex flex-col items-center justify-center text-center">
+        <Users className="w-8 h-8 text-[#ff6b00]/50 mb-2" />
+        <h3 className="text-sm font-semibold text-white mb-1">No contacts here</h3>
+        <p className="text-xs text-slate-400 mb-3">You don't have any contacts at {app.company}. Reach out to someone to boost your chances.</p>
         <button 
-          onClick={handleFindContacts} 
-          disabled={isSearching}
-          className="bg-[#ff6b00]/10 hover:bg-[#ff6b00]/20 text-[#ff6b00] border border-[#ff6b00]/20 px-4 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2"
+          onClick={() => window.location.href = `/networking?tab=alumni&company=${encodeURIComponent(app.company)}`}
+          className="bg-[#ff6b00]/20 hover:bg-[#ff6b00]/30 text-[#ff6b00] border border-[#ff6b00]/20 px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
         >
-          {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          Find Suggested Contacts
+          <Globe className="w-4 h-4" />
+          Find Alumni at {app.company}
         </button>
       </div>
     );
@@ -147,42 +127,33 @@ const NetworkContacts = ({ app }) => {
 
   return (
     <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-      <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2"><Users className="w-4 h-4" /> Company Contacts</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2"><Users className="w-4 h-4" /> Company Contacts ({companyContacts.length})</h3>
+        <button 
+          onClick={() => window.location.href = `/networking?company=${encodeURIComponent(app.company)}`}
+          className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+        >
+          View all
+        </button>
+      </div>
       <div className="space-y-3">
-        {companyContacts.map(c => (
-          <div key={c._id} className="flex justify-between items-center bg-[#13141f] border border-white/5 rounded-lg p-3">
-            <div>
-              <p className="text-sm text-white font-medium">{c.name}</p>
-              <p className="text-xs text-slate-400">{c.role}</p>
+        {companyContacts.slice(0, 3).map(c => (
+          <div key={c._id} className="flex justify-between items-center bg-[#13141f] border border-white/5 rounded-lg p-3 group hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/20">
+                {c.name.charAt(0)}
+              </div>
+              <div>
+                <p className="text-sm text-white font-medium group-hover:text-indigo-400 transition-colors">{c.name}</p>
+                <p className="text-xs text-slate-400">{c.role}</p>
+              </div>
             </div>
-            <span className={`text-xs px-2 py-1 rounded border font-bold ${c.status === 'Referral Given' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
-              {c.status}
-            </span>
+            {c.isReferralSource && <ReferralStatusBadge status={c.referralStatus} />}
+            {!c.isReferralSource && (
+              <span className="text-xs text-slate-500 uppercase tracking-wider font-bold">{c.connectionStrength}</span>
+            )}
           </div>
         ))}
-
-        {suggestedContacts.length > 0 && companyContacts.length === 0 && (
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Suggested Contacts to Add</h4>
-            <div className="space-y-2">
-              {suggestedContacts.map((c, i) => (
-                <div key={i} className="flex justify-between items-center bg-[#1a1b26] border border-[#ff6b00]/20 rounded-lg p-3">
-                  <div>
-                    <p className="text-sm text-white font-medium">{c.name}</p>
-                    <p className="text-xs text-[#ff6b00]">{c.role}</p>
-                  </div>
-                  <button 
-                    onClick={() => addContactMutation.mutate({ ...c, company: app.company, status: 'To Contact', platform: 'LinkedIn', lastContactDate: new Date() })}
-                    disabled={addContactMutation.isLoading}
-                    className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg font-bold transition-colors"
-                  >
-                    Add
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -468,6 +439,15 @@ const ApplicationDetailDrawer = ({ isOpen, onClose, applicationId, onEdit, onDel
                     <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Source</p>
                     <p className="text-sm font-bold text-white">{app.source}</p>
                   </div>
+                  {app.deadline && (
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/5 col-span-2">
+                      <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Application Deadline</p>
+                      <p className="text-sm font-bold text-red-400 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-red-400" />
+                        {new Date(app.deadline).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Resume Selector */}

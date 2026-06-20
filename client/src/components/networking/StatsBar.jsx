@@ -15,7 +15,7 @@ const StatsBar = ({ stats }) => {
   const outreachProgress = weeklyGoalProgress ? `${weeklyGoalProgress.outreachCompleted} / ${weeklyGoalProgress.outreachTarget}` : '0 / 0';
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 bg-[#13141f] border border-white/5 p-4 rounded-xl shadow-inner mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] mb-6">
       <div className="flex flex-col items-center justify-center p-2 border-r border-white/5 last:border-0">
         <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Contacts</span>
         <span className="text-2xl font-bold text-white mt-1">{totalContacts || 0}</span>

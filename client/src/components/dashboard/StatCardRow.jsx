@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Briefcase, Clock, CheckCircle2, Code, Flame } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AnimatedCounter from '../AnimatedCounter';
+import DashboardNetworkingCard from './DashboardNetworkingCard';
 
 const StatCardRow = ({ stats }) => {
   const cards = [
@@ -13,7 +14,7 @@ const StatCardRow = ({ stats }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
       {cards.map((stat, idx) => (
         <Link key={idx} to={stat.link}>
           <motion.div 
@@ -41,6 +42,7 @@ const StatCardRow = ({ stats }) => {
           </motion.div>
         </Link>
       ))}
+      <DashboardNetworkingCard />
     </div>
   );
 };

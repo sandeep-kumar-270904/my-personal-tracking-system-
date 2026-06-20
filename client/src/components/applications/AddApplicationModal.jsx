@@ -17,7 +17,8 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp, onViewExisting }) =>
     link: '',
     jobDescriptionUrl: '',
     tags: '',
-    notes: ''
+    notes: '',
+    deadline: ''
   });
   
   const [duplicateWarning, setDuplicateWarning] = useState(null);
@@ -54,7 +55,8 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp, onViewExisting }) =>
         jobDescriptionUrl: editingApp.jobDescriptionUrl || '',
         tags: editingApp.tags ? editingApp.tags.join(', ') : '',
         notes: editingApp.notes || '',
-        resumeId: editingApp.resumeId?._id || ''
+        resumeId: editingApp.resumeId?._id || '',
+        deadline: editingApp.deadline ? new Date(editingApp.deadline).toISOString().split('T')[0] : ''
       });
     }
   }, [editingApp]);
@@ -312,6 +314,21 @@ const AddApplicationModal = ({ isOpen, onClose, editingApp, onViewExisting }) =>
                       type="date" 
                       name="dateApplied" 
                       value={formData.dateApplied} 
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#ff6b00]"
+                    />
+                  </div>
+                </div>
+
+                {/* Deadline Date */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-300">Deadline Date (Optional)</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input 
+                      type="date" 
+                      name="deadline" 
+                      value={formData.deadline} 
                       onChange={handleChange}
                       className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#ff6b00]"
                     />

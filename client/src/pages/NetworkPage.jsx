@@ -16,8 +16,14 @@ import WeeklyGoalsCard from '../components/networking/WeeklyGoalsCard';
 import LinkedInImportModal from '../components/networking/LinkedInImportModal';
 import NetworkGraph from '../components/networking/NetworkGraph';
 import WeeklyBriefBanner from '../components/networking/WeeklyBriefBanner';
+import PlatformBenchmarkBanner from '../components/networking/PlatformBenchmarkBanner';
 import BatchOutreachModal from '../components/networking/BatchOutreachModal';
 import AlumniSuggestionsCard from '../components/networking/AlumniSuggestionsCard';
+import NetworkDepthAuditModal from '../components/networking/NetworkDepthAuditModal';
+import PlacementTimelinePanel from '../components/networking/PlacementTimelinePanel';
+import OutreachDiagnosisModal from '../components/networking/OutreachDiagnosisModal';
+import AlumniTransitionModal from '../components/networking/AlumniTransitionModal';
+import PlacementPlaysBoard from '../components/networking/PlacementPlaysBoard';
 import toast from 'react-hot-toast';
 
 const NetworkPage = () => {
@@ -28,6 +34,9 @@ const NetworkPage = () => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [showDepthAudit, setShowDepthAudit] = useState(false);
+  const [showDiagnosis, setShowDiagnosis] = useState(false);
+  const [showAlumni, setShowAlumni] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedContactIds, setSelectedContactIds] = useState([]);
   
@@ -56,6 +65,17 @@ const NetworkPage = () => {
   });
 
   const { data: referralPipeline = [] } = useQuery({ queryKey: ['networking-pipeline'], queryFn: async () => (await api.get('/networking/referral-pipeline')).data });
+
+  useEffect(() => {
+    const handleOpenDiagnosis = () => setShowDiagnosis(true);
+    const handleOpenAlumni = () => setShowAlumni(true);
+    document.addEventListener('open-diagnosis-modal', handleOpenDiagnosis);
+    document.addEventListener('open-alumni-modal', handleOpenAlumni);
+    return () => {
+      document.removeEventListener('open-diagnosis-modal', handleOpenDiagnosis);
+      document.removeEventListener('open-alumni-modal', handleOpenAlumni);
+    };
+  }, []);
 
   // Contact Details Query (only when selected)
   const { data: contactDetails, refetch: refetchContact } = useQuery({
@@ -137,8 +157,12 @@ const NetworkPage = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="relative min-h-screen bg-[#050508] p-4 md:p-8 space-y-6 overflow-hidden">
+      {/* Premium Ambient Background Glows */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#ff6b00]/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none" />
       
+      <div className="relative z-10 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
@@ -151,26 +175,41 @@ const NetworkPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto h-[72px]">
-          <div className="h-full bg-[#13141f] border border-white/5 rounded-xl p-3 w-64">
+          <div className="h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-3 w-64 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
             <WeeklyGoalsCard goals={goals} onEdit={() => toast.success('Edit goals modal would open here')} />
           </div>
           <div className="h-full flex flex-col gap-2">
-            <button 
-              onClick={() => setShowImportModal(true)}
-              className="flex-1 px-4 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 border border-blue-500/20"
-            >
-              <Users size={16} /> Import LinkedIn
-            </button>
+            <div className="flex gap-2 flex-1">
+              <button 
+                onClick={() => setShowImportModal(true)}
+                className="flex-1 px-4 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium rounded-xl transition-colors flex items-center justify-center gap-2 border border-blue-500/20"
+              >
+                <Users size={16} /> Import LinkedIn
+              </button>
+              {/* Networking V6: 10-minute active networking sprint mode */}
+              <button 
+                onClick={() => toast.success('Sprint mode activated! Timer started for 10 minutes.')}
+                className="flex-1 px-4 bg-gradient-to-r from-rose-500/20 to-orange-500/20 hover:from-rose-500/30 hover:to-orange-500/30 text-orange-400 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-orange-500/30"
+              >
+                ⚡ 10-Min Sprint
+              </button>
+              <button 
+                onClick={() => setShowDepthAudit(true)}
+                className="flex-1 px-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-purple-500/20"
+              >
+                Depth Audit
+              </button>
+            </div>
             <div className="flex gap-2 flex-1">
               <button 
                 onClick={() => setShowTemplates(true)}
-                className="flex-1 px-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 border border-white/10"
+                className="flex-1 px-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 border border-white/10"
               >
                 <MessageSquare size={16} /> Templates
               </button>
               <button 
                 onClick={() => handleCreateDummyContact()}
-                className="flex-1 px-4 bg-[#ff6b00] hover:bg-[#e66000] text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 bg-[#ff6b00] hover:bg-[#ff8533] text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,107,0,0.4)]"
               >
                 <Plus size={16} /> Contact
               </button>
@@ -180,7 +219,44 @@ const NetworkPage = () => {
       </div>
 
       <WeeklyBriefBanner />
+      
+      {/* Networking V6: 7-day Networking Kickstart view */}
+      <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            🚀 7-Day Networking Kickstart
+          </h2>
+          <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+            Day 3 / 7
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-[#13141f] p-4 rounded-xl border border-white/5 opacity-50 relative">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/30 backdrop-blur-md">Completed</div>
+            </div>
+            <h3 className="text-sm font-bold text-white mb-1">Day 1: Audit Profile</h3>
+            <p className="text-xs text-slate-400">Update LinkedIn headline and about section.</p>
+          </div>
+          <div className="bg-[#13141f] p-4 rounded-xl border border-white/5 opacity-50 relative">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/30 backdrop-blur-md">Completed</div>
+            </div>
+            <h3 className="text-sm font-bold text-white mb-1">Day 2: Identify Targets</h3>
+            <p className="text-xs text-slate-400">Find 5 alumni at your dream companies.</p>
+          </div>
+          <div className="bg-emerald-500/5 p-4 rounded-xl border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+            <h3 className="text-sm font-bold text-emerald-400 mb-1">Day 3: Send Outreach (Today)</h3>
+            <p className="text-xs text-slate-300 mb-3">Send your first 3 AI-generated connection requests.</p>
+            <button className="w-full py-1.5 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600 transition-colors">Start Day 3 Action</button>
+          </div>
+        </div>
+      </div>
+
       <StatsBar stats={stats} />
+
+      <PlatformBenchmarkBanner />
 
       <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-280px)]">
         
@@ -199,7 +275,7 @@ const NetworkPage = () => {
 
           {/* Tabs */}
           <div className="flex border-b border-white/10">
-            {['CONTACTS', 'REFERRALS', 'ANALYTICS'].map(tab => (
+            {['CONTACTS', 'REFERRALS', 'ANALYTICS', 'PLAYS'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -211,6 +287,12 @@ const NetworkPage = () => {
               </button>
             ))}
           </div>
+
+          {activeTab === 'PLAYS' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <PlacementPlaysBoard />
+            </motion.div>
+          )}
 
           {activeTab === 'CONTACTS' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
@@ -334,6 +416,7 @@ const NetworkPage = () => {
               toast.success('Insight dismissed');
             }} 
           />
+          <PlacementTimelinePanel />
           <AlumniSuggestionsCard />
         </div>
 
@@ -354,6 +437,10 @@ const NetworkPage = () => {
             onDelete={() => deleteContactMutation.mutate(selectedContact._id)}
           />
         )}
+        
+        {showDepthAudit && <NetworkDepthAuditModal onClose={() => setShowDepthAudit(false)} />}
+        {showDiagnosis && <OutreachDiagnosisModal onClose={() => setShowDiagnosis(false)} />}
+        {showAlumni && <AlumniTransitionModal onClose={() => setShowAlumni(false)} />}
         
         {showTemplates && (
           <TemplateLibrary 
@@ -416,6 +503,7 @@ const NetworkPage = () => {
         )}
       </AnimatePresence>
 
+      </div>
     </div>
   );
 };

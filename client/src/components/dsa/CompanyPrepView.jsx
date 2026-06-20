@@ -1,8 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Briefcase, Building } from 'lucide-react';
+import { Briefcase, Building, MessageSquare, Download } from 'lucide-react';
 import api from '../../services/api';
 import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 const CompanyPrepView = () => {
   const { data: appIntelligence, isLoading } = useQuery({
@@ -43,6 +44,38 @@ const CompanyPrepView = () => {
                 {rp.pattern} appears in <span className="text-white font-bold">{rp.applications.length}</span> of your active applications ({rp.applications.join(', ')}). 
                 {idx === 0 && <span className="text-rose-400 font-medium ml-1">Highest priority.</span>}
               </p>
+
+              {/* Networking V5: Contact Tips Callout */}
+              {idx === 0 && (
+                <div className="mt-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h4 className="text-xs font-bold text-indigo-300 flex items-center gap-1.5 mb-1">
+                        <MessageSquare className="w-3.5 h-3.5" /> What your contacts say
+                      </h4>
+                      <p className="text-xs text-indigo-200/80 italic">
+                        "They really drill down into edge cases for Two Pointers, especially around handling duplicates." - <span className="font-semibold text-indigo-300">Alex Chen (Google)</span>
+                      </p>
+                    </div>
+                    <button 
+                      onClick={async () => {
+                        const loadingToast = toast.loading("Importing insights...");
+                        try {
+                          await api.post('/dsa/insights/import-from-contact', { contactId: 'mock123', tips: ['Handle duplicates in Two Pointers'] });
+                          toast.success("Tip added to DSA notes!", { id: loadingToast });
+                        } catch (err) {
+                          toast.error("Failed to import tip", { id: loadingToast });
+                        }
+                      }}
+                      className="shrink-0 p-1.5 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 rounded-md transition-colors"
+                      title="Import tip to DSA notes"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           ))}
         </div>

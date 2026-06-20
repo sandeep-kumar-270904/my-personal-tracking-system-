@@ -97,6 +97,7 @@ const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearc
               <th className="p-4 font-bold text-slate-400">Source</th>
               <th className="p-4 font-bold text-slate-400">Date Applied</th>
               <th className="p-4 font-bold text-slate-400">Priority</th>
+              <th className="p-4 font-bold text-slate-400">Network</th>
               <th className="p-4 font-bold text-slate-400">Resume</th>
               {hasEnoughDataForPrediction && <th className="p-4 font-bold text-slate-400 text-center">Prediction</th>}
               <th className="p-4 font-bold text-slate-400 w-32">Momentum</th>
@@ -120,7 +121,14 @@ const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearc
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <img src={`https://logo.clearbit.com/${app.company.replace(/ /g, '').toLowerCase()}.com`} alt={app.company} className="w-8 h-8 rounded-lg bg-white/10" onError={(e) => { e.target.style.display = 'none'; }} />
-                      <span className="font-semibold text-white">{app.company}</span>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-white flex items-center gap-2">
+                          {app.company}
+                          {app.network?.hasReferralBoost && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 uppercase tracking-wider" title="Referral Boost Active">Boosted</span>
+                          )}
+                        </span>
+                      </div>
                     </div>
                   </td>
                   <td className="p-4 text-slate-300 font-medium">{app.role}</td>
@@ -135,6 +143,13 @@ const TableView = ({ applications, onAppClick, totalCount, page, limit, setSearc
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[app.priority] || PRIORITY_COLORS.MEDIUM}`}></div>
                       <span className="text-xs text-slate-400">{app.priority}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center">
+                        <span className="text-xs font-bold text-slate-300">{app.network?.contactCount || 0}</span>
+                      </div>
                     </div>
                   </td>
                   <td className="p-4 text-slate-400 text-sm">{app.resumeId?.name || 'None'}</td>

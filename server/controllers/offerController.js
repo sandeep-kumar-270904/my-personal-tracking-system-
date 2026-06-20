@@ -1,4 +1,5 @@
 const Offer = require('../models/Offer');
+const { syncEventFromSource, removeEventForSource } = require('../utils/calendarSync');
 
 // @desc    Get all offers for a user
 // @route   GET /api/offers
@@ -31,6 +32,8 @@ const createOffer = async (req, res) => {
       notes
     });
 
+    await syncEventFromSource('offer', offer);
+
     res.status(201).json(offer);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -58,6 +61,10 @@ const updateOffer = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    if (updatedOffer) {
+      await syncEventFromSource('offer', updatedOffer);
+    }
+
     res.json(updatedOffer);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -80,6 +87,7 @@ const deleteOffer = async (req, res) => {
     }
 
     await offer.deleteOne();
+    await removeEventForSource('offer', req.params.id);
     res.json({ message: 'Offer removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });

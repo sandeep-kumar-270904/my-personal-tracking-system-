@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Activity, FileText, History, Download, Trash2, CheckCircle2, Sparkles, Target, Search, MessageSquare, BarChart2, FileDown } from 'lucide-react';
+import { X, ExternalLink, Activity, FileText, History, Download, Trash2, CheckCircle2, Sparkles, Target, Search, MessageSquare, BarChart2, FileDown, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import AI_RewriteTab from './AI_RewriteTab';
@@ -211,6 +211,52 @@ export default function PreviewModal({ isOpen, onClose, resume, versions = [], o
                             </div>
                           </div>
                         )}
+
+                        {/* Networking V5 Integrations */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                          {/* Target Role Match & Referral Ready */}
+                          <div className="bg-[#13141f] border border-white/5 rounded-2xl p-5 shadow-lg relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                              <Target className="w-4 h-4 text-indigo-400" /> Target Role Match
+                            </h4>
+                            <div className="flex flex-col gap-3 relative z-10">
+                              <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
+                                <span className="text-sm text-slate-400">Inferred Target</span>
+                                <span className="text-sm font-bold text-white">{resume.tags?.[0] || 'Software Engineer'}</span>
+                              </div>
+                              <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
+                                <span className="text-sm text-slate-400">Referral Ready Status</span>
+                                {atsScore >= 80 ? (
+                                  <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                    Referral Ready
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                    Needs Work
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Who Can Review */}
+                          <div className="bg-[#13141f] border border-white/5 rounded-2xl p-5 shadow-lg relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                              <Users className="w-4 h-4 text-pink-400" /> Who Can Review
+                            </h4>
+                            <p className="text-xs text-slate-400 mb-3">Send this resume to your network for feedback before applying.</p>
+                            <button 
+                              onClick={() => window.location.href = `/networking?tab=messages&type=resume_review`}
+                              className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
+                            >
+                              <MessageSquare className="w-4 h-4 text-pink-400" />
+                              Draft Review Request
+                            </button>
+                          </div>
+                        </div>
+
                         <PeerBenchmarkSection resumeId={resume._id} />
                         <InterviewSignalsSection resumeId={resume._id} />
                         <OutcomeLearningSection resumeId={resume._id} />

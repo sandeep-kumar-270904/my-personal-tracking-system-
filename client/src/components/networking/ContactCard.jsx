@@ -47,15 +47,21 @@ const ContactCard = ({ contact, onClick }) => {
 
   return (
     <motion.div 
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -4, scale: 1.01 }}
       onClick={() => onClick(contact)}
-      className="bg-[#13141f] border border-white/10 hover:border-white/20 rounded-xl p-4 cursor-pointer transition-all flex flex-col h-full group"
+      className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:bg-white/10 rounded-2xl p-5 cursor-pointer transition-all flex flex-col h-full group shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
     >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0 pr-3">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-semibold text-white truncate text-lg">{contact.name || `${contact.firstName} ${contact.lastName}`}</h3>
             <div className={`w-2 h-2 rounded-full ${getStrengthColor(contact.connectionStrength)}`} title={contact.connectionStrength} />
+            {contact.placementLeverageScore > 0 && (
+              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/20 rounded border border-blue-500/30 text-[10px] font-bold text-blue-300" title="Placement Leverage Score">
+                <Target size={10} />
+                {contact.placementLeverageScore}
+              </div>
+            )}
           </div>
           <p className="text-sm text-slate-300 truncate">{contact.role}</p>
           <p className="text-xs text-slate-500 truncate">{contact.company}</p>
@@ -72,6 +78,11 @@ const ContactCard = ({ contact, onClick }) => {
             contact.referralStatus === 'SUBMITTED' ? 'bg-[#ff6b00]/20 text-[#ff6b00]' : 'bg-blue-500/20 text-blue-300'
           }`}>
             Ref: {contact.referralStatus}
+          </span>
+        )}
+        {contact.isWorkShared && (
+          <span className="px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-wider bg-purple-500/20 text-purple-400">
+            Knows your work
           </span>
         )}
       </div>
