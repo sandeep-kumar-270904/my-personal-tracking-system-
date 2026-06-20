@@ -5,22 +5,90 @@ const { pushEventToGoogle, deleteEventFromGoogle, getAuthUrl, exchangeCode, pull
 const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0 };
 const BUFFER_MINUTES = 90;
 
+function getOffsetMinutes(timezone, utcDate) {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone || 'UTC',
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(utcDate);
+    const map = {};
+    parts.forEach(p => map[p.type] = p.value);
+    
+    const localInUTC = Date.UTC(
+      parseInt(map.year),
+      parseInt(map.month) - 1,
+      parseInt(map.day),
+      parseInt(map.hour) === 24 ? 0 : parseInt(map.hour),
+      parseInt(map.minute),
+      parseInt(map.second)
+    );
+    return Math.round((localInUTC - utcDate.getTime()) / 60000);
+  } catch (err) {
+    console.warn(`Timezone formatting failed for ${timezone}, using 0 offset`, err);
+    return 0;
+  }
+}
+
+function localTimeToUTC(dateStr, timeStr, timezone) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = (timeStr || '00:00').split(':').map(Number);
+  
+  let utcMs = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+  for (let i = 0; i < 3; i++) {
+    const dateVal = new Date(utcMs);
+    const offsetMinutes = getOffsetMinutes(timezone, dateVal);
+    utcMs = Date.UTC(year, month - 1, day, hour, minute, 0, 0) - offsetMinutes * 60000;
+  }
+  return new Date(utcMs);
+}
+
+function utcToLocalTime(utcDate, timezone) {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone || 'UTC',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    const parts = formatter.formatToParts(utcDate);
+    const map = {};
+    parts.forEach(p => map[p.type] = p.value);
+    
+    const pad = (n) => String(n).padStart(2, '0');
+    const hour = map.hour === '24' ? '00' : map.hour;
+    
+    return {
+      dateStr: `${map.year}-${map.month}-${map.day}`,
+      timeStr: `${hour}:${map.minute}`
+    };
+  } catch (err) {
+    console.warn(`Timezone formatting failed for ${timezone}, returning UTC strings`, err);
+    const pad = (n) => String(n).padStart(2, '0');
+    return {
+      dateStr: `${utcDate.getUTCFullYear()}-${pad(utcDate.getUTCMonth() + 1)}-${pad(utcDate.getUTCDate())}`,
+      timeStr: `${pad(utcDate.getUTCHours())}:${pad(utcDate.getUTCMinutes())}`
+    };
+  }
+}
+
 const checkForConflicts = (newEvent, existingEvents) => {
   if (newEvent.is_all_day) return { isConflict: false, conflicts: [] };
 
   const startD = new Date(newEvent.date);
   if (newEvent.start_time) {
     const [h, m] = newEvent.start_time.split(':').map(Number);
-    startD.setHours(h, m, 0, 0);
+    startD.setUTCHours(h, m, 0, 0);
   }
   
   const duration = newEvent.end_time ? 0 : (DEFAULT_DURATIONS[newEvent.type] || 60);
   const endD = new Date(startD.getTime());
   if (newEvent.end_time) {
     const [h, m] = newEvent.end_time.split(':').map(Number);
-    endD.setHours(h, m, 0, 0);
+    endD.setUTCHours(h, m, 0, 0);
   } else {
-    endD.setMinutes(endD.getMinutes() + duration);
+    endD.setTime(endD.getTime() + duration * 60000);
   }
 
   const conflicts = [];
@@ -32,16 +100,16 @@ const checkForConflicts = (newEvent, existingEvents) => {
     const evStart = new Date(event.date);
     if (event.start_time) {
       const [h, m] = event.start_time.split(':').map(Number);
-      evStart.setHours(h, m, 0, 0);
+      evStart.setUTCHours(h, m, 0, 0);
     }
     
     const evDuration = event.end_time ? 0 : (DEFAULT_DURATIONS[event.type] || 60);
     const evEnd = new Date(evStart.getTime());
     if (event.end_time) {
       const [h, m] = event.end_time.split(':').map(Number);
-      evEnd.setHours(h, m, 0, 0);
+      evEnd.setUTCHours(h, m, 0, 0);
     } else {
-      evEnd.setMinutes(evEnd.getMinutes() + evDuration);
+      evEnd.setTime(evEnd.getTime() + evDuration * 60000);
     }
 
     // 1. Hard Conflict
@@ -187,12 +255,39 @@ exports.createEvent = async (req, res) => {
       }
     }
 
+    // Timezone normalization for creation
+    const userTimezone = req.body.timezone || req.user.calendarSettings?.timezone || 'Asia/Kolkata';
+
+    // Convert local inputs to UTC
+    let utcStart, utcEnd;
+    if (is_all_day) {
+      utcStart = localTimeToUTC(date, '00:00', userTimezone);
+      const ed = end_date || date;
+      utcEnd = localTimeToUTC(ed, '23:59', userTimezone);
+    } else {
+      utcStart = localTimeToUTC(date, start_time || '09:00', userTimezone);
+      if (end_time) {
+        utcEnd = localTimeToUTC(date, end_time, userTimezone);
+      } else {
+        const duration = DEFAULT_DURATIONS[type] || 60;
+        utcEnd = new Date(utcStart.getTime() + duration * 60000);
+      }
+    }
+
+    const startInfo = utcToLocalTime(utcStart, 'UTC');
+    const endInfo = utcToLocalTime(utcEnd, 'UTC');
+
+    const dbDate = new Date(startInfo.dateStr + 'T00:00:00.000Z');
+    const dbEndDate = end_date ? new Date(endInfo.dateStr + 'T00:00:00.000Z') : null;
+    const dbStartTime = startInfo.timeStr;
+    const dbEndTime = endInfo.timeStr;
+
     // Conflict detection
     if (!ignoreConflict) {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0,0,0,0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23,59,59,999);
+      const startOfDay = new Date(dbDate);
+      startOfDay.setUTCHours(0,0,0,0);
+      const endOfDay = new Date(dbDate);
+      endOfDay.setUTCHours(23,59,59,999);
 
       const existingEvents = await Event.find({
         user: req.user._id,
@@ -200,7 +295,7 @@ exports.createEvent = async (req, res) => {
         status: { $ne: 'cancelled' }
       });
 
-      const tempEvent = { date, start_time, end_time, is_all_day, type, location };
+      const tempEvent = { date: dbDate, start_time: dbStartTime, end_time: dbEndTime, is_all_day, type, location };
       const { isConflict, conflicts } = checkForConflicts(tempEvent, existingEvents);
       
       const hasHardConflict = conflicts.some(c => c.type === 'hard');
@@ -213,22 +308,23 @@ exports.createEvent = async (req, res) => {
     const parentEvent = await Event.create({
       user: req.user._id,
       title,
-      date: new Date(date),
-      start_time: is_all_day ? '' : start_time,
-      end_time: is_all_day ? '' : end_time,
+      date: dbDate,
+      start_time: is_all_day ? '' : dbStartTime,
+      end_time: is_all_day ? '' : dbEndTime,
       is_all_day: !!is_all_day,
       type,
       description,
       location,
       reminder_minutes_before: reminder_minutes_before || null,
-      source: 'manual',
-      source_ref_id: null,
+      source: req.body.source || 'manual',
+      source_ref_id: req.body.source_ref_id || null,
       status: 'upcoming',
       is_recurring: !!is_recurring,
       recurrence_pattern: is_recurring ? recurrence_pattern : 'none',
       recurrence_end_date: is_recurring ? new Date(recurrence_end_date) : null,
-      end_date: end_date ? new Date(end_date) : null,
-      parent_event_id: null
+      end_date: dbEndDate,
+      parent_event_id: null,
+      timezone: userTimezone
     });
 
     // Push to Google Calendar in background
@@ -237,7 +333,7 @@ exports.createEvent = async (req, res) => {
     // Generate and save child events if recurring
     if (is_recurring) {
       const instances = [];
-      const start = new Date(date);
+      const start = new Date(dbDate);
       const end = new Date(recurrence_end_date);
       
       let current = new Date(start);
@@ -262,22 +358,23 @@ exports.createEvent = async (req, res) => {
           user: req.user._id,
           title,
           date: new Date(current),
-          start_time: is_all_day ? '' : start_time,
-          end_time: is_all_day ? '' : end_time,
+          start_time: is_all_day ? '' : dbStartTime,
+          end_time: is_all_day ? '' : dbEndTime,
           is_all_day: !!is_all_day,
           type,
           description,
           location,
           reminder_minutes_before: reminder_minutes_before || null,
-          source: 'manual',
-          source_ref_id: null,
+          source: req.body.source || 'manual',
+          source_ref_id: req.body.source_ref_id || null,
           status: 'upcoming',
           is_recurring: true,
           recurrence_pattern,
           recurrence_end_date: new Date(recurrence_end_date),
-          end_date: end_date ? new Date(end_date) : null,
+          end_date: dbEndDate,
           parent_event_id: parentEvent._id,
-          reminderSent: false
+          reminderSent: false,
+          timezone: userTimezone
         });
         count++;
       }
@@ -306,7 +403,7 @@ exports.createEvent = async (req, res) => {
 exports.updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { recurrenceEditMode = 'single', ignoreConflict, ...updateData } = req.body;
+    const { recurrenceEditMode = 'single', ignoreConflict, lastKnownUpdatedAt, ...updateData } = req.body;
 
     const event = await Event.findById(id);
     if (!event) {
@@ -314,6 +411,18 @@ exports.updateEvent = async (req, res) => {
     }
     if (event.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    // Offline conflict resolution
+    if (lastKnownUpdatedAt && event.updatedAt && !ignoreConflict) {
+      const clientTime = new Date(lastKnownUpdatedAt).getTime();
+      const serverTime = new Date(event.updatedAt).getTime();
+      if (serverTime - clientTime > 1000) {
+        return res.status(409).json({
+          message: 'Conflict: This event was edited on the server while you were offline.',
+          serverEvent: event
+        });
+      }
     }
 
     // Title validation if updating title
@@ -333,26 +442,77 @@ exports.updateEvent = async (req, res) => {
       return res.status(400).json({ message: 'Multi-day spans are only valid for applications and custom events.' });
     }
 
-    // Time validation if updating times
-    const start_time = updateData.start_time !== undefined ? updateData.start_time : event.start_time;
-    const end_time = updateData.end_time !== undefined ? updateData.end_time : event.end_time;
-    const is_all_day = updateData.is_all_day !== undefined ? updateData.is_all_day : event.is_all_day;
-    const date = updateData.date !== undefined ? updateData.date : event.date;
+    // Timezone normalization for update
+    const userTimezone = updateData.timezone || event.timezone || req.user.calendarSettings?.timezone || 'Asia/Kolkata';
 
-    if (!is_all_day && start_time && end_time) {
-      const [sh, sm] = start_time.split(':').map(Number);
-      const [eh, em] = end_time.split(':').map(Number);
+    // Convert current UTC date+start_time to local in target timezone
+    let currentStartD = new Date(event.date);
+    if (event.start_time) {
+      const [h, m] = event.start_time.split(':').map(Number);
+      currentStartD.setUTCHours(h, m, 0, 0);
+    }
+    const localStartInfo = utcToLocalTime(currentStartD, userTimezone);
+
+    let currentEndD = event.end_date ? new Date(event.end_date) : null;
+    if (!currentEndD) {
+      currentEndD = new Date(currentStartD.getTime());
+      if (event.end_time) {
+        const [h, m] = event.end_time.split(':').map(Number);
+        currentEndD.setUTCHours(h, m, 0, 0);
+      } else {
+        const duration = DEFAULT_DURATIONS[event.type] || 60;
+        currentEndD.setTime(currentEndD.getTime() + duration * 60000);
+      }
+    }
+    const localEndInfo = utcToLocalTime(currentEndD, userTimezone);
+
+    // Merge with updateData (local values from client)
+    const mergedLocalDate = updateData.date !== undefined ? updateData.date : localStartInfo.dateStr;
+    const mergedLocalStartTime = updateData.start_time !== undefined ? updateData.start_time : localStartInfo.timeStr;
+    const mergedLocalEndTime = updateData.end_time !== undefined ? updateData.end_time : localEndInfo.timeStr;
+    const mergedLocalEndDate = updateData.end_date !== undefined ? updateData.end_date : (event.end_date ? localEndInfo.dateStr : '');
+    const mergedIsAllDay = updateData.is_all_day !== undefined ? updateData.is_all_day : event.is_all_day;
+    const mergedType = updateData.type !== undefined ? updateData.type : event.type;
+
+    // Time validation
+    if (!mergedIsAllDay && mergedLocalStartTime && mergedLocalEndTime) {
+      const [sh, sm] = mergedLocalStartTime.split(':').map(Number);
+      const [eh, em] = mergedLocalEndTime.split(':').map(Number);
       if (eh < sh || (eh === sh && em <= sm)) {
         return res.status(400).json({ message: 'End time must be after start time' });
       }
     }
 
+    // Convert back to UTC
+    let utcStart, utcEnd;
+    if (mergedIsAllDay) {
+      utcStart = localTimeToUTC(mergedLocalDate, '00:00', userTimezone);
+      const ed = mergedLocalEndDate || mergedLocalDate;
+      utcEnd = localTimeToUTC(ed, '23:59', userTimezone);
+    } else {
+      utcStart = localTimeToUTC(mergedLocalDate, mergedLocalStartTime || '09:00', userTimezone);
+      if (mergedLocalEndTime) {
+        utcEnd = localTimeToUTC(mergedLocalDate, mergedLocalEndTime, userTimezone);
+      } else {
+        const duration = DEFAULT_DURATIONS[mergedType] || 60;
+        utcEnd = new Date(utcStart.getTime() + duration * 60000);
+      }
+    }
+
+    const startInfo = utcToLocalTime(utcStart, 'UTC');
+    const endInfo = utcToLocalTime(utcEnd, 'UTC');
+
+    const dbDate = new Date(startInfo.dateStr + 'T00:00:00.000Z');
+    const dbEndDate = updateData.end_date !== undefined && !updateData.end_date ? null : (mergedLocalEndDate ? new Date(endInfo.dateStr + 'T00:00:00.000Z') : null);
+    const dbStartTime = startInfo.timeStr;
+    const dbEndTime = endInfo.timeStr;
+
     // Conflict detection
     if (!ignoreConflict) {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0,0,0,0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23,59,59,999);
+      const startOfDay = new Date(dbDate);
+      startOfDay.setUTCHours(0,0,0,0);
+      const endOfDay = new Date(dbDate);
+      endOfDay.setUTCHours(23,59,59,999);
 
       const existingEvents = await Event.find({
         user: req.user._id,
@@ -360,7 +520,7 @@ exports.updateEvent = async (req, res) => {
         status: { $ne: 'cancelled' }
       });
 
-      const tempEvent = { _id: event._id, date, start_time, end_time, is_all_day, type, location: updateData.location !== undefined ? updateData.location : event.location };
+      const tempEvent = { _id: event._id, date: dbDate, start_time: dbStartTime, end_time: dbEndTime, is_all_day: mergedIsAllDay, type: mergedType, location: updateData.location !== undefined ? updateData.location : event.location };
       const { isConflict, conflicts } = checkForConflicts(tempEvent, existingEvents);
       
       const hasHardConflict = conflicts.some(c => c.type === 'hard');
@@ -368,6 +528,13 @@ exports.updateEvent = async (req, res) => {
         return res.status(200).json({ hasConflict: true, conflicts });
       }
     }
+
+    // Apply normalized fields to updateData
+    updateData.date = dbDate;
+    updateData.start_time = mergedIsAllDay ? '' : dbStartTime;
+    updateData.end_time = mergedIsAllDay ? '' : dbEndTime;
+    updateData.end_date = dbEndDate;
+    updateData.timezone = userTimezone;
 
     // Handle updates based on recurrenceEditMode
     if (event.is_recurring && recurrenceEditMode === 'future') {
@@ -750,8 +917,10 @@ exports.findFreeSlots = async (req, res) => {
       return res.status(400).json({ message: 'dateStart and dateEnd are required' });
     }
 
-    const start = new Date(dateStart);
-    const end = new Date(dateEnd);
+    const userTimezone = req.user.calendarSettings?.timezone || 'Asia/Kolkata';
+
+    const start = new Date(dateStart + 'T00:00:00.000Z');
+    const end = new Date(dateEnd + 'T23:59:59.999Z');
     const dur = Number(duration);
 
     const events = await Event.find({
@@ -762,14 +931,16 @@ exports.findFreeSlots = async (req, res) => {
 
     const freeSlots = [];
     let currentDay = new Date(start);
-    currentDay.setHours(0,0,0,0);
+    currentDay.setUTCHours(0,0,0,0);
 
-    while (currentDay <= end && freeSlots.length < 3) {
-      let slotTime = new Date(currentDay);
-      slotTime.setHours(9, 0, 0, 0); // 9:00 AM
+    const endLimit = new Date(end);
+    endLimit.setUTCHours(23,59,59,999);
 
-      const dayEnd = new Date(currentDay);
-      dayEnd.setHours(19, 0, 0, 0); // 7:00 PM
+    while (currentDay <= endLimit && freeSlots.length < 3) {
+      const dateStr = currentDay.toISOString().split('T')[0];
+
+      let slotTime = localTimeToUTC(dateStr, '09:00', userTimezone);
+      const dayEnd = localTimeToUTC(dateStr, '19:00', userTimezone);
 
       while (slotTime.getTime() + dur * 60000 <= dayEnd.getTime() && freeSlots.length < 3) {
         const slotEnd = new Date(slotTime.getTime() + dur * 60000);
@@ -781,16 +952,16 @@ exports.findFreeSlots = async (req, res) => {
           const evStart = new Date(event.date);
           if (event.start_time) {
             const [h, m] = event.start_time.split(':').map(Number);
-            evStart.setHours(h, m, 0, 0);
+            evStart.setUTCHours(h, m, 0, 0);
           }
           
           const evDuration = event.end_time ? 0 : (DEFAULT_DURATIONS[event.type] || 60);
           const evEnd = new Date(evStart.getTime());
           if (event.end_time) {
             const [h, m] = event.end_time.split(':').map(Number);
-            evEnd.setHours(h, m, 0, 0);
+            evEnd.setUTCHours(h, m, 0, 0);
           } else {
-            evEnd.setMinutes(evEnd.getMinutes() + evDuration);
+            evEnd.setTime(evEnd.getTime() + evDuration * 60000);
           }
 
           if (slotTime < evEnd && evStart < slotEnd) {
@@ -800,18 +971,22 @@ exports.findFreeSlots = async (req, res) => {
         }
 
         if (!hasConflict) {
-          const pad = (n) => String(n).padStart(2, '0');
+          const startInfo = utcToLocalTime(slotTime, userTimezone);
+          const endInfo = utcToLocalTime(slotEnd, userTimezone);
+
           freeSlots.push({
-            date: new Date(currentDay),
-            start_time: `${pad(slotTime.getHours())}:${pad(slotTime.getMinutes())}`,
-            end_time: `${pad(slotEnd.getHours())}:${pad(slotEnd.getMinutes())}`
+            date: slotTime,
+            start: slotTime.toISOString(),
+            end: slotEnd.toISOString(),
+            start_time: startInfo.timeStr,
+            end_time: endInfo.timeStr
           });
         }
 
-        slotTime.setMinutes(slotTime.getMinutes() + 30);
+        slotTime.setTime(slotTime.getTime() + 30 * 60000);
       }
 
-      currentDay.setDate(currentDay.getDate() + 1);
+      currentDay.setUTCDate(currentDay.getUTCDate() + 1);
     }
 
     res.json(freeSlots);
@@ -820,3 +995,6 @@ exports.findFreeSlots = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.localTimeToUTC = localTimeToUTC;
+exports.utcToLocalTime = utcToLocalTime;

@@ -90,6 +90,14 @@ const eventSchema = new mongoose.Schema({
   is_read_only: {
     type: Boolean,
     default: false
+  },
+  timezone: {
+    type: String,
+    default: 'UTC'
+  },
+  followUpNudgeSent: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

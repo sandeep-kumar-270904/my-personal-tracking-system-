@@ -110,6 +110,33 @@ const SettingsPage = () => {
     }
   };
 
+  const handleUpdateCalendarSettings = async (settings) => {
+    const loadToast = toast.loading('Saving calendar preferences...');
+    try {
+      const res = await api.put('/auth/calendar-settings', settings);
+      setUser(prev => ({
+        ...prev,
+        calendarSettings: res.data.calendarSettings
+      }));
+      toast.success('Calendar preferences saved', { id: loadToast });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save calendar preferences', { id: loadToast });
+    }
+  };
+
+  const generateShareToken = () => {
+    const arr = new Uint8Array(16);
+    window.crypto.getRandomValues(arr);
+    const token = Array.from(arr, dec => dec.toString(16).padStart(2, '0')).join('');
+    handleUpdateCalendarSettings({ shareToken: token });
+  };
+
+  const revokeShareToken = () => {
+    if (window.confirm('Are you sure you want to revoke this public sharing link? The old link will stop working immediately.')) {
+      handleUpdateCalendarSettings({ shareToken: null });
+    }
+  };
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
@@ -434,6 +461,108 @@ const SettingsPage = () => {
                   <input type="checkbox" className="sr-only peer" defaultChecked />
                   <div className="w-11 h-6 bg-[#13141f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00f0ff] border border-white/10"></div>
                 </label>
+              </div>
+
+              {/* Display Timezone Dropdown */}
+              <div className="flex items-center justify-between py-4 border-b border-white/5">
+                <div>
+                  <h3 className="font-bold text-white">Display Timezone</h3>
+                  <p className="text-sm text-slate-400 mt-1">Select your preferred display timezone for calendar events.</p>
+                </div>
+                <div className="relative">
+                  <select 
+                    value={user?.calendarSettings?.timezone || 'Asia/Kolkata'}
+                    onChange={(e) => handleUpdateCalendarSettings({ timezone: e.target.value })}
+                    className="bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff] text-sm appearance-none min-w-[200px]"
+                  >
+                    <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                    <option value="America/New_York">America/New_York (EST/EDT)</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                    <option value="Europe/London">Europe/London (GMT/BST)</option>
+                    <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                    <option value="UTC">UTC</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Prep Suggestions Opt-out */}
+              <div className="flex items-center justify-between py-4 border-b border-white/5">
+                <div>
+                  <h3 className="font-bold text-white">Smart Prep Block Suggestions</h3>
+                  <p className="text-sm text-slate-400 mt-1">Automatically find free slots and suggest blocking prep time for interviews.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={!(user?.calendarSettings?.disablePrepSuggestions)}
+                    onChange={(e) => handleUpdateCalendarSettings({ disablePrepSuggestions: !e.target.checked })}
+                  />
+                  <div className="w-11 h-6 bg-[#13141f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00f0ff] border border-white/10"></div>
+                </label>
+              </div>
+
+              {/* Public Sharing Link Section */}
+              <div className="py-4 border-b border-white/5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-white">Public Calendar Sharing</h3>
+                    <p className="text-sm text-slate-400 mt-1">Share a read-only unauthenticated view of your calendar events.</p>
+                  </div>
+                  {!user?.calendarSettings?.shareToken ? (
+                    <button 
+                      type="button"
+                      onClick={generateShareToken}
+                      className="px-4 py-2.5 bg-[#ff6b00] hover:bg-[#ff8c33] text-white font-bold rounded-xl text-xs transition-colors"
+                    >
+                      Generate Link
+                    </button>
+                  ) : (
+                    <button 
+                      type="button"
+                      onClick={revokeShareToken}
+                      className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold rounded-xl text-xs transition-colors"
+                    >
+                      Revoke Link
+                    </button>
+                  )}
+                </div>
+
+                {user?.calendarSettings?.shareToken && (
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        readOnly
+                        value={`${window.location.origin}/cal/share/${user.calendarSettings.shareToken}`}
+                        className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-slate-300 text-sm focus:outline-none"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/cal/share/${user.calendarSettings.shareToken}`);
+                          toast.success('Share link copied to clipboard!');
+                        }}
+                        className="px-4 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold rounded-xl text-sm transition-all whitespace-nowrap"
+                      >
+                        Copy Link
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3.5 bg-white/5 rounded-xl border border-white/5">
+                      <div>
+                        <span className="text-sm font-semibold text-white block">Share Interviews Only</span>
+                        <p className="text-xs text-slate-500">Only interviews will be visible on the public shared link.</p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={user.calendarSettings.shareInterviewsOnly || false} 
+                        onChange={(e) => handleUpdateCalendarSettings({ shareInterviewsOnly: e.target.checked })} 
+                        className="w-5 h-5 rounded border-white/20 bg-[#13141f] text-[#ff6b00] focus:ring-[#ff6b00] focus:ring-offset-[#13141f]"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Google Calendar Sync */}

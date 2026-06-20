@@ -211,6 +211,45 @@ const startCronJobs = () => {
         }
       }
 
+      // Post-Interview Follow-Up Nudges
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const pastInterviews = await Event.find({
+        type: 'interview',
+        status: { $nin: ['completed', 'cancelled'] },
+        followUpNudgeSent: { $ne: true }
+      });
+
+      for (const interviewEvent of pastInterviews) {
+        const eventDateTime = new Date(interviewEvent.date);
+        if (interviewEvent.start_time) {
+          const [h, m] = interviewEvent.start_time.split(':').map(Number);
+          eventDateTime.setUTCHours(h, m, 0, 0);
+        } else {
+          eventDateTime.setUTCHours(9, 0, 0, 0);
+        }
+
+        if (eventDateTime <= twentyFourHoursAgo) {
+          const user = await User.findById(interviewEvent.user);
+          if (user && user.calendarSettings?.disablePrepSuggestions) {
+            continue;
+          }
+
+          const cleanCompany = interviewEvent.title.replace(/Interview:?/gi, '').trim();
+          
+          await Notification.create({
+            userId: interviewEvent.user,
+            title: `Thank-You Note Reminder`,
+            message: `Sent a thank-you note to ${cleanCompany} yet?`,
+            type: 'FOLLOW_UP_NUDGE',
+            eventId: interviewEvent._id,
+            link: `/calendar?date=${new Date(interviewEvent.date).toISOString().split('T')[0]}`
+          });
+
+          interviewEvent.followUpNudgeSent = true;
+          await interviewEvent.save();
+        }
+      }
+
     } catch (error) {
       console.error('Error running cron job:', error);
     }

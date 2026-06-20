@@ -84,6 +84,8 @@ const loginUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        googleCalendarSync: user.googleCalendarSync,
+        calendarSettings: user.calendarSettings,
         token: generateToken(user._id),
       });
     } else {
@@ -106,7 +108,9 @@ const getMe = async (req, res) => {
       gradYear: user.gradYear,
       username: user.username,
       isPublicProfile: user.isPublicProfile,
-      publicProfileSettings: user.publicProfileSettings
+      publicProfileSettings: user.publicProfileSettings,
+      googleCalendarSync: user.googleCalendarSync,
+      calendarSettings: user.calendarSettings
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -152,6 +156,8 @@ const updateUser = async (req, res) => {
       username: updatedUser.username,
       isPublicProfile: updatedUser.isPublicProfile,
       publicProfileSettings: updatedUser.publicProfileSettings,
+      googleCalendarSync: updatedUser.googleCalendarSync,
+      calendarSettings: updatedUser.calendarSettings,
       token: generateToken(updatedUser._id),
     });
   } catch (error) {
@@ -451,6 +457,36 @@ const linkedinAuth = async (req, res) => {
   }
 };
 
+const updateCalendarSettings = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.calendarSettings) {
+      user.calendarSettings = {};
+    }
+
+    const { timezone, preferredView, disablePrepSuggestions, shareToken, shareInterviewsOnly } = req.body;
+
+    if (timezone !== undefined) user.calendarSettings.timezone = timezone;
+    if (preferredView !== undefined) user.calendarSettings.preferredView = preferredView;
+    if (disablePrepSuggestions !== undefined) user.calendarSettings.disablePrepSuggestions = disablePrepSuggestions;
+    if (shareToken !== undefined) user.calendarSettings.shareToken = shareToken;
+    if (shareInterviewsOnly !== undefined) user.calendarSettings.shareInterviewsOnly = shareInterviewsOnly;
+
+    await user.save();
+
+    res.json({
+      message: 'Calendar settings updated successfully',
+      calendarSettings: user.calendarSettings
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -462,4 +498,5 @@ module.exports = {
   googleAuth,
   githubAuth,
   linkedinAuth,
+  updateCalendarSettings,
 };

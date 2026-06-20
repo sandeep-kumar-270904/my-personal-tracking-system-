@@ -103,6 +103,13 @@ const userSchema = new mongoose.Schema({
     calendarId: { type: String, default: '' },
     googleCalendarId: { type: String, default: 'primary' },
     lastSyncTime: { type: Date }
+  },
+  calendarSettings: {
+    timezone: { type: String, default: '' },
+    preferredView: { type: String, default: 'month' },
+    disablePrepSuggestions: { type: Boolean, default: false },
+    shareToken: { type: String, default: null },
+    shareInterviewsOnly: { type: Boolean, default: false }
   }
 }, { timestamps: true });
 

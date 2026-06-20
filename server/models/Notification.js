@@ -16,7 +16,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['INTERVIEW', 'APPLICATION_STALE', 'DSA_REMINDER', 'SYSTEM', 'CALENDAR'],
+    enum: ['INTERVIEW', 'APPLICATION_STALE', 'DSA_REMINDER', 'SYSTEM', 'CALENDAR', 'FOLLOW_UP_NUDGE'],
     default: 'SYSTEM',
   },
   link: {
@@ -27,6 +27,11 @@ const notificationSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  eventId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Event',
+    default: null
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Notification', notificationSchema);

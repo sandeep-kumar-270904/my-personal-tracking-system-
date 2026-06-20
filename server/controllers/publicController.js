@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Application = require('../models/Application');
 const DSA = require('../models/DSA');
+const Event = require('../models/Event');
 
 exports.getPublicProfile = async (req, res) => {
   try {
@@ -78,5 +79,46 @@ exports.getPublicProfile = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error fetching public profile' });
+  }
+};
+
+exports.getSharedCalendar = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const user = await User.findOne({ 'calendarSettings.shareToken': token });
+
+    if (!user || !user.calendarSettings?.shareToken) {
+      return res.status(404).json({ message: 'Shared calendar not found or link has been revoked.' });
+    }
+
+    const query = { user: user._id, status: { $ne: 'cancelled' } };
+
+    if (user.calendarSettings.shareInterviewsOnly) {
+      query.type = 'interview';
+    }
+
+    const events = await Event.find(query).sort({ date: 1, start_time: 1 });
+
+    const publicEvents = events.map(e => ({
+      _id: e._id,
+      title: e.title,
+      date: e.date,
+      start_time: e.start_time,
+      end_time: e.end_time,
+      is_all_day: e.is_all_day,
+      type: e.type,
+      status: e.status,
+      end_date: e.end_date,
+      is_recurring: e.is_recurring,
+      recurrence_pattern: e.recurrence_pattern
+    }));
+
+    res.json({
+      userName: user.name,
+      events: publicEvents
+    });
+  } catch (error) {
+    console.error('Error fetching shared calendar:', error);
+    res.status(500).json({ message: 'Server error fetching shared calendar' });
   }
 };

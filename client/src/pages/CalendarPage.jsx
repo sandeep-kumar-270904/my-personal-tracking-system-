@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -13,6 +13,143 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
+import { AuthContext } from '../context/AuthContext';
+
+export function localTimeToUTC(dateStr, timeStr, timezone) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = (timeStr || '00:00').split(':').map(Number);
+  
+  let utcMs = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+  
+  const getOffsetMinutes = (tz, dateVal) => {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz || 'UTC',
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: 'numeric', minute: 'numeric', second: 'numeric',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(dateVal);
+      const map = {};
+      parts.forEach(p => map[p.type] = p.value);
+      
+      const localInUTC = Date.UTC(
+        parseInt(map.year),
+        parseInt(map.month) - 1,
+        parseInt(map.day),
+        parseInt(map.hour) === 24 ? 0 : parseInt(map.hour),
+        parseInt(map.minute),
+        parseInt(map.second)
+      );
+      return Math.round((localInUTC - dateVal.getTime()) / 60000);
+    } catch (err) {
+      return 0;
+    }
+  };
+
+  for (let i = 0; i < 3; i++) {
+    const dateVal = new Date(utcMs);
+    const offsetMinutes = getOffsetMinutes(timezone, dateVal);
+    utcMs = Date.UTC(year, month - 1, day, hour, minute, 0, 0) - offsetMinutes * 60000;
+  }
+  return new Date(utcMs);
+}
+
+export function utcToLocalTime(utcDateInput, timezone) {
+  const utcDate = new Date(utcDateInput);
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone || 'UTC',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    const parts = formatter.formatToParts(utcDate);
+    const map = {};
+    parts.forEach(p => map[p.type] = p.value);
+    
+    const hour = map.hour === '24' ? '00' : map.hour;
+    
+    return {
+      dateStr: `${map.year}-${map.month}-${map.day}`,
+      timeStr: `${hour}:${map.minute}`
+    };
+  } catch (err) {
+    console.warn(`Timezone formatting failed for ${timezone}`, err);
+    const pad = (n) => String(n).padStart(2, '0');
+    return {
+      dateStr: `${utcDate.getUTCFullYear()}-${pad(utcDate.getUTCMonth() + 1)}-${pad(utcDate.getUTCDate())}`,
+      timeStr: `${pad(utcDate.getUTCHours())}:${pad(utcDate.getUTCMinutes())}`
+    };
+  }
+}
+
+export const computeEventLayout = (dayEvents) => {
+  const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0 };
+  
+  const timedEvents = dayEvents.filter(e => !e.is_all_day && e.localStartTime).map(e => {
+    const [sh, sm] = e.localStartTime.split(':').map(Number);
+    const startMinutes = sh * 60 + sm;
+    
+    let eh = sh + 1, em = sm;
+    if (e.localEndTime) {
+      [eh, em] = e.localEndTime.split(':').map(Number);
+    }
+    const endMinutes = eh * 60 + em;
+    return {
+      ...e,
+      startMinutes,
+      endMinutes: endMinutes > startMinutes ? endMinutes : startMinutes + (DEFAULT_DURATIONS[e.type] || 60)
+    };
+  });
+
+  timedEvents.sort((a, b) => a.startMinutes - b.startMinutes || b.endMinutes - a.endMinutes);
+
+  const groups = [];
+  let currentGroup = [];
+  let maxEnd = 0;
+
+  for (const event of timedEvents) {
+    if (currentGroup.length === 0 || event.startMinutes < maxEnd) {
+      currentGroup.push(event);
+      maxEnd = Math.max(maxEnd, event.endMinutes);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = [event];
+      maxEnd = event.endMinutes;
+    }
+  }
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  const laidOutEvents = [];
+  for (const group of groups) {
+    const columns = [];
+    for (const event of group) {
+      let placed = false;
+      for (let i = 0; i < columns.length; i++) {
+        const lastEvent = columns[i][columns[i].length - 1];
+        if (event.startMinutes >= lastEvent.endMinutes) {
+          columns[i].push(event);
+          event.columnIndex = i;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        columns.push([event]);
+        event.columnIndex = columns.length - 1;
+      }
+    }
+    for (const event of group) {
+      event.totalColumns = columns.length;
+      laidOutEvents.push(event);
+    }
+  }
+
+  return laidOutEvents;
+};
+
 
 const fetchCalendarData = async ({ queryKey }) => {
   const [_, start, end] = queryKey;
@@ -21,9 +158,36 @@ const fetchCalendarData = async ({ queryKey }) => {
 };
 
 const CalendarPage = () => {
+  const { user, setUser } = useContext(AuthContext);
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [calendarView, setCalendarView] = useState('month');
+  const [listFilter, setListFilter] = useState('all');
+  const [prepSuggestion, setPrepSuggestion] = useState(null);
+  const [suggestPrepBlock, setSuggestPrepBlock] = useState(false);
+
+  useEffect(() => {
+    if (user?.calendarSettings?.preferredView) {
+      setCalendarView(user.calendarSettings.preferredView);
+    }
+  }, [user]);
+
+  const handleViewChange = async (newView) => {
+    setCalendarView(newView);
+    try {
+      await api.put('/auth/calendar-settings', { preferredView: newView });
+      setUser(prev => ({
+        ...prev,
+        calendarSettings: {
+          ...prev.calendarSettings,
+          preferredView: newView
+        }
+      }));
+    } catch (err) {
+      console.error('Failed to save preferred view settings', err);
+    }
+  };
 
   const dateParam = searchParams.get('date');
 
@@ -40,6 +204,82 @@ const CalendarPage = () => {
       }
     }
   }, [dateParam, setSearchParams]);
+
+  useEffect(() => {
+    if (formData.type !== 'interview' || !formData.date || !formData.start_time || user?.calendarSettings?.disablePrepSuggestions) {
+      setPrepSuggestion(null);
+      setSuggestPrepBlock(false);
+      return;
+    }
+
+    const fetchPrepBlockSuggestion = async () => {
+      try {
+        const interviewDate = new Date(formData.date);
+        const dayBefore = format(addDays(interviewDate, -1), 'yyyy-MM-dd');
+        
+        // Find free slots for the day before and same day
+        const res = await api.get('/events/slots/find', {
+          params: {
+            dateStart: dayBefore,
+            dateEnd: formData.date,
+            duration: 60
+          }
+        });
+        
+        const slots = res.data;
+        if (slots && slots.length > 0) {
+          // Prioritize evening before (6 PM - 8 PM, i.e., 18:00 - 20:00)
+          const eveningBefore = slots.find(s => {
+            const sDate = s.start.split('T')[0];
+            if (sDate !== dayBefore) return false;
+            const [h] = s.start_time.split(':').map(Number);
+            return h >= 18 && h <= 20;
+          });
+
+          if (eveningBefore) {
+            setPrepSuggestion(eveningBefore);
+            setSuggestPrepBlock(true);
+            return;
+          }
+
+          // Next prioritize any slot the day before
+          const anyDayBefore = slots.find(s => s.start.split('T')[0] === dayBefore);
+          if (anyDayBefore) {
+            setPrepSuggestion(anyDayBefore);
+            setSuggestPrepBlock(true);
+            return;
+          }
+
+          // Next prioritize slot same day earlier than start_time
+          const [ih, im] = formData.start_time.split(':').map(Number);
+          const interviewMin = ih * 60 + im;
+          
+          const earlierSameDay = slots.find(s => {
+            const sDate = s.start.split('T')[0];
+            if (sDate !== formData.date) return false;
+            const [sh, sm] = s.start_time.split(':').map(Number);
+            const slotMin = sh * 60 + sm;
+            return slotMin < interviewMin;
+          });
+
+          if (earlierSameDay) {
+            setPrepSuggestion(earlierSameDay);
+            setSuggestPrepBlock(true);
+            return;
+          }
+        }
+        setPrepSuggestion(null);
+        setSuggestPrepBlock(false);
+      } catch (err) {
+        console.error('Failed to fetch prep suggestion', err);
+        setPrepSuggestion(null);
+        setSuggestPrepBlock(false);
+      }
+    };
+
+    fetchPrepBlockSuggestion();
+  }, [formData.type, formData.date, formData.start_time, user]);
+
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [activeView, setActiveView] = useState('list'); // 'list' | 'detail' | 'create' | 'edit'
@@ -80,7 +320,8 @@ const CalendarPage = () => {
     recurrence_pattern: 'none',
     recurrence_end_date: '',
     end_date: '',
-    ignoreConflict: false
+    ignoreConflict: false,
+    timezone: ''
   });
 
   // Calculate visible range to fetch events
@@ -99,27 +340,77 @@ const CalendarPage = () => {
     };
   }, [currentDate]);
 
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  }, [currentDate]);
+
+  const hours = useMemo(() => Array.from({ length: 16 }, (_, i) => 7 + i), []);
+
   // Fetch events for the visible month grid
   const { data: events = [], isLoading, isError } = useQuery({
     queryKey: ['events', startDateStr, endDateStr],
     queryFn: fetchCalendarData
   });
 
+  // Process events into display timezone
+  const processedEvents = useMemo(() => {
+    const userTimezone = user?.calendarSettings?.timezone || 'Asia/Kolkata';
+    return events.map(event => {
+      if (event.is_all_day) {
+        const startUtc = new Date(event.date);
+        const startLocalDateStr = `${startUtc.getUTCFullYear()}-${String(startUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(startUtc.getUTCDate()).padStart(2, '0')}`;
+        let endLocalDateStr = '';
+        if (event.end_date) {
+          const endUtc = new Date(event.end_date);
+          endLocalDateStr = `${endUtc.getUTCFullYear()}-${String(endUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(endUtc.getUTCDate()).padStart(2, '0')}`;
+        }
+        return {
+          ...event,
+          localDateStr: startLocalDateStr,
+          localEndDateStr: endLocalDateStr,
+          localStartTime: '',
+          localEndTime: ''
+        };
+      }
+
+      const startUtc = new Date(event.date);
+      const startUtcDateStr = `${startUtc.getUTCFullYear()}-${String(startUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(startUtc.getUTCDate()).padStart(2, '0')}`;
+      const [sy, sm, sd] = startUtcDateStr.split('-').map(Number);
+      const [sh, smin] = (event.start_time || '00:00').split(':').map(Number);
+      const eventStartUTCDate = new Date(Date.UTC(sy, sm - 1, sd, sh, smin));
+
+      const startLocal = utcToLocalTime(eventStartUTCDate, userTimezone);
+
+      let endLocal = { dateStr: startLocal.dateStr, timeStr: '' };
+      if (event.end_time) {
+        const [eh, emin] = event.end_time.split(':').map(Number);
+        let eventEndUTCDate;
+        if (eh < sh || (eh === sh && emin < smin)) {
+          eventEndUTCDate = new Date(Date.UTC(sy, sm - 1, sd + 1, eh, emin));
+        } else {
+          eventEndUTCDate = new Date(Date.UTC(sy, sm - 1, sd, eh, emin));
+        }
+        endLocal = utcToLocalTime(eventEndUTCDate, userTimezone);
+      }
+
+      return {
+        ...event,
+        localDateStr: startLocal.dateStr,
+        localEndDateStr: endLocal.dateStr,
+        localStartTime: startLocal.timeStr,
+        localEndTime: endLocal.timeStr
+      };
+    });
+  }, [events, user]);
+
   // Helper: check if event falls on a specific day (handles multi-day ranges)
   const isEventOnDay = (event, day) => {
-    const eventStart = new Date(event.date);
-    eventStart.setHours(0, 0, 0, 0);
-    
-    const targetDay = new Date(day);
-    targetDay.setHours(0, 0, 0, 0);
-    
-    if (event.end_date) {
-      const eventEnd = new Date(event.end_date);
-      eventEnd.setHours(0, 0, 0, 0);
-      return targetDay >= eventStart && targetDay <= eventEnd;
+    const dayStr = format(day, 'yyyy-MM-dd');
+    if (event.localEndDateStr && event.localEndDateStr !== event.localDateStr) {
+      return dayStr >= event.localDateStr && dayStr <= event.localEndDateStr;
     }
-    
-    return isSameDay(eventStart, targetDay);
+    return dayStr === event.localDateStr;
   };
 
   // Helper: Sort events consistently to align multi-day spans
@@ -127,17 +418,17 @@ const CalendarPage = () => {
     if (a.is_all_day && !b.is_all_day) return -1;
     if (!a.is_all_day && b.is_all_day) return 1;
     
-    const aDuration = a.end_date ? (new Date(a.end_date) - new Date(a.date)) : 0;
-    const bDuration = b.end_date ? (new Date(b.end_date) - new Date(b.date)) : 0;
+    const aDuration = a.localEndDateStr ? (new Date(a.localEndDateStr) - new Date(a.localDateStr)) : 0;
+    const bDuration = b.localEndDateStr ? (new Date(b.localEndDateStr) - new Date(b.localDateStr)) : 0;
     if (aDuration !== bDuration) {
       return bDuration - aDuration; // Longer durations first
     }
     
-    if (a.start_time && b.start_time) {
-      return a.start_time.localeCompare(b.start_time);
+    if (a.localStartTime && b.localStartTime) {
+      return a.localStartTime.localeCompare(b.localStartTime);
     }
-    if (a.start_time) return 1;
-    if (b.start_time) return -1;
+    if (a.localStartTime) return 1;
+    if (b.localStartTime) return -1;
     
     return String(a._id).localeCompare(String(b._id));
   };
@@ -161,15 +452,33 @@ const CalendarPage = () => {
     return diffHours >= 0 && diffHours <= 48;
   };
 
+  const getConvertedDisplayTime = () => {
+    if (!formData.date || !formData.start_time || !formData.timezone || !user?.calendarSettings?.timezone) return '';
+    try {
+      const utcDate = localTimeToUTC(formData.date, formData.start_time, formData.timezone);
+      const userLocal = utcToLocalTime(utcDate, user.calendarSettings.timezone);
+      return userLocal.timeStr;
+    } catch (err) {
+      return '';
+    }
+  };
+
+  const getPrepSuggestionLabel = () => {
+    if (!prepSuggestion) return '';
+    try {
+      const d = new Date(prepSuggestion.start.split('T')[0] + 'T00:00:00');
+      return `${format(d, 'MMM d')}, ${prepSuggestion.start_time} - ${prepSuggestion.end_time}`;
+    } catch (err) {
+      return '';
+    }
+  };
+
   // Helper: Generate textual label for days of a multi-day span
   const getMultiDaySpanText = (event, day) => {
-    if (!event.end_date) return '';
-    const start = new Date(event.date);
-    start.setHours(0,0,0,0);
-    const end = new Date(event.end_date);
-    end.setHours(0,0,0,0);
+    if (!event.localEndDateStr) return '';
+    const start = new Date(event.localDateStr);
+    const end = new Date(event.localEndDateStr);
     const current = new Date(day);
-    current.setHours(0,0,0,0);
     
     const totalDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
     const currentDay = Math.round((current - start) / (1000 * 60 * 60 * 24)) + 1;
@@ -183,64 +492,56 @@ const CalendarPage = () => {
     if (formValues.is_all_day) return { hasHard: false, hasSoft: false, conflicts: [] };
     if (!formValues.date || !formValues.start_time) return { hasHard: false, hasSoft: false, conflicts: [] };
 
-    const startD = new Date(formValues.date);
-    const [sh, sm] = formValues.start_time.split(':').map(Number);
-    startD.setHours(sh, sm, 0, 0);
+    const userTimezone = user?.calendarSettings?.timezone || 'Asia/Kolkata';
+    const startD = localTimeToUTC(formValues.date, formValues.start_time, userTimezone);
 
     const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0 };
     const duration = formValues.end_time ? 0 : (DEFAULT_DURATIONS[formValues.type] || 60);
     
     const endD = new Date(startD.getTime());
     if (formValues.end_time) {
-      const [eh, em] = formValues.end_time.split(':').map(Number);
-      endD.setHours(eh, em, 0, 0);
+      const endDLocal = localTimeToUTC(formValues.date, formValues.end_time, userTimezone);
+      endD.setTime(endDLocal.getTime());
     } else {
       endD.setMinutes(endD.getMinutes() + duration);
     }
 
     const conflicts = [];
-    const startOfDay = new Date(formValues.date);
-    startOfDay.setHours(0,0,0,0);
-    const endOfDay = new Date(formValues.date);
-    endOfDay.setHours(23,59,59,999);
 
-    // Filter events on the same day (excluding the current event being edited)
-    const sameDayEvents = allEvents.filter(e => {
-      if (String(e._id) === String(currentEventId)) return false;
-      if (e.status === 'cancelled') return false;
-      const eDate = new Date(e.date);
-      return eDate >= startOfDay && eDate <= endOfDay;
-    });
-
-    for (const event of sameDayEvents) {
+    for (const event of allEvents) {
+      if (String(event._id) === String(currentEventId)) continue;
+      if (event.status === 'cancelled') continue;
       if (event.is_all_day) continue;
 
-      const evStart = new Date(event.date);
-      if (event.start_time) {
-        const [h, m] = event.start_time.split(':').map(Number);
-        evStart.setHours(h, m, 0, 0);
-      }
+      const startUtc = new Date(event.date);
+      const startUtcDateStr = `${startUtc.getUTCFullYear()}-${String(startUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(startUtc.getUTCDate()).padStart(2, '0')}`;
+      const [sy, sm, sd] = startUtcDateStr.split('-').map(Number);
+      const [sh, smin] = (event.start_time || '00:00').split(':').map(Number);
+      const evStart = new Date(Date.UTC(sy, sm - 1, sd, sh, smin));
 
-      const evDuration = event.end_time ? 0 : (DEFAULT_DURATIONS[event.type] || 60);
-      const evEnd = new Date(evStart.getTime());
+      let evEnd = new Date(evStart.getTime());
       if (event.end_time) {
-        const [h, m] = event.end_time.split(':').map(Number);
-        evEnd.setHours(h, m, 0, 0);
+        const [eh, emin] = event.end_time.split(':').map(Number);
+        if (eh < sh || (eh === sh && emin < smin)) {
+          evEnd = new Date(Date.UTC(sy, sm - 1, sd + 1, eh, emin));
+        } else {
+          evEnd = new Date(Date.UTC(sy, sm - 1, sd, eh, emin));
+        }
       } else {
+        const evDuration = DEFAULT_DURATIONS[event.type] || 60;
         evEnd.setMinutes(evEnd.getMinutes() + evDuration);
       }
 
-      // 1. Hard Conflict
       if (startD < evEnd && evStart < endD) {
+        const evLocal = utcToLocalTime(evStart, userTimezone);
         conflicts.push({
           type: 'hard',
           title: event.title,
-          message: `Time overlap with "${event.title}" (${event.start_time})`
+          message: `Time overlap with "${event.title}" (${evLocal.timeStr})`
         });
         continue;
       }
 
-      // 2. Soft Conflict (Tight gap at different locations)
       const diffMinutes1 = Math.abs(startD.getTime() - evEnd.getTime()) / 60000;
       const diffMinutes2 = Math.abs(evStart.getTime() - endD.getTime()) / 60000;
       const minGap = Math.min(diffMinutes1, diffMinutes2);
@@ -265,8 +566,8 @@ const CalendarPage = () => {
 
   // Memoized client conflicts info
   const conflictsInfo = useMemo(() => {
-    return checkConflictsClient(formData, events, selectedEvent?._id);
-  }, [formData, events, selectedEvent]);
+    return checkConflictsClient(formData, processedEvents, selectedEvent?._id);
+  }, [formData, processedEvents, selectedEvent]);
 
   // Next 7 Days Strip selector
   const next7DaysEvents = useMemo(() => {
@@ -275,21 +576,44 @@ const CalendarPage = () => {
     const sevenDaysFromNow = addDays(today, 7);
     sevenDaysFromNow.setHours(23, 59, 59, 999);
 
-    return events.filter(event => {
-      const eventDate = new Date(event.date);
+    return processedEvents.filter(event => {
+      const eventDate = new Date(event.localDateStr);
       return eventDate >= today && eventDate <= sevenDaysFromNow;
-    }).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [events]);
+    }).sort((a, b) => new Date(a.localDateStr) - new Date(b.localDateStr));
+  }, [processedEvents]);
 
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (data) => await api.post('/events', data),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       if (res.data?.hasConflict) {
         setServerConflicts(res.data.conflicts);
         setShowServerConflictModal(true);
       } else {
         queryClient.invalidateQueries(['events']);
+        
+        // Auto prep block creation
+        if (suggestPrepBlock && prepSuggestion && res.data?._id) {
+          try {
+            const prepEventData = {
+              title: `Prep: ${formData.title}`,
+              type: 'event',
+              date: prepSuggestion.start.split('T')[0],
+              start_time: prepSuggestion.start_time,
+              end_time: prepSuggestion.end_time,
+              is_all_day: false,
+              description: `Preparation time for interview "${formData.title}"`,
+              source: 'interview',
+              source_ref_id: res.data._id,
+              timezone: formData.timezone || user?.calendarSettings?.timezone || 'Asia/Kolkata'
+            };
+            await api.post('/events', prepEventData);
+            toast.success('Prep block scheduled successfully!');
+          } catch (err) {
+            console.error('Failed to create prep block', err);
+          }
+        }
+
         toast.success('Event scheduled successfully');
         setIsPanelOpen(false);
       }
@@ -332,9 +656,40 @@ const CalendarPage = () => {
   });
 
   // Navigation handlers
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const handleNext = () => {
+    if (calendarView === 'month' || calendarView === 'list') {
+      setCurrentDate(addMonths(currentDate, 1));
+    } else if (calendarView === 'week') {
+      setCurrentDate(addDays(currentDate, 7));
+    } else if (calendarView === 'day') {
+      setCurrentDate(addDays(currentDate, 1));
+    }
+  };
+
+  const handlePrev = () => {
+    if (calendarView === 'month' || calendarView === 'list') {
+      setCurrentDate(subMonths(currentDate, 1));
+    } else if (calendarView === 'week') {
+      setCurrentDate(addDays(currentDate, -7));
+    } else if (calendarView === 'day') {
+      setCurrentDate(addDays(currentDate, -1));
+    }
+  };
+
   const jumpToToday = () => setCurrentDate(new Date());
+
+  const getHeaderTitle = () => {
+    if (calendarView === 'month' || calendarView === 'list') {
+      return format(currentDate, 'MMMM yyyy');
+    } else if (calendarView === 'week') {
+      const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+      return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
+    } else if (calendarView === 'day') {
+      return format(currentDate, 'MMMM d, yyyy');
+    }
+    return '';
+  };
 
   // Click on date cell
   const handleDateClick = (day) => {
@@ -360,8 +715,11 @@ const CalendarPage = () => {
       recurrence_pattern: 'none',
       recurrence_end_date: formattedDate,
       end_date: '',
-      ignoreConflict: false
+      ignoreConflict: false,
+      timezone: user?.calendarSettings?.timezone || 'Asia/Kolkata'
     });
+    setPrepSuggestion(null);
+    setSuggestPrepBlock(false);
     setShowSlotFinder(false);
     setSlotsResults([]);
     setSearchedSlots(false);
@@ -374,19 +732,22 @@ const CalendarPage = () => {
     setFormData({
       title: event.title,
       type: event.type,
-      date: format(new Date(event.date), 'yyyy-MM-dd'),
+      date: event.localDateStr,
       is_all_day: event.is_all_day,
-      start_time: event.start_time || '09:00',
-      end_time: event.end_time || '10:00',
+      start_time: event.localStartTime || '09:00',
+      end_time: event.localEndTime || '10:00',
       location: event.location || '',
       description: event.description || '',
       reminder_minutes_before: event.reminder_minutes_before !== null ? String(event.reminder_minutes_before) : '',
       is_recurring: event.is_recurring,
       recurrence_pattern: event.recurrence_pattern || 'none',
       recurrence_end_date: event.recurrence_end_date ? format(new Date(event.recurrence_end_date), 'yyyy-MM-dd') : '',
-      end_date: event.end_date ? format(new Date(event.end_date), 'yyyy-MM-dd') : '',
-      ignoreConflict: false
+      end_date: event.localEndDateStr || '',
+      ignoreConflict: false,
+      timezone: event.timezone || user?.calendarSettings?.timezone || 'Asia/Kolkata'
     });
+    setPrepSuggestion(null);
+    setSuggestPrepBlock(false);
     setShowSlotFinder(false);
     setSlotsResults([]);
     setSearchedSlots(false);
@@ -611,7 +972,7 @@ const CalendarPage = () => {
     <div className="max-w-7xl mx-auto min-h-[calc(100vh-100px)] flex flex-col pb-10 px-4 sm:px-6">
       
       {/* Header */}
-      <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-6">
+      <header className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">
         <div>
           <h1 className="text-[28px] font-semibold text-white mb-1 flex items-center gap-2">
             <CalendarIcon className="text-[#00f0ff] w-8 h-8" />
@@ -619,7 +980,24 @@ const CalendarPage = () => {
           </h1>
           <p className="text-[14px] text-slate-400">Manage interviews, deadlines, offers, and schedule custom reminders.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* View Mode Selector */}
+          <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 shrink-0">
+            {['month', 'week', 'day', 'list'].map((view) => (
+              <button
+                key={view}
+                onClick={() => handleViewChange(view)}
+                className={`px-3 py-1 text-xs font-semibold capitalize rounded-lg transition-all ${
+                  calendarView === view 
+                    ? 'bg-[#00f0ff] text-[#13141f] shadow-md' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {view}
+              </button>
+            ))}
+          </div>
+
           <button 
             onClick={jumpToToday} 
             className="px-4 py-2 text-xs font-semibold text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
@@ -627,13 +1005,13 @@ const CalendarPage = () => {
             Today
           </button>
           <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 shrink-0">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+            <button onClick={handlePrev} className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="px-4 py-1.5 text-sm font-semibold text-white min-w-[120px] text-center">
-              {format(currentDate, 'MMMM yyyy')}
+              {getHeaderTitle()}
             </span>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+            <button onClick={handleNext} className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -657,7 +1035,7 @@ const CalendarPage = () => {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">
-                      {format(new Date(event.date), 'EEE, MMM d')}
+                      {format(new Date(event.localDateStr), 'EEE, MMM d')}
                     </span>
                     {event.source !== 'manual' && <Link2 className="w-3.5 h-3.5 text-slate-500" />}
                   </div>
@@ -673,120 +1051,446 @@ const CalendarPage = () => {
         </div>
       </section>
 
-      {/* Main Grid View */}
-      <div className="glass-card border border-white/5 rounded-2xl flex-1 overflow-hidden flex flex-col">
-        {/* Day Name Row */}
-        <div className="grid grid-cols-7 border-b border-white/5 bg-[#13141f]/30 shrink-0">
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-            <div key={day} className="text-center font-bold text-xs text-slate-400 py-3 uppercase tracking-wider">{day}</div>
-          ))}
-        </div>
+      {/* Views Container */}
+      <div className="flex-1 flex flex-col min-h-0 bg-[#0b0c15] border border-white/5 rounded-2xl overflow-hidden">
         
-        {/* Days cells */}
-        {isLoading ? (
-          <div className="flex-1 min-h-[400px] grid grid-cols-7 grid-rows-5 gap-px bg-white/5 animate-pulse" />
-        ) : (
-          <div className="flex-1 grid grid-cols-7 grid-rows-5 auto-rows-fr bg-[#13141f]">
-            {gridCells.map((day) => {
-              const isToday = isSameDay(day, new Date());
-              const isCurrentMonth = isSameMonth(day, currentDate);
-              const dayEvents = events.filter(e => isEventOnDay(e, day)).sort(sortEvents);
-              const displayEvents = dayEvents.slice(0, 3);
-              const overflowCount = dayEvents.length - 3;
+        {/* MONTH VIEW */}
+        {calendarView === 'month' && (
+          <div className="flex flex-col flex-1">
+            {/* Day Name Row */}
+            <div className="grid grid-cols-7 border-b border-white/5 bg-[#13141f]/30 shrink-0">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                <div key={day} className="text-center font-bold text-xs text-slate-400 py-3 uppercase tracking-wider">{day}</div>
+              ))}
+            </div>
+            
+            {/* Days cells */}
+            {isLoading ? (
+              <div className="flex-1 min-h-[400px] grid grid-cols-7 grid-rows-5 gap-px bg-white/5 animate-pulse" />
+            ) : (
+              <div className="flex-1 grid grid-cols-7 grid-rows-5 auto-rows-fr bg-[#13141f]">
+                {gridCells.map((day) => {
+                  const isToday = isSameDay(day, new Date());
+                  const isCurrentMonth = isSameMonth(day, currentDate);
+                  const dayEvents = processedEvents.filter(e => isEventOnDay(e, day)).sort(sortEvents);
+                  const displayEvents = dayEvents.slice(0, 3);
+                  const overflowCount = dayEvents.length - 3;
 
-              return (
-                <div
-                  key={day.toISOString()}
-                  onClick={() => handleDateClick(day)}
-                  className={`min-h-[110px] p-2 cursor-pointer border border-white/5 transition-all flex flex-col justify-between hover:bg-white/5 overflow-hidden ${
-                    !isCurrentMonth ? 'text-slate-600 bg-black/20' : 'text-slate-300 bg-[#13141f]'
-                  } ${isToday ? 'ring-2 ring-[#00f0ff] ring-inset' : ''}`}
-                >
-                  <div className="flex justify-between items-start mb-1.5">
-                    <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${
-                      isToday ? 'bg-[#00f0ff] text-[#13141f]' : ''
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      onClick={() => handleDateClick(day)}
+                      className={`min-h-[110px] p-2 cursor-pointer border border-white/5 transition-all flex flex-col justify-between hover:bg-white/5 overflow-hidden ${
+                        !isCurrentMonth ? 'text-slate-600 bg-black/20' : 'text-slate-300 bg-[#13141f]'
+                      } ${isToday ? 'ring-2 ring-[#00f0ff] ring-inset' : ''}`}
+                    >
+                      <div className="flex justify-between items-start mb-1.5">
+                        <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${
+                          isToday ? 'bg-[#00f0ff] text-[#13141f]' : ''
+                        }`}>
+                          {format(day, 'd')}
+                        </span>
+                      </div>
+                      
+                      {/* Event Chips */}
+                      <div className="flex-1 flex flex-col gap-1 overflow-hidden justify-start w-full">
+                        {displayEvents.map(event => {
+                          const colors = getEventColors(event.type, event.status);
+                          const isMultiDay = event.localEndDateStr && event.localEndDateStr !== event.localDateStr;
+                          
+                          let roundedClass = 'rounded';
+                          let marginClass = '';
+                          let borderClass = 'border';
+                          let prefix = null;
+                          let suffix = null;
+                          let showText = true;
+
+                          if (isMultiDay) {
+                            const isStart = isSameDay(new Date(event.localDateStr + 'T00:00:00'), day);
+                            const isEnd = isSameDay(new Date(event.localEndDateStr + 'T00:00:00'), day);
+                            const isMon = day.getDay() === 1;
+                            const isSun = day.getDay() === 0;
+
+                            showText = isStart || isMon;
+
+                            if (isStart) {
+                              roundedClass = 'rounded-l-lg rounded-r-none';
+                              borderClass = 'border border-r-0';
+                              marginClass = 'mr-[-8px]';
+                            } else if (isEnd) {
+                              roundedClass = 'rounded-r-lg rounded-l-none';
+                              borderClass = 'border border-l-0';
+                              marginClass = 'ml-[-8px]';
+                            } else {
+                              roundedClass = 'rounded-none';
+                              borderClass = 'border-y border-x-0';
+                              marginClass = 'mx-[-8px]';
+                            }
+
+                            if (isMon && !isStart) {
+                              prefix = <span className="text-[8px] mr-1 text-slate-400 font-bold shrink-0">◀</span>;
+                            }
+                            if (isSun && !isEnd) {
+                              suffix = <span className="text-[8px] ml-1 text-slate-400 font-bold shrink-0">▶</span>;
+                            }
+                          }
+
+                          const hasPrepWarning = isUpcomingInterviewWithoutPrep(event);
+
+                          return (
+                            <div 
+                              key={event._id}
+                              onClick={(e) => handleEventClick(event, e)}
+                              className={`text-[10px] px-1.5 py-0.5 truncate flex items-center justify-between cursor-pointer ${roundedClass} ${borderClass} ${marginClass} ${colors.chip} ${
+                                event.pendingSync ? 'border-dashed border-white/30' : ''
+                              }`}
+                              title={`${event.title} ${event.localEndDateStr ? `(${format(new Date(event.localDateStr + 'T00:00:00'), 'MMM d')} - ${format(new Date(event.localEndDateStr + 'T00:00:00'), 'MMM d')})` : ''}`}
+                            >
+                              <div className="flex items-center truncate flex-1 font-medium">
+                                {hasPrepWarning && (
+                                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0 mr-1.5 animate-pulse" title="No prep logged yet" />
+                                )}
+                                {prefix}
+                                <span className="truncate">
+                                  {showText ? event.title : '\u00A0'}
+                                </span>
+                                {suffix}
+                              </div>
+                              {showText && event.source !== 'manual' && (
+                                <Link2 className="w-2.5 h-2.5 ml-1 text-slate-500 opacity-60 flex-shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })}
+                        {overflowCount > 0 && (
+                          <div className="text-[9px] text-slate-400 font-semibold pl-1.5">
+                            +{overflowCount} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* WEEK VIEW */}
+        {calendarView === 'week' && (
+          <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+            {/* Week Sticky Day Headers */}
+            <div className="grid grid-cols-7 border-b border-white/5 bg-[#13141f]/95 sticky top-0 z-20 shrink-0 pl-16">
+              {weekDays.map((day, dayIdx) => {
+                const isToday = isSameDay(day, new Date());
+                const allDayForDay = processedEvents.filter(e => isEventOnDay(e, day) && (e.is_all_day || (e.localEndDateStr && e.localEndDateStr !== e.localDateStr)));
+                return (
+                  <div key={dayIdx} className="text-center py-2 border-r border-white/5 flex flex-col items-center min-h-[70px]">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{format(day, 'EEE')}</span>
+                    <span className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full mt-1 ${
+                      isToday ? 'bg-[#00f0ff] text-[#13141f]' : 'text-slate-300'
                     }`}>
                       {format(day, 'd')}
                     </span>
-                  </div>
-                  
-                  {/* Event Chips */}
-                  <div className="flex-1 flex flex-col gap-1 overflow-hidden justify-start w-full">
-                    {displayEvents.map(event => {
-                      const colors = getEventColors(event.type, event.status);
-                      const isMultiDay = event.end_date && !isSameDay(new Date(event.date), new Date(event.end_date));
-                      
-                      let roundedClass = 'rounded';
-                      let marginClass = '';
-                      let borderClass = 'border';
-                      let prefix = null;
-                      let suffix = null;
-                      let showText = true;
-
-                      if (isMultiDay) {
-                        const isStart = isSameDay(new Date(event.date), day);
-                        const isEnd = isSameDay(new Date(event.end_date), day);
-                        const isMon = day.getDay() === 1;
-                        const isSun = day.getDay() === 0;
-
-                        showText = isStart || isMon;
-
-                        if (isStart) {
-                          roundedClass = 'rounded-l-lg rounded-r-none';
-                          borderClass = 'border border-r-0';
-                          marginClass = 'mr-[-8px]';
-                        } else if (isEnd) {
-                          roundedClass = 'rounded-r-lg rounded-l-none';
-                          borderClass = 'border border-l-0';
-                          marginClass = 'ml-[-8px]';
-                        } else {
-                          roundedClass = 'rounded-none';
-                          borderClass = 'border-y border-x-0';
-                          marginClass = 'mx-[-8px]';
-                        }
-
-                        if (isMon && !isStart) {
-                          prefix = <span className="text-[8px] mr-1 text-slate-400 font-bold shrink-0">◀</span>;
-                        }
-                        if (isSun && !isEnd) {
-                          suffix = <span className="text-[8px] ml-1 text-slate-400 font-bold shrink-0">▶</span>;
-                        }
-                      }
-
-                      const hasPrepWarning = isUpcomingInterviewWithoutPrep(event);
-
-                      return (
-                        <div 
-                          key={event._id}
-                          onClick={(e) => handleEventClick(event, e)}
-                          className={`text-[10px] px-1.5 py-0.5 truncate flex items-center justify-between cursor-pointer ${roundedClass} ${borderClass} ${marginClass} ${colors.chip}`}
-                          title={`${event.title} ${event.end_date ? `(${format(new Date(event.date), 'MMM d')} - ${format(new Date(event.end_date), 'MMM d')})` : ''}`}
-                        >
-                          <div className="flex items-center truncate flex-1 font-medium">
-                            {hasPrepWarning && (
-                              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0 mr-1.5 animate-pulse" title="No prep logged yet" />
-                            )}
-                            {prefix}
-                            <span className="truncate">
-                              {showText ? event.title : '\u00A0'}
-                            </span>
-                            {suffix}
+                    
+                    {/* Week All-Day chips */}
+                    <div className="w-full px-1 mt-1.5 space-y-1">
+                      {allDayForDay.map(event => {
+                        const colors = getEventColors(event.type, event.status);
+                        return (
+                          <div
+                            key={event._id}
+                            onClick={(e) => handleEventClick(event, e)}
+                            className={`text-[8px] px-1 py-0.5 rounded truncate font-bold text-center cursor-pointer border ${colors.chip}`}
+                          >
+                            {event.title}
                           </div>
-                          {showText && event.source !== 'manual' && (
-                            <Link2 className="w-2.5 h-2.5 ml-1 text-slate-500 opacity-60 flex-shrink-0" />
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Hourly Grid Rows */}
+            <div className="flex flex-1 relative bg-[#13141f] min-h-[980px]">
+              {/* Hour Labels */}
+              <div className="w-16 flex-shrink-0 border-r border-white/5 bg-[#13141f]/80 sticky left-0 z-10 select-none">
+                <div className="h-[20px]" />
+                {hours.map(hour => (
+                  <div key={hour} className="h-[60px] text-[10px] font-bold text-slate-500 text-right pr-3 flex items-center justify-end">
+                    {hour % 12 || 12} {hour >= 12 ? 'PM' : 'AM'}
+                  </div>
+                ))}
+              </div>
+
+              {/* Grid Cells Columns */}
+              <div className="flex-1 grid grid-cols-7 relative">
+                {/* Horizontal Dividers */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="h-[20px]" />
+                  {hours.map((_, idx) => (
+                    <div key={idx} className="h-[60px] border-b border-white/5 w-full" />
+                  ))}
+                </div>
+
+                {/* Day Columns */}
+                {weekDays.map((day, dayIdx) => {
+                  const dayEvents = processedEvents.filter(e => isEventOnDay(e, day));
+                  const timedEvents = computeEventLayout(dayEvents);
+                  return (
+                    <div key={dayIdx} className="border-r border-white/5 relative h-full min-h-[980px]">
+                      <div className="absolute inset-0 top-[20px] bottom-0 left-0.5 right-0.5">
+                        {timedEvents.map(event => {
+                          const colors = getEventColors(event.type, event.status);
+                          const startM = event.startMinutes;
+                          const endM = event.endMinutes;
+                          const top = Math.max(0, startM - 420); // offset 7 AM
+                          const height = Math.max(25, endM - startM);
+                          
+                          const left = event.columnIndex * (100 / event.totalColumns);
+                          const width = (100 / event.totalColumns) - 1;
+
+                          const hasPrepWarning = isUpcomingInterviewWithoutPrep(event);
+
+                          return (
+                            <div
+                              key={event._id}
+                              onClick={(e) => handleEventClick(event, e)}
+                              style={{
+                                top: `${top}px`,
+                                height: `${height}px`,
+                                left: `${left}%`,
+                                width: `${width}%`
+                              }}
+                              className={`absolute p-1.5 rounded-lg border text-[9px] leading-tight cursor-pointer overflow-hidden transition-all hover:brightness-110 flex flex-col justify-between ${colors.chip} ${
+                                event.pendingSync ? 'border-dashed border-white/30' : ''
+                              }`}
+                            >
+                              <div className="w-full overflow-hidden">
+                                <div className="font-bold truncate text-white mb-0.5">{event.title}</div>
+                                <div className="opacity-80 truncate text-[8px]">{event.localStartTime} - {event.localEndTime}</div>
+                              </div>
+                              {hasPrepWarning && (
+                                <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0 mr-1.5 animate-pulse self-end" title="No prep logged yet" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DAY VIEW */}
+        {calendarView === 'day' && (
+          <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+            {/* Day Header */}
+            <div className="border-b border-white/5 bg-[#13141f]/95 p-4 sticky top-0 z-20 shrink-0 flex flex-col items-center">
+              <span className="text-xs font-bold text-[#00f0ff] uppercase tracking-wider">{format(currentDate, 'EEEE')}</span>
+              <span className="text-xl font-bold text-white mt-1">{format(currentDate, 'MMMM d, yyyy')}</span>
+              
+              {/* Day All-Day chips */}
+              <div className="w-full max-w-md mt-3 space-y-1">
+                {processedEvents.filter(e => isEventOnDay(e, currentDate) && (e.is_all_day || (e.localEndDateStr && e.localEndDateStr !== e.localDateStr))).map(event => {
+                  const colors = getEventColors(event.type, event.status);
+                  return (
+                    <div
+                      key={event._id}
+                      onClick={(e) => handleEventClick(event, e)}
+                      className={`text-xs px-3 py-1.5 rounded-xl border text-center font-semibold cursor-pointer ${colors.chip}`}
+                    >
+                      {event.title} (All Day)
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Hourly Grid Rows */}
+            <div className="flex flex-1 relative bg-[#13141f] min-h-[980px]">
+              {/* Hour Labels */}
+              <div className="w-20 flex-shrink-0 border-r border-white/5 bg-[#13141f]/80 sticky left-0 z-10 select-none">
+                <div className="h-[20px]" />
+                {hours.map(hour => (
+                  <div key={hour} className="h-[60px] text-xs font-bold text-slate-500 text-right pr-4 flex items-center justify-end">
+                    {hour % 12 || 12} {hour >= 12 ? 'PM' : 'AM'}
+                  </div>
+                ))}
+              </div>
+
+              {/* Grid Column */}
+              <div className="flex-1 relative">
+                {/* Horizontal Dividers */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="h-[20px]" />
+                  {hours.map((_, idx) => (
+                    <div key={idx} className="h-[60px] border-b border-white/5 w-full" />
+                  ))}
+                </div>
+
+                {/* Event Column */}
+                <div className="absolute inset-0 top-[20px] bottom-0 left-2 right-4">
+                  {computeEventLayout(processedEvents.filter(e => isEventOnDay(e, currentDate))).map(event => {
+                    const colors = getEventColors(event.type, event.status);
+                    const startM = event.startMinutes;
+                    const endM = event.endMinutes;
+                    const top = Math.max(0, startM - 420); // offset 7 AM
+                    const height = Math.max(40, endM - startM);
+                    
+                    const left = event.columnIndex * (100 / event.totalColumns);
+                    const width = (100 / event.totalColumns) - 2;
+
+                    const hasPrepWarning = isUpcomingInterviewWithoutPrep(event);
+
+                    return (
+                      <div
+                        key={event._id}
+                        onClick={(e) => handleEventClick(event, e)}
+                        style={{
+                          top: `${top}px`,
+                          height: `${height}px`,
+                          left: `${left}%`,
+                          width: `${width}%`
+                        }}
+                        className={`absolute p-3 rounded-xl border text-xs leading-tight cursor-pointer overflow-hidden transition-all hover:brightness-110 flex flex-col justify-between ${colors.chip} ${
+                          event.pendingSync ? 'border-dashed border-white/30' : ''
+                        }`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start gap-2 mb-1.5">
+                            <span className="font-bold text-white text-sm truncate">{event.title}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold capitalize ${colors.badge}`}>
+                              {event.type.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <div className="opacity-80 text-xs">{event.localStartTime} - {event.localEndTime}</div>
+                          {event.location && (
+                            <div className="opacity-60 text-[10px] mt-1.5 truncate">📍 {event.location}</div>
                           )}
                         </div>
-                      );
-                    })}
-                    {overflowCount > 0 && (
-                      <div className="text-[9px] text-slate-400 font-semibold pl-1.5">
-                        +{overflowCount} more
+
+                        {hasPrepWarning && (
+                          <div className="mt-2 bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg flex items-center gap-2 self-start">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span className="text-[10px] text-amber-300 font-bold">No preparation notes logged yet!</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LIST / AGENDA VIEW */}
+        {calendarView === 'list' && (
+          <div className="flex flex-col flex-1 p-6 overflow-y-auto">
+            {/* Filter controls */}
+            <div className="flex gap-2 mb-6 border-b border-white/5 pb-4">
+              {[
+                { value: 'all', label: 'All Events' },
+                { value: 'interview', label: 'Interviews Only' },
+                { value: 'deadline', label: 'Deadlines Only' }
+              ].map(f => (
+                <button
+                  key={f.value}
+                  onClick={() => setListFilter(f.value)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                    listFilter === f.value
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-inner'
+                      : 'text-slate-400 hover:text-white border-transparent bg-white/5'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* List group */}
+            {isLoading ? (
+              <div className="space-y-4 animate-pulse">
+                {[1,2,3].map(i => <div key={i} className="h-16 bg-white/5 rounded-xl" />)}
+              </div>
+            ) : Object.keys(
+              processedEvents.filter(e => {
+                if (listFilter === 'interview') return e.type === 'interview';
+                if (listFilter === 'deadline') return ['deadline', 'application_deadline', 'offer_deadline'].includes(e.type);
+                return true;
+              }).reduce((acc, curr) => {
+                if (!acc[curr.localDateStr]) acc[curr.localDateStr] = [];
+                acc[curr.localDateStr].push(curr);
+                return acc;
+              }, {})
+            ).length === 0 ? (
+              <div className="text-center py-20 bg-white/5 border border-white/5 border-dashed rounded-2xl">
+                <p className="text-sm text-slate-500">No events found matching current criteria.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(
+                  processedEvents.filter(e => {
+                    if (listFilter === 'interview') return e.type === 'interview';
+                    if (listFilter === 'deadline') return ['deadline', 'application_deadline', 'offer_deadline'].includes(e.type);
+                    return true;
+                  }).reduce((acc, curr) => {
+                    if (!acc[curr.localDateStr]) acc[curr.localDateStr] = [];
+                    acc[curr.localDateStr].push(curr);
+                    return acc;
+                  }, {})
+                ).sort((a,b) => a[0].localeCompare(b[0])).map(([dateKey, dayEvs]) => (
+                  <div key={dateKey} className="space-y-3">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-l-2 border-[#00f0ff] pl-2.5">
+                      {format(new Date(dateKey + 'T00:00:00'), 'EEEE, MMMM d, yyyy')}
+                    </h3>
+                    <div className="space-y-2 pl-3">
+                      {dayEvs.sort(sortEvents).map(event => {
+                        const colors = getEventColors(event.type, event.status);
+                        const hasPrepWarning = isUpcomingInterviewWithoutPrep(event);
+                        return (
+                          <div
+                            key={event._id}
+                            onClick={(e) => handleEventClick(event, e)}
+                            className="p-4 rounded-xl border border-white/5 bg-[#181926]/50 hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer flex flex-col gap-2"
+                          >
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                  <span className={`w-2.5 h-2.5 rounded-full ${colors.indicator}`} />
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider capitalize">
+                                    {event.type.replace('_', ' ')}
+                                  </span>
+                                </div>
+                                <h4 className="text-sm font-bold text-white mb-0.5">{event.title}</h4>
+                                <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                                  {event.is_all_day ? 'All Day' : `${event.localStartTime} - ${event.localEndTime || 'None'}`}
+                                </p>
+                              </div>
+                              <ChevronRight className="w-5 h-5 text-slate-600" />
+                            </div>
+
+                            {hasPrepWarning && (
+                              <div className="mt-1 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-lg flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span className="text-xs text-amber-300 font-medium">No prep logged yet</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1129,6 +1833,25 @@ const CalendarPage = () => {
                       </div>
                     )}
 
+                    {formData.type === 'interview' && prepSuggestion && (
+                      <div className="flex items-center justify-between p-3.5 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                        <div className="pr-3">
+                          <label className="text-sm font-bold text-amber-400 block flex items-center gap-1.5">
+                            <Clock className="w-4 h-4 text-amber-505" /> Block Prep Time
+                          </label>
+                          <p className="text-xs text-amber-300/80 mt-1">
+                            Suggested slot: <span className="font-semibold text-amber-200">{getPrepSuggestionLabel()}</span>
+                          </p>
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={suggestPrepBlock} 
+                          onChange={(e) => setSuggestPrepBlock(e.target.checked)} 
+                          className="w-5 h-5 rounded border-amber-500/30 bg-[#13141f] text-amber-500 focus:ring-amber-500 focus:ring-offset-[#13141f]"
+                        />
+                      </div>
+                    )}
+
                     {/* All-day toggle */}
                     <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
                       <div>
@@ -1274,6 +1997,31 @@ const CalendarPage = () => {
                             )}
                           </div>
                         )}
+
+                        {/* Timezone dropdown selector */}
+                        <div className="mt-4">
+                          <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Timezone</label>
+                          <select 
+                            value={formData.timezone || 'Asia/Kolkata'} 
+                            onChange={(e) => setFormData({...formData, timezone: e.target.value})} 
+                            className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#ff6b00] text-sm appearance-none"
+                          >
+                            <option value="Asia/Kolkata" className="bg-[#13141f]">Asia/Kolkata</option>
+                            <option value="America/New_York" className="bg-[#13141f]">America/New_York</option>
+                            <option value="America/Los_Angeles" className="bg-[#13141f]">America/Los_Angeles</option>
+                            <option value="Europe/London" className="bg-[#13141f]">Europe/London</option>
+                            <option value="Asia/Singapore" className="bg-[#13141f]">Asia/Singapore</option>
+                            <option value="UTC" className="bg-[#13141f]">UTC</option>
+                          </select>
+                          {formData.timezone && user?.calendarSettings?.timezone && formData.timezone !== user.calendarSettings.timezone && formData.start_time && (
+                            <div className="text-xs text-[#00f0ff] mt-2.5 flex items-center gap-1.5 font-medium bg-[#00f0ff]/5 p-2.5 rounded-lg border border-[#00f0ff]/10">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>
+                                {formData.start_time} ({formData.timezone}) is {getConvertedDisplayTime()} ({user.calendarSettings.timezone}) for you
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </>
                     )}
 

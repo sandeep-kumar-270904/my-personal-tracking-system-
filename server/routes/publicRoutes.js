@@ -5,5 +5,6 @@ const { getSharedApplications } = require('../controllers/applicationAddonsContr
 
 router.get('/profile/:username', publicController.getPublicProfile);
 router.get('/shared-applications/:token', getSharedApplications);
+router.get('/calendar/:token', publicController.getSharedCalendar);
 
 module.exports = router;

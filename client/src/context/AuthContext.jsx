@@ -14,7 +14,15 @@ export const AuthProvider = ({ children }) => {
         _id: 'preview123',
         name: 'Preview User',
         email: 'preview@test.com',
-        gradYear: '2026'
+        gradYear: '2026',
+        googleCalendarSync: { connected: false },
+        calendarSettings: {
+          timezone: 'Asia/Kolkata',
+          preferredView: 'month',
+          disablePrepSuggestions: false,
+          shareToken: null,
+          shareInterviewsOnly: false
+        }
       });
       setLoading(false);
     };

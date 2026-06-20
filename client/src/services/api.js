@@ -17,10 +17,45 @@ api.interceptors.request.use(
     // Offline outbox logic
     if (!navigator.onLine && ['post', 'put', 'delete'].includes(config.method)) {
       toast('You are offline. Action saved and will sync later.', { icon: '📡' });
+      
+      const tempId = config.data?._id || 'temp_' + Date.now();
+      const payload = { ...config.data };
+      
+      // Update Dexie database immediately so it is viewable offline!
+      if (config.url && config.url.startsWith('/events')) {
+        if (config.method === 'post') {
+          const newEvent = {
+            ...config.data,
+            _id: tempId,
+            pendingSync: true,
+            status: config.data.status || 'upcoming'
+          };
+          await db.events.add(newEvent);
+          payload._id = tempId;
+        } else if (config.method === 'put') {
+          const parts = config.url.split('/');
+          const id = parts[parts.length - 1];
+          const existing = await db.events.get(id);
+          if (existing) {
+            await db.events.put({
+              ...existing,
+              ...config.data,
+              lastKnownUpdatedAt: existing.updatedAt,
+              pendingSync: true
+            });
+            payload.lastKnownUpdatedAt = existing.updatedAt;
+          }
+        } else if (config.method === 'delete') {
+          const parts = config.url.split('/');
+          const id = parts[parts.length - 1];
+          await db.events.delete(id);
+        }
+      }
+
       await db.outbox.add({
         method: config.method,
         url: config.url,
-        payload: config.data,
+        payload: payload,
         timestamp: new Date().toISOString()
       });
 
@@ -50,8 +85,20 @@ api.interceptors.response.use(
           await db.interviews.clear();
           const intsData = Array.isArray(response.data) ? response.data : (response.data.interviews || []);
           if (intsData.length > 0) await db.interviews.bulkAdd(intsData);
+        } else if (response.config.url.startsWith('/events') || response.config.url.startsWith('events')) {
+          const eventsData = Array.isArray(response.data) ? response.data : [];
+          if (eventsData.length > 0) {
+            // Keep local pending events so they don't get deleted by sync read
+            const allLocal = await db.events.toArray();
+            const pendingIds = new Set(allLocal.filter(e => e.pendingSync).map(e => e._id));
+            
+            // Filter incoming to not overwrite pending items
+            const filteredIncoming = eventsData.filter(e => !pendingIds.has(e._id));
+            if (filteredIncoming.length > 0) {
+              await db.events.bulkPut(filteredIncoming);
+            }
+          }
         }
-        // Could add more endpoints to cache
       } catch (e) {
         console.warn('Failed to cache to Dexie', e);
       }
@@ -72,6 +119,25 @@ api.interceptors.response.use(
           return Promise.resolve({ data });
         } else if (error.config.url === '/interviews') {
           const data = await db.interviews.toArray();
+          return Promise.resolve({ data });
+        } else if (error.config.url?.startsWith('/events')) {
+          let data = await db.events.toArray();
+          // Filter if start/end parameters are present
+          const urlPart = error.config.url;
+          const qIndex = urlPart.indexOf('?');
+          if (qIndex !== -1) {
+            const queryParams = new URLSearchParams(urlPart.slice(qIndex));
+            const startParam = queryParams.get('start');
+            const endParam = queryParams.get('end');
+            if (startParam && endParam) {
+              const start = new Date(startParam);
+              const end = new Date(endParam);
+              data = data.filter(e => {
+                const date = new Date(e.date);
+                return date >= start && date <= end;
+              });
+            }
+          }
           return Promise.resolve({ data });
         }
       } catch (e) {
@@ -98,14 +164,67 @@ export const processOutbox = async () => {
 
   for (const item of queue) {
     try {
-      await api({
+      const res = await api({
         method: item.method,
         url: item.url,
         data: item.payload
       });
+      
+      // Update local storage representation
+      if (item.url.startsWith('/events')) {
+        if (item.method === 'post') {
+          const tempId = item.payload?._id;
+          if (tempId) {
+            await db.events.delete(tempId);
+          }
+          if (res.data && res.data._id) {
+            await db.events.put(res.data);
+          }
+        } else if (item.method === 'put') {
+          if (res.data && res.data._id) {
+            await db.events.put(res.data);
+          }
+        }
+      }
+      
       await db.outbox.delete(item.id);
       successCount++;
     } catch (e) {
+      if (e.response && e.response.status === 409) {
+        // Genuine conflict detected!
+        const serverEvent = e.response.data?.serverEvent;
+        if (serverEvent) {
+          const keepLocal = window.confirm(
+            `Sync Conflict for "${item.payload.title || 'Event'}":\n\nThis event was edited on the server while you were offline. Do you want to overwrite the server version with your offline edits?\n\n- Click OK to KEEP your offline version.\n- Click Cancel to DISCARD your offline version.`
+          );
+          if (keepLocal) {
+            try {
+              const res = await api({
+                method: item.method,
+                url: item.url,
+                data: { ...item.payload, ignoreConflict: true }
+              });
+              if (item.method === 'post' && item.payload?._id) {
+                await db.events.delete(item.payload._id);
+              }
+              if (res.data && res.data._id) {
+                await db.events.put(res.data);
+              }
+              await db.outbox.delete(item.id);
+              successCount++;
+              toast.success('Local changes saved to server.');
+              continue;
+            } catch (err) {
+              console.error('Bypass conflict update failed', err);
+            }
+          } else {
+            await db.events.put(serverEvent);
+            await db.outbox.delete(item.id);
+            toast('Discarded local changes; server version applied.', { icon: 'ℹ️' });
+            continue;
+          }
+        }
+      }
       console.error('Sync failed for item', item, e);
     }
   }

@@ -40,8 +40,68 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
+const Event = require('../models/Event');
+const { localTimeToUTC, utcToLocalTime } = require('./eventController');
+
+const handleNotificationAction = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action } = req.body; // 'mark_sent' | 'add_reminder' | 'dismiss'
+
+    const notification = await Notification.findOne({ _id: id, userId: req.user._id });
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    notification.read = true;
+    await notification.save();
+
+    if (action === 'mark_sent' && notification.eventId) {
+      const event = await Event.findById(notification.eventId);
+      if (event) {
+        event.status = 'completed';
+        await event.save();
+      }
+    } else if (action === 'add_reminder' && notification.eventId) {
+      const event = await Event.findById(notification.eventId);
+      if (event) {
+        const cleanCompany = event.title.replace(/Interview:?/gi, '').trim();
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const userTimezone = req.user.calendarSettings?.timezone || 'Asia/Kolkata';
+
+        const tomorrowStart = localTimeToUTC(tomorrow.toISOString().split('T')[0], '09:00', userTimezone);
+        const tomorrowEnd = new Date(tomorrowStart.getTime() + 30 * 60000);
+
+        const startInfo = utcToLocalTime(tomorrowStart, 'UTC');
+        const endInfo = utcToLocalTime(tomorrowEnd, 'UTC');
+
+        await Event.create({
+          user: req.user._id,
+          title: `Follow-up: Thank-you to ${cleanCompany}`,
+          date: new Date(startInfo.dateStr + 'T00:00:00.000Z'),
+          start_time: startInfo.timeStr,
+          end_time: endInfo.timeStr,
+          is_all_day: false,
+          type: 'follow_up',
+          source: 'manual',
+          status: 'upcoming',
+          timezone: userTimezone
+        });
+      }
+    }
+
+    res.json({ message: 'Notification action completed successfully', notification });
+  } catch (error) {
+    console.error('Error handling notification action:', error);
+    res.status(500).json({ message: 'Server error handling notification action' });
+  }
+};
+
 module.exports = {
   getNotifications,
   markAsRead,
-  markAllAsRead
+  markAllAsRead,
+  handleNotificationAction
 };

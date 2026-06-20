@@ -31,6 +31,22 @@ const NotificationDropdown = () => {
     }
   });
 
+  const notificationActionMutation = useMutation({
+    mutationFn: async ({ id, action }) => await api.post(`/notifications/${id}/action`, { action }),
+    onSuccess: (res, variables) => {
+      queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries(['events']);
+      if (variables.action === 'mark_sent') {
+        toast.success('Thank-you note marked as sent!');
+      } else if (variables.action === 'add_reminder') {
+        toast.success('Follow-up reminder scheduled!');
+      }
+    },
+    onError: () => {
+      toast.error('Failed to save action');
+    }
+  });
+
   const markAllReadMutation = useMutation({
     mutationFn: async () => await api.put(`/notifications/read-all`),
     onSuccess: () => {
@@ -49,6 +65,7 @@ const NotificationDropdown = () => {
       case 'INTERVIEW': return <Calendar className="w-5 h-5 text-emerald-400" />;
       case 'APPLICATION_STALE': return <Clock className="w-5 h-5 text-amber-400" />;
       case 'DSA_REMINDER': return <AlertCircle className="w-5 h-5 text-red-400" />;
+      case 'FOLLOW_UP_NUDGE': return <CheckCircle2 className="w-5 h-5 text-emerald-400" />;
       default: return <Bell className="w-5 h-5 text-[#00f0ff]" />;
     }
   };
@@ -137,6 +154,37 @@ const NotificationDropdown = () => {
                           <p className="text-sm text-slate-400 mb-2 leading-relaxed">
                             {notif.message}
                           </p>
+                          {notif.type === 'FOLLOW_UP_NUDGE' && !notif.read && (
+                            <div className="flex gap-2 mt-2.5 mb-3 flex-wrap">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  notificationActionMutation.mutate({ id: notif._id, action: 'mark_sent' });
+                                }}
+                                className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition-colors"
+                              >
+                                Mark sent
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  notificationActionMutation.mutate({ id: notif._id, action: 'add_reminder' });
+                                }}
+                                className="px-2.5 py-1 bg-[#00f0ff]/20 hover:bg-[#00f0ff]/30 text-[#00f0ff] border border-[#00f0ff]/30 rounded-lg text-xs font-bold transition-colors"
+                              >
+                                Add reminder
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  notificationActionMutation.mutate({ id: notif._id, action: 'dismiss' });
+                                }}
+                                className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 rounded-lg text-xs font-bold transition-colors"
+                              >
+                                Dismiss
+                              </button>
+                            </div>
+                          )}
                           <span className="text-xs text-slate-500 font-medium">
                             {new Date(notif.createdAt).toLocaleDateString('en-US', {
                               month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
