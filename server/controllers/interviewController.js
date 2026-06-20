@@ -1,5 +1,6 @@
 const Interview = require('../models/Interview');
 const { syncEventFromSource, removeEventForSource } = require('../utils/calendarSync');
+const { recordGoalProgress } = require('../services/goalTrackingService');
 
 // @desc    Get user interviews
 // @route   GET /api/interviews
@@ -118,6 +119,8 @@ const updateInterview = async (req, res) => {
       return res.status(401).json({ message: 'User not authorized' });
     }
 
+    const previousOutcome = interview.outcome;
+
     const updatedInterview = await Interview.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -125,6 +128,12 @@ const updateInterview = async (req, res) => {
 
     if (updatedInterview) {
       await syncEventFromSource('interview', updatedInterview);
+    }
+
+    // v5 Interview Rounds Completed Auto-Tracking
+    const completedOutcomes = ['PASSED', 'FAILED', 'AWAITING_RESULT'];
+    if (previousOutcome === 'PENDING' && completedOutcomes.includes(updatedInterview.outcome)) {
+      await recordGoalProgress(req.user._id, 'interviews', 1, updatedInterview._id);
     }
 
     res.status(200).json(updatedInterview);

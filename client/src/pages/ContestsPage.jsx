@@ -29,6 +29,15 @@ const ContestsPage = () => {
     onError: () => toast.error('Failed to set reminder')
   });
 
+  const attendMutation = useMutation({
+    mutationFn: async (data) => await api.post('/contests/participate', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['goals']);
+      toast.success('Contest participation logged! Goals updated.');
+    },
+    onError: () => toast.error('Failed to log participation')
+  });
+
   const getNextDates = (dayOfWeek, hour, count, biweekly = false) => {
     const dates = [];
     let d = new Date();
@@ -264,6 +273,14 @@ const ContestsPage = () => {
                           Compete <ExternalLink className="w-4 h-4" />
                         </a>
                       </div>
+
+                      <button 
+                        onClick={() => attendMutation.mutate({ name: contest.name, site: contest.site, url: contest.url })}
+                        disabled={attendMutation.isPending}
+                        className="w-full py-2 mt-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Trophy className="w-4 h-4" /> Mark as Attended
+                      </button>
 
                       {/* Networking V5: Shareable Completion */}
                       <button 

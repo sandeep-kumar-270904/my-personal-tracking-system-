@@ -742,6 +742,7 @@ const PublicCalendarPage = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Legend */}
       <div className="mt-6 flex flex-wrap items-center gap-6 justify-center text-xs text-slate-400 font-medium border-t border-white/5 pt-6">

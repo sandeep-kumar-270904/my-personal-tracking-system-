@@ -29,6 +29,7 @@ import GoalsPage from './pages/GoalsPage';
 import OffersPage from './pages/OffersPage';
 import ContestsPage from './pages/ContestsPage';
 import ResourcesPage from './pages/ResourcesPage';
+import SharedGoalsPage from './pages/SharedGoalsPage';
 import SettingsPage from './pages/SettingsPage';
 import PublicProfile from './pages/PublicProfile';
 import ReviewPage from './pages/ReviewPage';
@@ -36,6 +37,7 @@ import JourneyPage from './pages/JourneyPage';
 import TrainingHub from './pages/TrainingHub';
 import PublicCalendarPage from './pages/PublicCalendarPage';
 import RecruiterBookingPage from './pages/RecruiterBookingPage';
+import AdminDashboard from './pages/AdminDashboard';
 
 import { Toaster, toast } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -106,6 +108,8 @@ function App() {
       }} />
       <Router>
         <Routes>
+          <Route path="/shared/goals/:token" element={<SharedGoalsPage />} />
+
           {/* Public Routes */}
           <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
           <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
@@ -143,6 +147,9 @@ function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="ai-analyzer" element={<AIAnalyzerPage />} />
             <Route path="journey" element={<JourneyPage />} />
+            <Route path="/admin" element={
+              user?.role === 'placement_cell_admin' ? <AdminDashboard /> : <Navigate to="/dashboard" replace />
+            } />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

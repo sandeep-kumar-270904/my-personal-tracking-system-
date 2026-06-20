@@ -16,6 +16,7 @@ import toast from 'react-hot-toast';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import DecisionTracker from '../components/calendar/DecisionTracker';
+import BulkAcademicAddModal from '../components/calendar/BulkAcademicAddModal';
 
 export function localTimeToUTC(dateStr, timeStr, timezone) {
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -176,6 +177,53 @@ const CalendarPage = () => {
   const [selectedEvents, setSelectedEvents] = useState([]);
   const [isLoggingReflection, setLoggingReflection] = useState(false);
   const [reflectionData, setReflectionData] = useState({ confidence: 0, note: '', outcome: 'none' });
+  const [showBulkAcademicAdd, setShowBulkAcademicAdd] = useState(false);
+
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [activeView, setActiveView] = useState('list'); // 'list' | 'detail' | 'create' | 'edit'
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  // Recurrence confirmation modal state
+  const [showRecurrenceModal, setShowRecurrenceModal] = useState(false);
+  const [recurrenceAction, setRecurrenceAction] = useState('edit'); // 'edit' | 'delete'
+  const [pendingFormValues, setPendingFormValues] = useState(null);
+
+  // Slot Finder State
+  const [showSlotFinder, setShowSlotFinder] = useState(false);
+  const [slotSearchParams, setSlotSearchParams] = useState({
+    dateStart: format(new Date(), 'yyyy-MM-dd'),
+    dateEnd: format(addDays(new Date(), 3), 'yyyy-MM-dd'),
+    duration: 60
+  });
+  const [slotsResults, setSlotsResults] = useState([]);
+  const [isSearchingSlots, setIsSearchingSlots] = useState(false);
+  const [searchedSlots, setSearchedSlots] = useState(false);
+
+  // Server Conflict State
+  const [showServerConflictModal, setShowServerConflictModal] = useState(false);
+  const [serverConflicts, setServerConflicts] = useState([]);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    title: '',
+    type: 'event',
+    date: '',
+    is_all_day: false,
+    is_official_drive: false,
+    expected_response_date: '',
+    start_time: '',
+    end_time: '',
+    location: '',
+    description: '',
+    reminder_minutes_before: '',
+    is_recurring: false,
+    recurrence_pattern: 'none',
+    recurrence_end_date: '',
+    end_date: '',
+    ignoreConflict: false,
+    timezone: ''
+  });
 
   useEffect(() => {
     if (user?.calendarSettings?.preferredView) {
@@ -290,51 +338,6 @@ const CalendarPage = () => {
     fetchPrepBlockSuggestion();
   }, [formData.type, formData.date, formData.start_time, user]);
 
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [activeView, setActiveView] = useState('list'); // 'list' | 'detail' | 'create' | 'edit'
-  const [selectedEvent, setSelectedEvent] = useState(null);
-
-  // Recurrence confirmation modal state
-  const [showRecurrenceModal, setShowRecurrenceModal] = useState(false);
-  const [recurrenceAction, setRecurrenceAction] = useState('edit'); // 'edit' | 'delete'
-  const [pendingFormValues, setPendingFormValues] = useState(null);
-
-  // Slot Finder State
-  const [showSlotFinder, setShowSlotFinder] = useState(false);
-  const [slotSearchParams, setSlotSearchParams] = useState({
-    dateStart: format(new Date(), 'yyyy-MM-dd'),
-    dateEnd: format(addDays(new Date(), 3), 'yyyy-MM-dd'),
-    duration: 60
-  });
-  const [slotsResults, setSlotsResults] = useState([]);
-  const [isSearchingSlots, setIsSearchingSlots] = useState(false);
-  const [searchedSlots, setSearchedSlots] = useState(false);
-
-  // Server Conflict State
-  const [showServerConflictModal, setShowServerConflictModal] = useState(false);
-  const [serverConflicts, setServerConflicts] = useState([]);
-
-  // Form State
-  const [formData, setFormData] = useState({
-    title: '',
-    type: 'event',
-    date: '',
-    is_all_day: false,
-    is_official_drive: false,
-    expected_response_date: '',
-    start_time: '',
-    end_time: '',
-    location: '',
-    description: '',
-    reminder_minutes_before: '',
-    is_recurring: false,
-    recurrence_pattern: 'none',
-    recurrence_end_date: '',
-    end_date: '',
-    ignoreConflict: false,
-    timezone: ''
-  });
 
   // Calculate visible range to fetch events
   const { startDateStr, endDateStr, monthStart, monthEnd, gridStartDate, gridEndDate } = useMemo(() => {
@@ -1072,6 +1075,22 @@ const CalendarPage = () => {
     }
   };
 
+  // Today's Mission Control
+  const eventsToday = useMemo(() => {
+    const today = new Date();
+    return events.filter(e => isEventOnDay(e, today) && e.status !== 'completed').sort(sortEvents);
+  }, [events]);
+
+  const incompleteLogisticsCount = useMemo(() => {
+    return eventsToday.reduce((acc, event) => {
+      if (event.type === 'interview' && event.logistics) {
+        const unchecked = Object.values(event.logistics).filter(v => v === false).length;
+        return acc + unchecked;
+      }
+      return acc;
+    }, 0);
+  }, [eventsToday]);
+
   // Event list for side panel on clicked date
   const selectedDayEvents = useMemo(() => {
     if (!selectedDate) return [];
@@ -1125,6 +1144,14 @@ const CalendarPage = () => {
           >
             Today
           </button>
+          
+          <button
+            onClick={() => setShowBulkAcademicAdd(true)}
+            className="px-4 py-2 text-xs font-semibold bg-[#00f0ff]/10 text-[#00f0ff] hover:bg-[#00f0ff]/20 border border-[#00f0ff]/30 rounded-xl transition-all flex items-center gap-2"
+          >
+            <Zap className="w-3.5 h-3.5" /> Smart Paste
+          </button>
+
           <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 shrink-0">
             <button onClick={handlePrev} className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
               <ChevronLeft className="w-5 h-5" />
@@ -1138,6 +1165,40 @@ const CalendarPage = () => {
           </div>
         </div>
       </header>
+
+      {/* Morning Agenda / Mission Control */}
+      {eventsToday.length > 0 && (
+        <section className="mb-6 bg-gradient-to-r from-[#00f0ff]/20 to-[#00f0ff]/5 border border-[#00f0ff]/30 rounded-2xl p-5 shadow-[0_0_20px_rgba(0,240,255,0.1)]">
+          <div className="flex items-start md:items-center justify-between flex-col md:flex-row gap-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-[#00f0ff]/20 p-3 rounded-xl border border-[#00f0ff]/40">
+                <Target className="w-6 h-6 text-[#00f0ff]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white mb-1">Today's Mission Control</h2>
+                <p className="text-sm text-[#00f0ff]/80">
+                  You have <strong className="text-white">{eventsToday.length}</strong> action item{eventsToday.length !== 1 ? 's' : ''} scheduled for today.
+                  {incompleteLogisticsCount > 0 && (
+                    <span className="ml-2 text-amber-400 font-medium">
+                      <AlertTriangle className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
+                      {incompleteLogisticsCount} checklist item{incompleteLogisticsCount !== 1 ? 's' : ''} still pending!
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                jumpToToday();
+                if (calendarView !== 'day') handleViewChange('day');
+              }}
+              className="px-5 py-2 bg-[#00f0ff] hover:bg-[#00d0e0] text-[#13141f] font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)] flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4" /> Focus Today
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Deadline Countdown Strip */}
       {upcomingDeadlines.length > 0 && (
@@ -2884,6 +2945,10 @@ const CalendarPage = () => {
         </div>
       )}
 
+      <BulkAcademicAddModal 
+        isOpen={showBulkAcademicAdd} 
+        onClose={() => setShowBulkAcademicAdd(false)} 
+      />
     </div>
   );
 };

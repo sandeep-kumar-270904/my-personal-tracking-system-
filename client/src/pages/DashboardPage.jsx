@@ -27,8 +27,8 @@ import DailyDigestModal from '../components/dashboard/DailyDigestModal';
 import ShortcutHintCard from '../components/dashboard/ShortcutHintCard';
 import DashboardCoverageAlerts from '../components/dashboard/DashboardCoverageAlerts';
 import DashboardNetworkRecommendations from '../components/dashboard/DashboardNetworkRecommendations';
-import LiveFeedWidget from '../components/dashboard/LiveFeedWidget';
-import ActiveRoundsWidget from '../components/dashboard/ActiveRoundsWidget';
+import PinnedGoalsWidget from '../components/dashboard/PinnedGoalsWidget';
+
 
 // Hooks
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
@@ -157,6 +157,8 @@ const DashboardPage = () => {
           </button>
         </div>
       </div>
+
+      <PinnedGoalsWidget />
 
       {prepAlerts.map(alert => (
         <div key={alert._id} className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/30 rounded-xl p-4 flex justify-between items-center mb-4">

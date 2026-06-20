@@ -2,6 +2,7 @@ const Application = require('../models/Application');
 const Interview = require('../models/Interview');
 const DSA = require('../models/DSA');
 const Goal = require('../models/Goal');
+const GoalProgressEntry = require('../models/GoalProgressEntry');
 const Contest = require('../models/Contest');
 const Offer = require('../models/Offer');
 const Network = require('../models/Network');
@@ -106,28 +107,26 @@ const getDashboardStats = async (req, res) => {
       }
     }
 
-    // Weekly Goals
+    // Weekly Goals (Dynamic computation for v1)
     const { start, end } = getWeekBounds();
-    let weeklyGoals = await Goal.findOne({ user: userId, weekStartDate: { $gte: start, $lte: end } });
-    
-    // Auto calculate if missing or exist
-    if (!weeklyGoals) {
-      weeklyGoals = new Goal({
-        user: userId,
-        weekStartDate: start,
-      });
-      await weeklyGoals.save();
+    const activeGoals = await Goal.find({ user_id: userId, status: 'active', period: 'weekly' });
+    let totalTarget = 0;
+    let totalProgress = 0;
+
+    for (const g of activeGoals) {
+      totalTarget += g.target_value;
+      const entries = await GoalProgressEntry.aggregate([
+        { $match: { goal_id: g._id, logged_at: { $gte: start, $lte: end } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]);
+      totalProgress += entries.length > 0 ? entries[0].total : 0;
     }
     
-    // Calculate completions for this week
-    const applicationsCompleted = await Application.countDocuments({ userId, dateApplied: { $gte: start, $lte: end } });
-    const dsaCompleted = await DSA.countDocuments({ userId, solvedAt: { $gte: start, $lte: end } });
-    const networkingCompleted = await Network.countDocuments({ userId, lastContactDate: { $gte: start, $lte: end }, outreachStatus: { $ne: 'NOT_CONTACTED' } });
-
-    weeklyGoals.applicationsCompleted = applicationsCompleted;
-    weeklyGoals.dsaCompleted = dsaCompleted;
-    weeklyGoals.networkingCompleted = networkingCompleted;
-    await weeklyGoals.save();
+    let weeklyGoals = {
+      progressPercentage: totalTarget > 0 ? Math.min(100, Math.round((totalProgress / totalTarget) * 100)) : 0,
+      totalTarget,
+      totalProgress
+    };
 
     // Average Network Health
     const avgHealthAggr = await Network.aggregate([
@@ -159,7 +158,7 @@ const getDashboardStats = async (req, res) => {
       })
     });
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error fetching stats' });
   }
 };
@@ -195,7 +194,7 @@ const getDashboardPipeline = async (req, res) => {
 
     res.json(pipeline);
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error fetching pipeline' });
   }
 };
@@ -232,7 +231,7 @@ const getDashboardActivityFeed = async (req, res) => {
 
     res.json(formattedEvents);
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error fetching activity' });
   }
 };
@@ -320,7 +319,7 @@ const getDashboardUpcoming = async (req, res) => {
     items.sort((a, b) => new Date(a.date) - new Date(b.date));
     res.json(items.slice(0, 5));
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error fetching upcoming' });
   }
 };
@@ -349,7 +348,7 @@ const getDashboardHeatmap = async (req, res) => {
 
     res.json(heatmap);
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error fetching heatmap' });
   }
 };
@@ -425,7 +424,7 @@ const getDashboardCharts = async (req, res) => {
       dsaByDifficulty
     });
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error fetching charts' });
   }
 };
@@ -479,7 +478,7 @@ const getAIInsights = async (req, res) => {
 
     res.json({ insights: user.aiInsightsCache.text });
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error generating AI insights' });
   }
 };
@@ -512,14 +511,20 @@ const getReadinessScore = async (req, res) => {
     }
 
     const { start, end } = getWeekBounds();
-    const goal = await Goal.findOne({ user: userId, weekStartDate: { $gte: start, $lte: end } });
-    let goalCompletion = 0;
-    if (goal) {
-      const p1 = Math.min(100, goal.applicationsTarget > 0 ? (goal.applicationsCompleted / goal.applicationsTarget) * 100 : 0);
-      const p2 = Math.min(100, goal.dsaTarget > 0 ? (goal.dsaCompleted / goal.dsaTarget) * 100 : 0);
-      const p3 = Math.min(100, goal.networkingTarget > 0 ? (goal.networkingCompleted / goal.networkingTarget) * 100 : 0);
-      goalCompletion = (p1 + p2 + p3) / 3;
+    const activeGoals = await Goal.find({ user_id: userId, status: 'active', period: 'weekly' });
+    let tTarget = 0;
+    let tProgress = 0;
+
+    for (const g of activeGoals) {
+      tTarget += g.target_value;
+      const entries = await GoalProgressEntry.aggregate([
+        { $match: { goal_id: g._id, logged_at: { $gte: start, $lte: end } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]);
+      tProgress += entries.length > 0 ? entries[0].total : 0;
     }
+    
+    let goalCompletion = tTarget > 0 ? Math.min(100, Math.round((tProgress / tTarget) * 100)) : 0;
 
     let pointsApps = Math.min(20, appsThisMonth * 1);
     let pointsDSA = Math.min(25, dsaThisMonth * 0.5);
@@ -544,7 +549,7 @@ const getReadinessScore = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error fetching readiness score' });
   }
 };
@@ -561,7 +566,7 @@ const completeOnboarding = async (req, res) => {
     }
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error completing onboarding' });
   }
 };
@@ -616,7 +621,7 @@ const getSeasonSummary = async (req, res) => {
       avgTimeToOfferDays: Math.round(timeToOfferDays)
     });
   } catch (error) {
-    console.error(error);
+    console.log("DASHBOARD_ERROR:", error.stack || error);
     res.status(500).json({ message: 'Server Error fetching season summary' });
   }
 };

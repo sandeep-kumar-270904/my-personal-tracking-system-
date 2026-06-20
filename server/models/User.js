@@ -86,7 +86,8 @@ const userSchema = new mongoose.Schema({
     showTargetCompanies: { type: Boolean, default: true },
     isOpenToOpportunities: { type: Boolean, default: true },
     benchmarkOptOut: { type: Boolean, default: false }, // Legacy
-    benchmarkOptIn: { type: Boolean, default: false }
+    benchmarkOptIn: { type: Boolean, default: false },
+    sustainablePaceOptOut: { type: Boolean, default: false }
   },
   cgpa: {
     type: Number,

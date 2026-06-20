@@ -24,6 +24,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     { name: 'PrepHub', path: '/resources', icon: BookOpen },
   ];
 
+  if (user?.role === 'placement_cell_admin') {
+    navItems.push({ name: 'Admin Dashboard', path: '/admin', icon: Briefcase });
+  }
+
   const mobileNavItems = navItems.slice(0, 4); // Show top 4 on mobile bottom nav
 
   const sidebarContent = (

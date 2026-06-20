@@ -22,6 +22,9 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const campusDriveRoutes = require('./routes/campusDriveRoutes');
 const benchmarkRoutes = require('./routes/benchmarkRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const contestRoutes = require('./routes/contestRoutes');
+const botRoutes = require('./routes/botRoutes');
 const { initCronJobs } = require('./cron/weeklySummary');
 const startCronJobs = require('./utils/cron');
 
@@ -67,6 +70,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/campus-drives', campusDriveRoutes);
 app.use('/api/benchmarks', benchmarkRoutes);
 app.use('/api/timeline', timelineRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/contests', contestRoutes);
+app.use('/api/bot', botRoutes);
 
 app.get('/', (req, res) => {
   res.send('Smart Internship & Career Tracker API is running...');

@@ -4,6 +4,9 @@ const Event = require('../models/Event');
 const Interview = require('../models/Interview');
 const Network = require('../models/Network');
 const User = require('../models/User');
+const Goal = require('../models/Goal');
+const GoalProgressEntry = require('../models/GoalProgressEntry');
+const GoalPeriodSnapshot = require('../models/GoalPeriodSnapshot');
 
 const startCronJobs = () => {
   // Run everyday at 8:00 AM
@@ -180,6 +183,16 @@ const startCronJobs = () => {
         const avgApps = apps.length / totalUsers;
         const avgDSA = dsas.reduce((acc, d) => acc + (d.solvedProblems ? d.solvedProblems.length : 0), 0) / totalUsers;
         
+        // Fetch active goals for benchmarking
+        const goals = await Goal.find({ user_id: { $in: cohortUserIds }, status: 'active' });
+        const appGoals = goals.filter(g => g.linked_module === 'applications');
+        const dsaGoals = goals.filter(g => g.linked_module === 'dsa_tracker');
+        const netGoals = goals.filter(g => g.linked_module === 'networking');
+
+        const avgGoalTargetApps = appGoals.length > 0 ? appGoals.reduce((sum, g) => sum + g.target_value, 0) / appGoals.length : 0;
+        const avgGoalTargetDSA = dsaGoals.length > 0 ? dsaGoals.reduce((sum, g) => sum + g.target_value, 0) / dsaGoals.length : 0;
+        const avgGoalTargetNetwork = netGoals.length > 0 ? netGoals.reduce((sum, g) => sum + g.target_value, 0) / netGoals.length : 0;
+
         let totalInterviews = interviews.length;
         let selectedInterviews = interviews.filter(i => i.status === 'Offer' || i.status === 'Done').length; // Assuming Done/Offer indicates success for this metric
         const avgConversion = totalInterviews > 0 ? (selectedInterviews / totalInterviews) * 100 : 0;
@@ -214,7 +227,10 @@ const startCronJobs = () => {
             avgATSScore: Math.round(avgATSScore * 10) / 10,
             avgSkillsCount: Math.round(avgSkillsCount * 10) / 10,
             avgSectionCompleteness: Math.round(avgSectionCompleteness * 10) / 10,
-            avgQuantifiedAchievements: Math.round(avgQuantifiedAchievements * 10) / 10
+            avgQuantifiedAchievements: Math.round(avgQuantifiedAchievements * 10) / 10,
+            avgGoalTargetApps: Math.round(avgGoalTargetApps * 10) / 10,
+            avgGoalTargetDSA: Math.round(avgGoalTargetDSA * 10) / 10,
+            avgGoalTargetNetwork: Math.round(avgGoalTargetNetwork * 10) / 10
           },
           { upsert: true, new: true }
         );
@@ -427,6 +443,65 @@ const startCronJobs = () => {
       }
     } catch (err) {
       console.error('Error running 15-minute Google Calendar pull worker:', err);
+    }
+  });
+
+  // Daily at 00:05 to take Goal Snapshots
+  cron.schedule('5 0 * * *', async () => {
+    try {
+      console.log('Running daily goal snapshot worker...');
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      
+      const isMonday = today.getDay() === 1;
+      const isFirstOfMonth = today.getDate() === 1;
+
+      if (!isMonday && !isFirstOfMonth) return; // Only run on week/month boundaries
+
+      const activeGoals = await Goal.find({ status: { $in: ['active', 'paused'] } });
+      
+      for (const goal of activeGoals) {
+        if (goal.period === 'weekly' && !isMonday) continue;
+        if (goal.period === 'monthly' && !isFirstOfMonth) continue;
+
+        // The period just ended yesterday
+        const periodEnd = new Date(today);
+        periodEnd.setMilliseconds(-1); // 23:59:59.999 of yesterday
+        
+        const periodStart = new Date(periodEnd);
+        periodStart.setHours(0,0,0,0);
+        if (goal.period === 'weekly') {
+          periodStart.setDate(periodStart.getDate() - 6);
+        } else {
+          periodStart.setDate(1);
+        }
+
+        // Check if snapshot already exists (idempotency)
+        const existing = await GoalPeriodSnapshot.findOne({
+          goal_id: goal._id,
+          period_end: { $gte: periodEnd.setHours(0,0,0,0), $lte: new Date(periodEnd).setHours(23,59,59,999) }
+        });
+
+        if (!existing) {
+          const entries = await GoalProgressEntry.aggregate([
+            { $match: { goal_id: goal._id, logged_at: { $gte: periodStart, $lte: periodEnd } } },
+            { $group: { _id: null, total: { $sum: '$amount' } } }
+          ]);
+          
+          const completed = entries.length > 0 ? entries[0].total : 0;
+
+          await GoalPeriodSnapshot.create({
+            goal_id: goal._id,
+            period_start: periodStart,
+            period_end: periodEnd,
+            target_value_at_period: goal.target_value,
+            final_completed_value: completed
+          });
+        }
+      }
+      console.log('Daily goal snapshot worker completed.');
+    } catch (err) {
+      console.error('Error running goal snapshot worker:', err);
     }
   });
 };

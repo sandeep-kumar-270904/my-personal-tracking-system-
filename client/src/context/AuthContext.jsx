@@ -12,9 +12,13 @@ export const AuthProvider = ({ children }) => {
       // PREVIEW MODE BYPASS
       setUser({
         _id: 'preview123',
-        name: 'Preview User',
-        email: 'preview@test.com',
-        gradYear: '2026',
+        name: 'Demo Admin User',
+        email: 'admin@demo.com',
+        role: 'placement_cell_admin',
+        college: 'Preview Institute of Technology',
+        branch: 'Computer Science',
+        gradYear: '2025',
+        username: 'demo_admin',
         googleCalendarSync: { connected: false },
         calendarSettings: {
           timezone: 'Asia/Kolkata',
@@ -22,7 +26,8 @@ export const AuthProvider = ({ children }) => {
           disablePrepSuggestions: false,
           shareToken: null,
           shareInterviewsOnly: false
-        }
+        },
+        targetCompanies: ['Google', 'Microsoft', 'Amazon', 'Atlassian']
       });
       setLoading(false);
     };

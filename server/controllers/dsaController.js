@@ -5,6 +5,7 @@ const DSAStudySession = require('../models/DSAStudySession');
 const DSAWeaknessLog = require('../models/DSAWeaknessLog');
 const Application = require('../models/Application');
 const { calculateNextReview } = require('../utils/spacedRepetition');
+const { recordGoalProgress } = require('../services/goalTrackingService');
 
 // --- HELPERS ---
 const updateTopicMastery = async (userId, topicName) => {
@@ -192,6 +193,8 @@ exports.logProblem = async (req, res) => {
         await updatePatternMastery(req.user._id, pattern);
       }
     }
+
+    await recordGoalProgress(req.user._id, 'dsa_tracker', 1, problem._id);
 
     res.status(201).json(problem);
   } catch (err) {

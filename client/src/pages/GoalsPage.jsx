@@ -1,258 +1,302 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Target, Edit2, Check, TrendingUp, Briefcase, Code, Users, Zap } from 'lucide-react';
+import { Target, Edit2, Check, TrendingUp, Plus, Briefcase, Code, Users, Zap, Calendar, History, Undo, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import confetti from 'canvas-confetti';
+import GoalEditModal from '../components/goals/GoalEditModal';
+import GoalHistoryChart from '../components/goals/GoalHistoryChart';
+import GoalCard from '../components/goals/GoalCard';
+import GoalSeasonRetrospectiveModal from '../components/goals/GoalSeasonRetrospectiveModal';
+import { Lightbulb, Info, X } from 'lucide-react';
 
-const fetchGoals = async () => {
+const fetchGoalsOverview = async () => {
   const { data } = await api.get('/goals');
-  return data; // { goal: {...}, progress: {...} }
+  return data;
 };
 
 const GoalsPage = () => {
   const queryClient = useQueryClient();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    targetApplications: 10,
-    targetDSA: 5,
-    targetNetworking: 3
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRetroModalOpen, setIsRetroModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['goals'], 
-    queryFn: fetchGoals,
-    onSuccess: (d) => {
-      if (d?.goal) {
-        setEditForm({
-          targetApplications: d.goal.targetApplications,
-          targetDSA: d.goal.targetDSA,
-          targetNetworking: d.goal.targetNetworking
-        });
-      }
-    }
+    queryKey: ['goals'],
+    queryFn: fetchGoalsOverview
   });
 
-  // Since React Query v5 doesn't have onSuccess in useQuery the same way, we can use useEffect or just populate form on edit open.
-  // We'll populate form on edit click.
+  const handleAddGoal = () => {
+    setEditingGoal(null);
+    setIsModalOpen(true);
+  };
 
-  const updateMutation = useMutation({
-    mutationFn: async (payload) => await api.put('/goals', payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['goals']);
-      toast.success('Goals updated!');
-      setIsEditing(false);
+  const generateShareLinkMutation = useMutation({
+    mutationFn: async () => {
+      const activeGoals = goals.filter(g => g.status === 'active');
+      const { data } = await api.post('/goals/share', { goalIds: activeGoals.map(g => g._id) });
+      return data;
     },
-    onError: () => toast.error('Failed to update goals')
+    onSuccess: (data) => {
+      navigator.clipboard.writeText(`${window.location.origin}${data.link}`);
+      toast.success('Share link copied to clipboard!');
+    },
+    onError: () => toast.error('Failed to generate share link')
   });
 
-  const handleEditOpen = () => {
-    if (data?.goal) {
-      setEditForm({
-        targetApplications: data.goal.targetApplications,
-        targetDSA: data.goal.targetDSA,
-        targetNetworking: data.goal.targetNetworking
-      });
+  const handleEditGoal = (goal) => {
+    setEditingGoal(goal);
+    setIsModalOpen(true);
+  };
+
+  const getMomentumMessage = (momentum, calendarLoad) => {
+    if (momentum < 100 && calendarLoad >= 2) {
+      return `Applications are behind pace — makes sense with ${calendarLoad} interviews this week. No need to also chase volume right now.`;
     }
-    setIsEditing(true);
+    if (momentum === 0) return "Week's just getting started. Ready when you are.";
+    if (momentum < 30) return "Gaining traction. A few more reps will keep you on pace.";
+    if (momentum < 75) return "Making solid progress. Keep up the consistency.";
+    if (momentum < 100) return "Almost there. Just a strong push left to hit your targets.";
+    return "Targets hit. Excellent consistency this period.";
   };
 
-  const handleSave = () => {
-    updateMutation.mutate(editForm);
+  const getIcon = (iconName) => {
+    const icons = {
+      briefcase: <Briefcase className="w-5 h-5" />,
+      code: <Code className="w-5 h-5" />,
+      users: <Users className="w-5 h-5" />,
+      target: <Target className="w-5 h-5" />
+    };
+    return icons[iconName] || <Target className="w-5 h-5" />;
   };
 
-  const calculatePercentage = (progress, target) => {
-    if (target === 0) return 0;
-    const percentage = (progress / target) * 100;
-    return percentage > 100 ? 100 : percentage;
-  };
-
-  const ProgressBar = ({ title, progress, target, icon: Icon, color }) => {
-    const percentage = calculatePercentage(progress, target);
-    const isComplete = progress >= target && target > 0;
-
-    return (
-      <div className="glass-card p-6 rounded-2xl border border-white/5 relative overflow-hidden flex flex-col h-full">
-        {isComplete && (
-          <div className="absolute top-0 right-0 p-4">
-            <span className="flex items-center text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
-              <Check className="w-3 h-3 mr-1" /> Target Hit!
-            </span>
-          </div>
-        )}
-        
-        <div className="flex items-center gap-4 mb-4">
-          <div className={`p-3 rounded-xl border ${color.bg} ${color.text} ${color.border}`}>
-            <Icon className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-white">{title}</h3>
-            <p className="text-sm text-slate-400">Weekly Target: {target}</p>
-          </div>
-        </div>
-
-        <div className="mt-auto pt-6">
-          <div className="flex justify-between items-end mb-2">
-            <span className="text-3xl font-bold text-white">{progress} <span className="text-sm font-normal text-slate-400">completed</span></span>
-            <span className="text-sm font-bold text-white bg-white/10 px-2 py-0.5 rounded">{Math.round(percentage)}%</span>
-          </div>
-          <div className="w-full h-3 bg-[#13141f] rounded-full overflow-hidden border border-white/5 shadow-inner">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${percentage}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className={`h-full rounded-full ${color.fill} shadow-[0_0_10px_currentColor]`}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const [dismissedStageMsg, setDismissedStageMsg] = useState(localStorage.getItem('dismissed_stage_msg'));
+  const [dismissedPaceMsg, setDismissedPaceMsg] = useState(localStorage.getItem('dismissed_pace_msg'));
 
   if (isLoading) {
     return (
-      <div className="p-8 w-full max-w-6xl mx-auto">
-        <div className="h-10 w-48 bg-white/5 animate-pulse rounded-lg mb-8"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1,2,3].map(i => <div key={i} className="h-48 bg-white/5 animate-pulse rounded-2xl"></div>)}
-        </div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin w-8 h-8 border-2 border-[#00f0ff] border-t-transparent rounded-full" />
       </div>
     );
   }
 
-  const safeData = data || {
-    goal: { targetApplications: 10, targetDSA: 5, targetNetworking: 3 },
-    progress: { applications: 0, dsa: 0, networking: 0 }
+  const { 
+    goals = [], 
+    momentum = 0, 
+    streak = 0, 
+    calendarLoad = 0, 
+    userStage = 'Pre-interview', 
+    showPaceCheck = false,
+    capacityWarning = null,
+    hasAcademicConflict = false
+  } = data || {};
+
+  const handleDismissStage = () => {
+    localStorage.setItem('dismissed_stage_msg', userStage);
+    setDismissedStageMsg(userStage);
   };
 
-  const totalProgress = 
-    (calculatePercentage(safeData.progress.applications, safeData.goal.targetApplications) +
-    calculatePercentage(safeData.progress.dsa, safeData.goal.targetDSA) +
-    calculatePercentage(safeData.progress.networking, safeData.goal.targetNetworking)) / 3;
+  const handleDismissPace = () => {
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem('dismissed_pace_msg', today);
+    setDismissedPaceMsg(today);
+  };
 
-  // Confetti for Networking Goal
-  useEffect(() => {
-    if (safeData.progress.networking >= safeData.goal.targetNetworking && safeData.goal.targetNetworking > 0) {
-      const hasFired = localStorage.getItem(`networking_confetti_${safeData.goal._id}`);
-      if (!hasFired) {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#f59e0b', '#fcd34d', '#fbbf24']
-        });
-        localStorage.setItem(`networking_confetti_${safeData.goal._id}`, 'true');
-      }
-    }
-  }, [safeData.progress.networking, safeData.goal.targetNetworking, safeData.goal._id]);
+  const showStageSuggestion = userStage !== 'Pre-interview' && dismissedStageMsg !== userStage;
+  const isPaceDismissedToday = dismissedPaceMsg === new Date().toISOString().split('T')[0];
 
-  // Mock Cross-goal Streak
-  const hasCrossGoalStreak = safeData.progress.networking >= safeData.goal.targetNetworking && safeData.progress.dsa >= safeData.goal.targetDSA;
+  const [dismissedCapacityMsg, setDismissedCapacityMsg] = useState(localStorage.getItem('dismissed_capacity_msg'));
+  const handleDismissCapacity = () => {
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem('dismissed_capacity_msg', today);
+    setDismissedCapacityMsg(today);
+  };
+  const isCapacityDismissedToday = dismissedCapacityMsg === new Date().toISOString().split('T')[0];
 
   return (
-    <div className="max-w-6xl mx-auto p-8">
-      <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-white/5 pb-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+      {/* Header section */}
+      <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+          <h1 className="text-[32px] font-bold text-white mb-2 flex items-center gap-3">
             <Target className="text-[#00f0ff] w-8 h-8" />
             Goal Setting Engine
           </h1>
-          <p className="text-slate-400">Track your weekly progress and build unstoppable momentum.</p>
-        </div>
-        
-        {isEditing ? (
-          <div className="flex gap-3">
-            <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Cancel
-            </button>
-            <button onClick={handleSave} disabled={updateMutation.isPending} className="btn-primary">
-              {updateMutation.isPending ? 'Saving...' : <><Check className="w-4 h-4 mr-2" /> Save Goals</>}
-            </button>
-          </div>
-        ) : (
-          <button onClick={handleEditOpen} className="btn-primary">
-            <Edit2 className="w-4 h-4 mr-2" /> Edit Targets
-          </button>
-        )}
-      </header>
-
-      {isEditing && (
-        <motion.div 
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="glass-card p-6 rounded-2xl border border-[#00f0ff]/30 mb-8 bg-[#00f0ff]/5"
-        >
-          <h3 className="text-lg font-bold text-white mb-4">Set Your Weekly Targets</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Weekly Applications</label>
-              <input type="number" min="0" value={editForm.targetApplications} onChange={(e) => setEditForm({...editForm, targetApplications: Number(e.target.value)})} className="input-field text-lg font-bold" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Weekly DSA Problems</label>
-              <input type="number" min="0" value={editForm.targetDSA} onChange={(e) => setEditForm({...editForm, targetDSA: Number(e.target.value)})} className="input-field text-lg font-bold" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Weekly Networking Contacts</label>
-              <input type="number" min="0" value={editForm.targetNetworking} onChange={(e) => setEditForm({...editForm, targetNetworking: Number(e.target.value)})} className="input-field text-lg font-bold" />
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <ProgressBar 
-          title="Job Applications" progress={safeData.progress.applications} target={safeData.goal.targetApplications} icon={Briefcase}
-          color={{ bg: 'bg-blue-500/10', text: 'text-[#00f0ff]', fill: 'bg-gradient-to-r from-blue-600 to-[#00f0ff]', border: 'border-blue-500/20' }}
-        />
-        <ProgressBar 
-          title="DSA Practice" progress={safeData.progress.dsa} target={safeData.goal.targetDSA} icon={Code}
-          color={{ bg: 'bg-violet-500/10', text: 'text-violet-400', fill: 'bg-gradient-to-r from-purple-600 to-violet-400', border: 'border-violet-500/20' }}
-        />
-        <ProgressBar 
-          title="Cold Outreach" progress={safeData.progress.networking} target={safeData.goal.targetNetworking} icon={Users}
-          color={{ bg: 'bg-amber-500/10', text: 'text-amber-400', fill: 'bg-gradient-to-r from-orange-500 to-amber-400', border: 'border-amber-500/20' }}
-        />
-      </div>
-
-      <div className="mt-8 glass-card p-8 rounded-2xl border border-white/5 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div className="w-20 h-20 rounded-full bg-[#13141f] flex items-center justify-center shrink-0 border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.2)] relative z-10">
-          <TrendingUp className="w-10 h-10 text-emerald-400" />
-        </div>
-        <div className="relative z-10 flex-1">
-          <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-            Keep up the momentum!
-            {hasCrossGoalStreak && (
-              <span className="text-xs px-2.5 py-1 bg-gradient-to-r from-amber-500/20 to-purple-500/20 border border-amber-500/30 text-amber-400 rounded-full flex items-center gap-1 shadow-lg">
-                <Zap className="w-3 h-3" /> Networking + DSA Streak Active!
-              </span>
-            )}
-          </h3>
-          <p className="text-slate-400 leading-relaxed text-lg">
-            Small consistent steps every week lead to massive results over time. You are currently hitting 
-            <strong className="text-emerald-400 mx-1"> {Math.round(totalProgress || 0)}% </strong> 
-            of your total goals this week.
+          <p className="text-[15px] text-slate-400 max-w-2xl">
+            Honest tracking for your placement preparation. Set weekly or monthly targets and track your real activity.
           </p>
         </div>
-      </div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsRetroModalOpen(true)}
+            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 font-bold rounded-xl border border-white/10 transition-colors flex items-center gap-2 hidden lg:flex"
+            title="Season Summary"
+          >
+            <History className="w-5 h-5" />
+            <span>Summary</span>
+          </button>
+          <button 
+            onClick={() => generateShareLinkMutation.mutate()}
+            disabled={generateShareLinkMutation.isPending || goals.length === 0}
+            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl border border-white/10 transition-colors flex items-center gap-2"
+            title="Share read-only view with accountability partner"
+          >
+            {generateShareLinkMutation.isPending ? <div className="w-5 h-5 animate-spin border border-white border-t-transparent rounded-full" /> : <Share2 className="w-5 h-5" />}
+            <span className="hidden sm:inline">Share</span>
+          </button>
+          <button 
+            onClick={handleAddGoal}
+            className="px-4 py-2.5 bg-[#00f0ff] hover:bg-[#00c0cc] text-[#13141f] font-bold rounded-xl shadow-[0_0_15px_rgba(0,240,255,0.4)] transition-all flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> <span className="hidden sm:inline">New Target</span>
+          </button>
+        </div>
+      </header>
 
-      <div className="mt-8 glass-card p-8 rounded-2xl border border-white/5 relative overflow-hidden">
-        <div className="absolute top-0 right-0 opacity-[0.03] transform translate-x-1/4 -translate-y-1/4">
-          <Target className="w-96 h-96 text-white" />
+      {/* Dynamic Momentum Board */}
+      <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#00f0ff]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="shrink-0 w-24 h-24 relative flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                <motion.circle 
+                  cx="50" cy="50" r="45" fill="none" stroke="#00f0ff" strokeWidth="8"
+                  strokeDasharray="283"
+                  initial={{ strokeDashoffset: 283 }}
+                  animate={{ strokeDashoffset: 283 - (283 * momentum) / 100 }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  className="drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold text-white">{momentum}%</span>
+              </div>
+            </div>
+            
+            <div>
+              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" /> Current Pace
+              </h2>
+              <p className="text-lg text-white/90 font-medium leading-relaxed max-w-lg">
+                {getMomentumMessage(momentum, calendarLoad)}
+              </p>
+            </div>
+          </div>
         </div>
-        
-        <h3 className="text-xl font-bold text-white mb-4 relative z-10">Why Weekly Goals?</h3>
-        <p className="text-slate-300 max-w-4xl relative z-10 leading-relaxed text-lg">
-          Consistency is the secret weapon in job hunting. Instead of cramming 50 applications in one day and burning out, 
-          aim for a steady pace. Hitting small weekly targets compounds over time, leading to better interview 
-          performance and higher quality applications. 
-        </p>
-        <div className="mt-8 inline-flex items-center text-[#00f0ff] font-medium bg-[#00f0ff]/10 px-6 py-3 rounded-xl relative z-10 border border-[#00f0ff]/20 text-lg italic shadow-inner">
-          "Small disciplines repeated with consistency every day lead to great achievements gained slowly over time."
+
+        <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-center items-center text-center">
+          <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center mb-3">
+            <Zap className="w-6 h-6 text-orange-400" />
+          </div>
+          <h3 className="text-3xl font-bold text-white mb-1">{streak} {streak === 1 ? 'Day' : 'Days'}</h3>
+          <p className="text-sm text-slate-400 font-medium uppercase tracking-wider">Current Streak</p>
         </div>
-      </div>
+      </section>
+
+      {/* Stage-Aware Banner */}
+      <AnimatePresence>
+        {showStageSuggestion && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-8 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-start gap-4"
+          >
+            <Lightbulb className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-indigo-400">Context: You are in the "{userStage}" stage</h4>
+              <p className="text-sm text-slate-300 mt-1">
+                {userStage === 'Post-offer' && "You've secured an offer! Consider lowering your application targets and focusing on networking or exploring specific skills for your upcoming role."}
+                {userStage === 'Active interview' && "You're getting interviews. It might be wise to pause cold outreach goals and double down on Mock Interviews and Company Research."}
+              </p>
+            </div>
+            <button onClick={handleDismissStage} className="text-slate-500 hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Capacity Warning Banner */}
+      <AnimatePresence>
+        {capacityWarning && !isCapacityDismissedToday && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-4"
+          >
+            <Calendar className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-amber-400">Ambitious Goals This Week</h4>
+              <p className="text-sm text-slate-300 mt-1">
+                Your active goals demand roughly {capacityWarning.totalGoalHours} hours this week, but your calendar only shows {capacityWarning.freeHours} hours of free time. Consider reducing targets to avoid burnout.
+              </p>
+            </div>
+            <button onClick={handleDismissCapacity} className="text-slate-500 hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sustainable Pace Banner */}
+      {showPaceCheck && !isPaceDismissedToday && (
+        <div className="mb-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex justify-between items-center">
+          <div className="flex gap-3 items-center">
+            <div className="p-2 bg-emerald-500/10 rounded-full shrink-0">
+              <Info className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-[13px] text-slate-300">
+                You've been consistently active for 3 weeks straight — make sure you're building in rest too.
+              </p>
+            </div>
+          </div>
+          <button onClick={handleDismissPace} className="text-slate-500 hover:text-white p-2">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...goals].sort((a, b) => {
+          if (a.pinned === b.pinned) return 0;
+          return a.pinned ? -1 : 1;
+        }).map((goal) => (
+          <GoalCard 
+            key={goal._id} 
+            goal={goal} 
+            getIcon={getIcon} 
+            onEdit={handleEditGoal} 
+            hasAcademicConflict={hasAcademicConflict}
+          />
+        ))}
+      </section>
+
+      {goals.length === 0 && (
+        <div className="text-center py-20 text-slate-500 border border-dashed border-white/10 rounded-2xl">
+          <Target className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p>No active goals found. Create one to get started.</p>
+        </div>
+      )}
+
+      <GoalEditModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        goalToEdit={editingGoal} 
+      />
+
+      <GoalSeasonRetrospectiveModal 
+        isOpen={isRetroModalOpen} 
+        onClose={() => setIsRetroModalOpen(false)} 
+        goals={goals} 
+      />
     </div>
   );
 };

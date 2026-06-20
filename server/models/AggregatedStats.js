@@ -60,6 +60,22 @@ const aggregatedStatsSchema = new mongoose.Schema({
   topPercentileProblemsTotal: {
     type: Number,
     default: 0
+  },
+  avgOutreachMessages: {
+    type: Number,
+    default: 0
+  },
+  avgGoalTargetApps: {
+    type: Number,
+    default: 0
+  },
+  avgGoalTargetDSA: {
+    type: Number,
+    default: 0
+  },
+  avgGoalTargetNetwork: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 

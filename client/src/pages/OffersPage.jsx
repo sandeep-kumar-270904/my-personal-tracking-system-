@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BadgeDollarSign, Plus, X, Trash2, Edit2, Building2, Calendar, Clock } from 'lucide-react';
@@ -8,6 +8,7 @@ import api from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
 import EmptyState from '../components/EmptyState';
 import OfferLeverageCard from '../components/offers/OfferLeverageCard';
+import OfferArchiveGoalsModal from '../components/offers/OfferArchiveGoalsModal';
 
 const fetchOffers = async () => {
   const { data } = await api.get('/offers');
@@ -17,6 +18,7 @@ const fetchOffers = async () => {
 const OffersPage = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [offerToDelete, setOfferToDelete] = useState(null);
 
@@ -27,6 +29,22 @@ const OffersPage = () => {
   const { data: offers = [], isLoading, isError } = useQuery({
     queryKey: ['offers'], queryFn: fetchOffers
   });
+
+  useEffect(() => {
+    if (offers && offers.some(o => o.status === 'Accepted')) {
+      const hasPrompted = localStorage.getItem('goals_archive_prompted');
+      if (!hasPrompted) {
+        setIsArchiveModalOpen(true);
+      }
+    }
+  }, [offers]);
+
+  const handleCloseArchiveModal = (handled) => {
+    if (handled) {
+      localStorage.setItem('goals_archive_prompted', 'true');
+    }
+    setIsArchiveModalOpen(false);
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -274,7 +292,14 @@ const OffersPage = () => {
         onClose={() => setOfferToDelete(null)}
         onConfirm={() => deleteMutation.mutate(offerToDelete)}
         title="Delete Offer"
-        message="Are you sure you want to delete this offer? This action cannot be undone."
+        message="Are you sure you want to remove this offer? This action cannot be undone."
+        confirmText="Delete Offer"
+        isDanger={true}
+      />
+
+      <OfferArchiveGoalsModal 
+        isOpen={isArchiveModalOpen}
+        onClose={handleCloseArchiveModal}
       />
 
       <AnimatePresence>

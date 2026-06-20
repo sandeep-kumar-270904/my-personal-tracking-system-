@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 const ModalWrapper = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;

@@ -7,6 +7,7 @@ const CompanyNetworkMap = require('../models/CompanyNetworkMap');
 const MessageTemplate = require('../models/MessageTemplate');
 const Application = require('../models/Application');
 const { GoogleGenAI } = require('@google/genai');
+const { recordGoalProgress, removeGoalProgress } = require('../services/goalTrackingService');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -118,6 +119,8 @@ exports.createContact = async (req, res) => {
       }
     }
 
+    await recordGoalProgress(req.user.id, 'networking', 1, contact._id);
+
     res.status(201).json(contact);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -174,6 +177,9 @@ exports.deleteContact = async (req, res) => {
 
     contact.isDeleted = true;
     await contact.save();
+
+    await removeGoalProgress(req.user.id, 'networking', contact._id);
+
     res.json({ message: 'Contact soft deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -93,6 +93,7 @@ const loginUser = async (req, res) => {
         publicProfileSettings: user.publicProfileSettings,
         googleCalendarSync: user.googleCalendarSync,
         calendarSettings: user.calendarSettings,
+        targetCompanies: user.targetCompanies,
         token: generateToken(user._id),
       });
     } else {
@@ -118,7 +119,8 @@ const getMe = async (req, res) => {
       benchmarkOptIn: user.benchmarkOptIn,
       publicProfileSettings: user.publicProfileSettings,
       googleCalendarSync: user.googleCalendarSync,
-      calendarSettings: user.calendarSettings
+      calendarSettings: user.calendarSettings,
+      targetCompanies: user.targetCompanies
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

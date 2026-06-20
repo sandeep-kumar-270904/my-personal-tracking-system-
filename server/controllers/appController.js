@@ -5,6 +5,8 @@ const Interview = require('../models/Interview');
 const { logTimelineEvent } = require('../services/timelineService');
 const csv = require('csv-parser');
 const fs = require('fs');
+const { recordGoalProgress, removeGoalProgress } = require('../services/goalTrackingService');
+const Resume = require('../models/Resume');
 
 const getApplications = async (req, res) => {
   try {
@@ -199,6 +201,16 @@ const createApplication = async (req, res) => {
 
     const createdApplication = await application.save();
 
+    await recordGoalProgress(req.user._id, 'applications', 1, createdApplication._id);
+    
+    // v5 Resume Tailoring Auto-Tracking
+    if (resumeId) {
+      const resumeUsed = await Resume.findById(resumeId);
+      if (resumeUsed && !resumeUsed.isPrimary) {
+        await recordGoalProgress(req.user._id, 'resume_tailoring', 1, createdApplication._id);
+      }
+    }
+
     await syncEventFromSource('application', createdApplication);
 
     await logTimelineEvent(createdApplication._id, 'Application created', null, status, notes ? `Notes: ${notes}` : '');
@@ -282,6 +294,7 @@ const deleteApplication = async (req, res) => {
     application.deletedAt = new Date();
     await application.save();
     
+    await removeGoalProgress(req.user._id, 'applications', application._id);
     await removeEventForSource('application', req.params.id);
     
     await logTimelineEvent(application._id, 'Application deleted', application.status, 'DELETED');
