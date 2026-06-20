@@ -1,8 +1,12 @@
 const Event = require('../models/Event');
 const User = require('../models/User');
+const Interview = require('../models/Interview');
+const Application = require('../models/Application');
+const { utcToLocalTime, localTimeToUTC } = require('../utils/timezoneHelper');
 const { pushEventToGoogle, deleteEventFromGoogle, getAuthUrl, exchangeCode, pullEventsFromGoogle } = require('../utils/googleSync');
+const Notification = require('../models/Notification');
 
-const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0 };
+const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0, academic: 60 };
 const BUFFER_MINUTES = 90;
 
 function getOffsetMinutes(timezone, utcDate) {
@@ -573,16 +577,40 @@ exports.updateEvent = async (req, res) => {
       for (const ev of updatedEvents) {
         pushEventToGoogle(req.user._id, ev);
       }
-      
       const updatedEvent = await Event.findById(id);
+      
+      const timeChanged = 
+        (updateData.date && new Date(updateData.date).getTime() !== new Date(event.date).getTime()) ||
+        (updateData.start_time !== undefined && updateData.start_time !== event.start_time) ||
+        (updateData.end_time !== undefined && updateData.end_time !== event.end_time);
+
+      if (updatedEvent.is_official_drive && timeChanged) {
+        await Notification.create({
+          userId: req.user._id,
+          title: `Drive Rescheduled: ${updatedEvent.title}`,
+          message: `The official placement drive has been rescheduled. Old time was ${event.date.toISOString().split('T')[0]} ${event.start_time || 'All Day'}. Please check the calendar for the new timing.`,
+          type: 'DRIVE_RESCHEDULED',
+          link: '/calendar',
+          eventId: updatedEvent._id
+        });
+      }
+
       return res.json(updatedEvent);
     } else {
+      const timeChanged = 
+        (updateData.date && new Date(updateData.date).getTime() !== new Date(event.date).getTime()) ||
+        (updateData.start_time !== undefined && updateData.start_time !== event.start_time) ||
+        (updateData.end_time !== undefined && updateData.end_time !== event.end_time);
+
       if (event.is_recurring) {
         event.is_recurring = false;
         event.recurrence_pattern = 'none';
         event.recurrence_end_date = null;
         event.parent_event_id = null;
       }
+
+      const oldDate = event.date;
+      const oldStartTime = event.start_time;
 
       Object.keys(updateData).forEach(key => {
         event[key] = updateData[key];
@@ -593,7 +621,18 @@ exports.updateEvent = async (req, res) => {
       }
 
       const updatedEvent = await event.save();
-      
+
+      if (updatedEvent.is_official_drive && timeChanged) {
+        await Notification.create({
+          userId: req.user._id,
+          title: `Drive Rescheduled: ${updatedEvent.title}`,
+          message: `The official placement drive has been rescheduled. Old time was ${oldDate.toISOString().split('T')[0]} ${oldStartTime || 'All Day'}. Please check the calendar for the new timing.`,
+          type: 'DRIVE_RESCHEDULED',
+          link: '/calendar',
+          eventId: updatedEvent._id
+        });
+      }
+
       // Push single event
       pushEventToGoogle(req.user._id, updatedEvent);
 
@@ -992,6 +1031,112 @@ exports.findFreeSlots = async (req, res) => {
     res.json(freeSlots);
   } catch (error) {
     console.error('Error finding free slots:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.batchUpdateEvents = async (req, res) => {
+  try {
+    const { eventIds, updates } = req.body;
+    if (!eventIds || !Array.isArray(eventIds) || eventIds.length === 0) {
+      return res.status(400).json({ message: 'No event IDs provided' });
+    }
+
+    const allowedUpdates = ['status', 'reminder_minutes_before'];
+    const updateObj = {};
+    for (const key of allowedUpdates) {
+      if (updates[key] !== undefined) {
+        updateObj[key] = updates[key];
+        if (key === 'reminder_minutes_before') {
+          updateObj.reminderSent = false;
+        }
+      }
+    }
+
+    if (Object.keys(updateObj).length === 0) {
+      return res.status(400).json({ message: 'No valid fields to update' });
+    }
+
+    const filter = { _id: { $in: eventIds }, user: req.user._id };
+    await Event.updateMany(filter, { $set: updateObj });
+    
+    // Push updates to Google Calendar for each updated event
+    const updatedEvents = await Event.find(filter);
+    for (const ev of updatedEvents) {
+      if (ev.source === 'manual' || ev.source === 'platform') {
+        pushEventToGoogle(req.user._id, ev);
+      }
+    }
+
+    res.json({ message: 'Batch update successful', count: updatedEvents.length });
+  } catch (error) {
+    console.error('Error in batchUpdateEvents:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.batchDeleteEvents = async (req, res) => {
+  try {
+    const { eventIds } = req.body;
+    if (!eventIds || !Array.isArray(eventIds) || eventIds.length === 0) {
+      return res.status(400).json({ message: 'No event IDs provided' });
+    }
+
+    const filter = { _id: { $in: eventIds }, user: req.user._id };
+    const eventsToDelete = await Event.find(filter);
+    
+    for (const ev of eventsToDelete) {
+      if ((ev.source === 'manual' || ev.source === 'platform') && ev.googleEventId) {
+        deleteEventFromGoogle(req.user._id, ev.googleEventId);
+      }
+    }
+
+    await Event.deleteMany(filter);
+    res.json({ message: 'Batch delete successful', count: eventsToDelete.length });
+  } catch (error) {
+    console.error('Error in batchDeleteEvents:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getEventRounds = async (req, res) => {
+  try {
+    const event = await Event.findOne({ _id: req.params.id, user: req.user._id });
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+    
+    let companyName = null;
+    
+    if (event.source === 'interview' && event.source_ref_id) {
+      const interview = await Interview.findById(event.source_ref_id);
+      if (interview) companyName = interview.company;
+    } else if (event.source === 'application' && event.source_ref_id) {
+      const application = await Application.findById(event.source_ref_id);
+      if (application) companyName = application.companyName || application.company;
+    } else if (event.title.includes(' at ')) {
+      companyName = event.title.split(' at ')[1].trim();
+    }
+    
+    if (!companyName) {
+      return res.json({ company: null, rounds: [] });
+    }
+    
+    const rounds = await Interview.find({ user: req.user._id, company: new RegExp(`^${companyName}$`, 'i') })
+      .sort({ scheduledAt: 1 })
+      .lean();
+      
+    const formattedRounds = rounds.map(r => ({
+      id: r._id,
+      round: r.round,
+      roundType: r.roundType,
+      date: r.scheduledAt,
+      status: r.status,
+      outcome: r.outcome,
+      isCurrentEvent: event.source_ref_id && r._id.toString() === event.source_ref_id.toString()
+    }));
+    
+    res.json({ company: companyName, rounds: formattedRounds });
+  } catch (error) {
+    console.error('Error in getEventRounds:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

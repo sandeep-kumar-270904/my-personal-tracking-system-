@@ -35,6 +35,7 @@ import ReviewPage from './pages/ReviewPage';
 import JourneyPage from './pages/JourneyPage';
 import TrainingHub from './pages/TrainingHub';
 import PublicCalendarPage from './pages/PublicCalendarPage';
+import RecruiterBookingPage from './pages/RecruiterBookingPage';
 
 import { Toaster, toast } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -118,6 +119,7 @@ function App() {
           <Route path="/u/:username" element={<PublicProfile />} />
           <Route path="/review/resume/:token" element={<ReviewPage />} />
           <Route path="/cal/share/:token" element={<PublicCalendarPage />} />
+          <Route path="/book/:token" element={<RecruiterBookingPage />} />
           
           {/* Protected Dashboard Routes */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

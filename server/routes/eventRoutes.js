@@ -19,6 +19,11 @@ router.post('/sync/google/trigger', require('../controllers/eventController').tr
 
 router.get('/:id/ics', require('../controllers/eventController').exportICS);
 
+router.put('/batch-update', require('../controllers/eventController').batchUpdateEvents);
+router.post('/batch-delete', require('../controllers/eventController').batchDeleteEvents);
+
+router.get('/:id/rounds', require('../controllers/eventController').getEventRounds);
+
 router.route('/:id')
   .put(updateEvent)
   .delete(deleteEvent);

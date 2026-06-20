@@ -84,6 +84,13 @@ const loginUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        college: user.college,
+        branch: user.branch,
+        gradYear: user.gradYear,
+        username: user.username,
+        isPublicProfile: user.isPublicProfile,
+        benchmarkOptIn: user.benchmarkOptIn,
+        publicProfileSettings: user.publicProfileSettings,
         googleCalendarSync: user.googleCalendarSync,
         calendarSettings: user.calendarSettings,
         token: generateToken(user._id),
@@ -108,6 +115,7 @@ const getMe = async (req, res) => {
       gradYear: user.gradYear,
       username: user.username,
       isPublicProfile: user.isPublicProfile,
+      benchmarkOptIn: user.benchmarkOptIn,
       publicProfileSettings: user.publicProfileSettings,
       googleCalendarSync: user.googleCalendarSync,
       calendarSettings: user.calendarSettings
@@ -138,7 +146,9 @@ const updateUser = async (req, res) => {
     user.gradYear = req.body.gradYear || user.gradYear;
     if (req.body.username !== undefined) user.username = req.body.username;
     if (req.body.isPublicProfile !== undefined) user.isPublicProfile = req.body.isPublicProfile;
+    if (req.body.benchmarkOptIn !== undefined) user.benchmarkOptIn = req.body.benchmarkOptIn;
     if (req.body.publicProfileSettings) user.publicProfileSettings = { ...user.publicProfileSettings, ...req.body.publicProfileSettings };
+    if (req.body.calendarSettings) user.calendarSettings = { ...user.calendarSettings, ...req.body.calendarSettings };
 
     if (req.body.password) {
       user.password = req.body.password;
@@ -155,6 +165,7 @@ const updateUser = async (req, res) => {
       gradYear: updatedUser.gradYear,
       username: updatedUser.username,
       isPublicProfile: updatedUser.isPublicProfile,
+      benchmarkOptIn: updatedUser.benchmarkOptIn,
       publicProfileSettings: updatedUser.publicProfileSettings,
       googleCalendarSync: updatedUser.googleCalendarSync,
       calendarSettings: updatedUser.calendarSettings,
@@ -468,13 +479,18 @@ const updateCalendarSettings = async (req, res) => {
       user.calendarSettings = {};
     }
 
-    const { timezone, preferredView, disablePrepSuggestions, shareToken, shareInterviewsOnly } = req.body;
+    const { timezone, preferredView, disablePrepSuggestions, shareToken, shareInterviewsOnly, shareLinks, recruiterLinks, dailyDigestEnabled, dailyDigestTime, suppressIndividualReminders } = req.body;
 
     if (timezone !== undefined) user.calendarSettings.timezone = timezone;
     if (preferredView !== undefined) user.calendarSettings.preferredView = preferredView;
     if (disablePrepSuggestions !== undefined) user.calendarSettings.disablePrepSuggestions = disablePrepSuggestions;
     if (shareToken !== undefined) user.calendarSettings.shareToken = shareToken;
     if (shareInterviewsOnly !== undefined) user.calendarSettings.shareInterviewsOnly = shareInterviewsOnly;
+    if (shareLinks !== undefined) user.calendarSettings.shareLinks = shareLinks;
+    if (recruiterLinks !== undefined) user.calendarSettings.recruiterLinks = recruiterLinks;
+    if (dailyDigestEnabled !== undefined) user.calendarSettings.dailyDigestEnabled = dailyDigestEnabled;
+    if (dailyDigestTime !== undefined) user.calendarSettings.dailyDigestTime = dailyDigestTime;
+    if (suppressIndividualReminders !== undefined) user.calendarSettings.suppressIndividualReminders = suppressIndividualReminders;
 
     await user.save();
 

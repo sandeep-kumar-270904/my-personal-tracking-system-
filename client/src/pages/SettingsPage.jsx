@@ -19,7 +19,8 @@ const SettingsPage = () => {
     email: user?.email || '',
     college: user?.college || '',
     branch: user?.branch || '',
-    gradYear: user?.gradYear || ''
+    gradYear: user?.gradYear || '',
+    benchmarkOptIn: user?.benchmarkOptIn || false
   });
 
   useEffect(() => {
@@ -29,7 +30,8 @@ const SettingsPage = () => {
         email: user.email || '',
         college: user.college || '',
         branch: user.branch || '',
-        gradYear: user.gradYear || ''
+        gradYear: user.gradYear || '',
+        benchmarkOptIn: user.benchmarkOptIn || false
       });
     }
   }, [user]);
@@ -124,16 +126,48 @@ const SettingsPage = () => {
     }
   };
 
-  const generateShareToken = () => {
+  const generateShareLink = (mode = 'full', name = 'Share Link') => {
     const arr = new Uint8Array(16);
     window.crypto.getRandomValues(arr);
     const token = Array.from(arr, dec => dec.toString(16).padStart(2, '0')).join('');
-    handleUpdateCalendarSettings({ shareToken: token });
+    
+    const newLinks = [...(user?.calendarSettings?.shareLinks || [])];
+    newLinks.push({ token, mode, name, createdAt: new Date() });
+    handleUpdateCalendarSettings({ shareLinks: newLinks });
   };
 
-  const revokeShareToken = () => {
+  const revokeShareLink = (tokenToRevoke) => {
     if (window.confirm('Are you sure you want to revoke this public sharing link? The old link will stop working immediately.')) {
-      handleUpdateCalendarSettings({ shareToken: null });
+      const newLinks = (user?.calendarSettings?.shareLinks || []).filter(l => l.token !== tokenToRevoke);
+      handleUpdateCalendarSettings({ shareLinks: newLinks });
+    }
+  };
+
+  const generateRecruiterLink = () => {
+    const arr = new Uint8Array(16);
+    window.crypto.getRandomValues(arr);
+    const token = Array.from(arr, dec => dec.toString(16).padStart(2, '0')).join('');
+    
+    // Default config: valid for 7 days
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 7);
+    
+    const newLinks = [...(user?.calendarSettings?.recruiterLinks || [])];
+    newLinks.push({ 
+      token, 
+      startDate, 
+      endDate, 
+      duration: 60,
+      createdAt: new Date() 
+    });
+    handleUpdateCalendarSettings({ recruiterLinks: newLinks });
+  };
+
+  const revokeRecruiterLink = (tokenToRevoke) => {
+    if (window.confirm('Are you sure you want to revoke this recruiter booking link?')) {
+      const newLinks = (user?.calendarSettings?.recruiterLinks || []).filter(l => l.token !== tokenToRevoke);
+      handleUpdateCalendarSettings({ recruiterLinks: newLinks });
     }
   };
 
@@ -502,65 +536,144 @@ const SettingsPage = () => {
                 </label>
               </div>
 
-              {/* Public Sharing Link Section */}
+              {/* Public Sharing Links Section */}
               <div className="py-4 border-b border-white/5 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-bold text-white">Public Calendar Sharing</h3>
-                    <p className="text-sm text-slate-400 mt-1">Share a read-only unauthenticated view of your calendar events.</p>
+                    <p className="text-sm text-slate-400 mt-1">Generate read-only unauthenticated views of your calendar.</p>
                   </div>
-                  {!user?.calendarSettings?.shareToken ? (
+                  <div className="flex gap-2">
                     <button 
                       type="button"
-                      onClick={generateShareToken}
-                      className="px-4 py-2.5 bg-[#ff6b00] hover:bg-[#ff8c33] text-white font-bold rounded-xl text-xs transition-colors"
+                      onClick={() => generateShareLink('full', 'Full Detail Link')}
+                      className="px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold rounded-xl text-xs transition-colors"
                     >
-                      Generate Link
+                      + Full Link
                     </button>
-                  ) : (
                     <button 
                       type="button"
-                      onClick={revokeShareToken}
-                      className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold rounded-xl text-xs transition-colors"
+                      onClick={() => generateShareLink('summary', 'Summary Only')}
+                      className="px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold rounded-xl text-xs transition-colors"
                     >
-                      Revoke Link
+                      + Summary Link
                     </button>
-                  )}
+                  </div>
                 </div>
 
-                {user?.calendarSettings?.shareToken && (
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        readOnly
-                        value={`${window.location.origin}/cal/share/${user.calendarSettings.shareToken}`}
-                        className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-slate-300 text-sm focus:outline-none"
-                      />
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/cal/share/${user.calendarSettings.shareToken}`);
-                          toast.success('Share link copied to clipboard!');
-                        }}
-                        className="px-4 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold rounded-xl text-sm transition-all whitespace-nowrap"
-                      >
-                        Copy Link
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3.5 bg-white/5 rounded-xl border border-white/5">
-                      <div>
-                        <span className="text-sm font-semibold text-white block">Share Interviews Only</span>
-                        <p className="text-xs text-slate-500">Only interviews will be visible on the public shared link.</p>
+                {user?.calendarSettings?.shareLinks && user.calendarSettings.shareLinks.length > 0 ? (
+                  <div className="space-y-3 mt-4">
+                    {user.calendarSettings.shareLinks.map((link, idx) => (
+                      <div key={idx} className="flex flex-col sm:flex-row gap-3 p-4 bg-[#13141f] rounded-xl border border-white/10 relative">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-bold text-sm text-white">{link.name || 'Share Link'}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${link.mode === 'summary' ? 'bg-amber-500/10 text-amber-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                              {link.mode} Mode
+                            </span>
+                          </div>
+                          <input 
+                            type="text" 
+                            readOnly
+                            value={`${window.location.origin}/cal/share/${link.token}`}
+                            className="w-full bg-black/20 border border-white/5 rounded-lg px-3 py-2 text-slate-300 text-xs focus:outline-none"
+                          />
+                        </div>
+                        <div className="flex sm:flex-col gap-2 shrink-0 justify-center">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/cal/share/${link.token}`);
+                              toast.success('Share link copied to clipboard!');
+                            }}
+                            className="flex-1 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg text-xs transition-all whitespace-nowrap"
+                          >
+                            Copy
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => revokeShareLink(link.token)}
+                            className="flex-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-lg text-xs transition-colors whitespace-nowrap"
+                          >
+                            Revoke
+                          </button>
+                        </div>
                       </div>
-                      <input 
-                        type="checkbox" 
-                        checked={user.calendarSettings.shareInterviewsOnly || false} 
-                        onChange={(e) => handleUpdateCalendarSettings({ shareInterviewsOnly: e.target.checked })} 
-                        className="w-5 h-5 rounded border-white/20 bg-[#13141f] text-[#ff6b00] focus:ring-[#ff6b00] focus:ring-offset-[#13141f]"
-                      />
-                    </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 border border-dashed border-white/10 rounded-xl text-center text-sm text-slate-500">
+                    No active share links. Generate one to allow family or mentors to track your progress.
+                  </div>
+                )}
+              </div>
+
+              {/* Recruiter Booking Links Section */}
+              <div className="py-4 border-b border-white/5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-white">Recruiter Booking Links</h3>
+                    <p className="text-sm text-slate-400 mt-1">Generate self-serve booking links that pull from your free slots.</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={generateRecruiterLink}
+                    className="px-3 py-2 bg-[#ff6b00]/10 hover:bg-[#ff6b00]/20 text-[#ff6b00] font-bold rounded-xl text-xs transition-colors"
+                  >
+                    + Generate Link
+                  </button>
+                </div>
+
+                {user?.calendarSettings?.recruiterLinks && user.calendarSettings.recruiterLinks.length > 0 ? (
+                  <div className="space-y-3 mt-4">
+                    {user.calendarSettings.recruiterLinks.map((link, idx) => {
+                      const isExpired = new Date(link.endDate) < new Date();
+                      return (
+                        <div key={idx} className="flex flex-col sm:flex-row gap-3 p-4 bg-[#13141f] rounded-xl border border-white/10 relative">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-bold text-sm text-white">Booking Link</span>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                                {isExpired ? 'Expired' : 'Active'}
+                              </span>
+                            </div>
+                            <input 
+                              type="text" 
+                              readOnly
+                              value={`${window.location.origin}/book/${link.token}`}
+                              className="w-full bg-black/20 border border-white/5 rounded-lg px-3 py-2 text-slate-300 text-xs focus:outline-none mb-2"
+                            />
+                            <div className="text-[10px] text-slate-500 flex gap-4 font-medium">
+                              <span>Duration: {link.duration}m</span>
+                              <span>Expires: {new Date(link.endDate).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex sm:flex-col gap-2 shrink-0 justify-center">
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/book/${link.token}`);
+                                toast.success('Booking link copied to clipboard!');
+                              }}
+                              className="flex-1 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg text-xs transition-all whitespace-nowrap"
+                            >
+                              Copy
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => revokeRecruiterLink(link.token)}
+                              className="flex-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-lg text-xs transition-colors whitespace-nowrap"
+                            >
+                              Revoke
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 border border-dashed border-white/10 rounded-xl text-center text-sm text-slate-500">
+                    No active recruiter booking links.
                   </div>
                 )}
               </div>
@@ -720,6 +833,35 @@ const SettingsPage = () => {
                     </div>
                   </div>
                 </div>
+                <div className="bg-white/5 p-6 rounded-xl border border-white/10 mt-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400 shrink-0">
+                        <Activity className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-white">Anonymous Benchmarking</h3>
+                        <p className="text-sm text-slate-400 mt-1 mb-2 leading-relaxed">
+                          Opt-in to contribute your anonymized application metrics to the global benchmark pool. This enables the Benchmarking widget on your dashboard, allowing you to see how your progress compares with peers anonymously. Your personal identifiable data is never shared.
+                        </p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-2">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={formData.benchmarkOptIn || false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setFormData({ ...formData, benchmarkOptIn: val });
+                          updateProfileMutation.mutate({ benchmarkOptIn: val });
+                        }}
+                      />
+                      <div className="w-11 h-6 bg-[#13141f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 border border-white/10"></div>
+                    </label>
+                  </div>
+                </div>
+
                 <div className="bg-white/5 p-6 rounded-xl border border-white/10 mt-6">
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-red-500/10 rounded-lg text-red-400 shrink-0">

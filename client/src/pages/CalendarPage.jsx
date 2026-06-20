@@ -8,12 +8,14 @@ import {
   parseISO
 } from 'date-fns';
 import { 
-  ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, 
-  Link2, Plus, Trash2, Edit3, Clock, MapPin, AlertTriangle, Check 
+  ChevronLeft, ChevronRight, Plus, Search, Filter, Settings, 
+  MapPin, Clock, Video, Globe, FileText, Check, Trash2, Edit3, X,
+  Calendar as CalendarIcon, Briefcase, Zap, Brain, Target, MessageSquare, AlertTriangle, Link, Bell, Download, RefreshCw, LogOut, CheckCircle2, ChevronDown, List as ListIcon, CalendarDays, Maximize2, Share2, Star, GitCommit, CheckSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import DecisionTracker from '../components/calendar/DecisionTracker';
 
 export function localTimeToUTC(dateStr, timeStr, timezone) {
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -84,7 +86,7 @@ export function utcToLocalTime(utcDateInput, timezone) {
 }
 
 export const computeEventLayout = (dayEvents) => {
-  const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0 };
+  const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0, academic: 60 };
   
   const timedEvents = dayEvents.filter(e => !e.is_all_day && e.localStartTime).map(e => {
     const [sh, sm] = e.localStartTime.split(':').map(Number);
@@ -166,6 +168,14 @@ const CalendarPage = () => {
   const [listFilter, setListFilter] = useState('all');
   const [prepSuggestion, setPrepSuggestion] = useState(null);
   const [suggestPrepBlock, setSuggestPrepBlock] = useState(false);
+  const [dismissedDeadlines, setDismissedDeadlines] = useState(() => {
+    const saved = localStorage.getItem('dismissedDeadlines');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [isDeadlineStripExpanded, setIsDeadlineStripExpanded] = useState(true);
+  const [selectedEvents, setSelectedEvents] = useState([]);
+  const [isLoggingReflection, setLoggingReflection] = useState(false);
+  const [reflectionData, setReflectionData] = useState({ confidence: 0, note: '', outcome: 'none' });
 
   useEffect(() => {
     if (user?.calendarSettings?.preferredView) {
@@ -311,6 +321,8 @@ const CalendarPage = () => {
     type: 'event',
     date: '',
     is_all_day: false,
+    is_official_drive: false,
+    expected_response_date: '',
     start_time: '',
     end_time: '',
     location: '',
@@ -495,7 +507,7 @@ const CalendarPage = () => {
     const userTimezone = user?.calendarSettings?.timezone || 'Asia/Kolkata';
     const startD = localTimeToUTC(formValues.date, formValues.start_time, userTimezone);
 
-    const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0 };
+    const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0, academic: 60 };
     const duration = formValues.end_time ? 0 : (DEFAULT_DURATIONS[formValues.type] || 60);
     
     const endD = new Date(startD.getTime());
@@ -582,7 +594,104 @@ const CalendarPage = () => {
     }).sort((a, b) => new Date(a.localDateStr) - new Date(b.localDateStr));
   }, [processedEvents]);
 
+  // Upcoming Deadlines (14 days)
+  const upcomingDeadlines = useMemo(() => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const fourteenDays = addDays(today, 14);
+    fourteenDays.setHours(23, 59, 59, 999);
+    
+    return processedEvents.filter(ev => {
+      if (!['deadline', 'application_deadline', 'offer_deadline'].includes(ev.type)) return false;
+      if (dismissedDeadlines.includes(ev._id)) return false;
+      if (ev.status === 'completed' || ev.status === 'cancelled') return false;
+      const d = new Date(ev.localDateStr);
+      return d >= today && d <= fourteenDays;
+    }).sort((a, b) => new Date(a.localDateStr) - new Date(b.localDateStr));
+  }, [processedEvents, dismissedDeadlines]);
+
+  const handleDismissDeadline = (e, id) => {
+    e.stopPropagation();
+    const updated = [...dismissedDeadlines, id];
+    setDismissedDeadlines(updated);
+    localStorage.setItem('dismissedDeadlines', JSON.stringify(updated));
+  };
+
+  // Pipeline View Groups
+  const pipelineGroups = useMemo(() => {
+    const groups = {};
+
+    processedEvents.forEach(ev => {
+      if (ev.status === 'cancelled') return;
+      const company = ev.company_name || 'Other';
+      if (!groups[company]) {
+        groups[company] = { company, events: [], nextAction: null, currentStage: 'Applied' };
+      }
+      groups[company].events.push(ev);
+    });
+
+    Object.values(groups).forEach(g => {
+      g.events.sort((a, b) => new Date(a.date) - new Date(b.date));
+      // Determine nextAction and currentStage
+      const futureEvents = g.events.filter(e => new Date(e.date) >= new Date() && e.status !== 'completed');
+      if (futureEvents.length > 0) {
+        g.nextAction = futureEvents[0];
+      }
+      const pastEvents = g.events.filter(e => e.status === 'completed' || new Date(e.date) < new Date());
+      if (pastEvents.length > 0) {
+        const last = pastEvents[pastEvents.length - 1];
+        g.currentStage = last.type === 'interview' ? 'Awaiting Response' : last.type;
+      }
+    });
+
+    return Object.values(groups).sort((a, b) => {
+      if (a.nextAction && !b.nextAction) return -1;
+      if (!a.nextAction && b.nextAction) return 1;
+      if (a.nextAction && b.nextAction) return new Date(a.nextAction.date) - new Date(b.nextAction.date);
+      return 0;
+    });
+  }, [processedEvents]);
+
+  // Heat Map / Density Data
+  const densityData = useMemo(() => {
+    const data = {};
+    const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0 };
+    processedEvents.forEach(event => {
+      if (event.status === 'cancelled') return;
+      let duration = 0;
+      if (!event.is_all_day && event.localStartTime) {
+        const [sh, sm] = event.localStartTime.split(':').map(Number);
+        let eh = sh, em = sm;
+        if (event.localEndTime) {
+          [eh, em] = event.localEndTime.split(':').map(Number);
+        } else {
+          const d = DEFAULT_DURATIONS[event.type] || 60;
+          em += d;
+        }
+        duration = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+        if (duration < 0) duration += 24;
+      }
+      
+      const dateStr = event.localDateStr;
+      if (!data[dateStr]) data[dateStr] = { hours: 0, interviews: 0, totalEvents: 0 };
+      data[dateStr].hours += duration;
+      data[dateStr].totalEvents += 1;
+      if (event.type === 'interview') data[dateStr].interviews += 1;
+    });
+    return data;
+  }, [processedEvents]);
+
   // Mutations
+  const { data: eventRoundsData, isLoading: isLoadingRounds } = useQuery({
+    queryKey: ['eventRounds', selectedEvent?._id],
+    queryFn: async () => {
+      const res = await api.get(`/events/${selectedEvent._id}/rounds`);
+      return res.data;
+    },
+    enabled: !!selectedEvent && activeView === 'detail',
+    staleTime: 5 * 60 * 1000,
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data) => await api.post('/events', data),
     onSuccess: async (res) => {
@@ -643,10 +752,14 @@ const CalendarPage = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async ({ id, editMode }) => await api.delete(`/events/${id}?recurrenceEditMode=${editMode}`),
-    onSuccess: () => {
+    mutationFn: async ({ action, activeEvent, isSeries }) => {
+      if (action === 'delete') {
+        await api.delete(`/events/${activeEvent._id}${isSeries ? '?recurrenceEditMode=future' : ''}`);
+      } else if (action === 'status') {
+        const newStatus = activeEvent.status === 'completed' ? 'upcoming' : 'completed';
+        await api.put(`/events/${activeEvent._id}`, { status: newStatus, recurrenceEditMode: isSeries ? 'future' : 'single' });
+      }
       queryClient.invalidateQueries(['events']);
-      toast.success('Event removed successfully');
       setIsPanelOpen(false);
     },
     onError: (err) => {
@@ -687,6 +800,8 @@ const CalendarPage = () => {
       return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
     } else if (calendarView === 'day') {
       return format(currentDate, 'MMMM d, yyyy');
+    } else if (calendarView === 'pipeline') {
+      return 'Event Pipeline';
     }
     return '';
   };
@@ -734,6 +849,8 @@ const CalendarPage = () => {
       type: event.type,
       date: event.localDateStr,
       is_all_day: event.is_all_day,
+      is_official_drive: event.is_official_drive || false,
+      expected_response_date: event.expected_response_date ? format(new Date(event.expected_response_date), 'yyyy-MM-dd') : '',
       start_time: event.localStartTime || '09:00',
       end_time: event.localEndTime || '10:00',
       location: event.location || '',
@@ -788,6 +905,10 @@ const CalendarPage = () => {
         toast.error('End date cannot be before start date.');
         return;
       }
+    }
+
+    if (submitData.type !== 'interview') {
+      submitData.expected_response_date = null;
     }
 
     if (activeView === 'create') {
@@ -983,7 +1104,7 @@ const CalendarPage = () => {
         <div className="flex flex-wrap items-center gap-3">
           {/* View Mode Selector */}
           <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 shrink-0">
-            {['month', 'week', 'day', 'list'].map((view) => (
+            {['month', 'week', 'day', 'list', 'pipeline'].map((view) => (
               <button
                 key={view}
                 onClick={() => handleViewChange(view)}
@@ -1018,6 +1139,68 @@ const CalendarPage = () => {
         </div>
       </header>
 
+      {/* Deadline Countdown Strip */}
+      {upcomingDeadlines.length > 0 && (
+        <section className="mb-6 bg-white/5 border border-red-500/20 rounded-2xl p-4">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" /> Upcoming Deadlines
+            </h2>
+            <button 
+              onClick={() => setIsDeadlineStripExpanded(!isDeadlineStripExpanded)}
+              className="text-slate-400 hover:text-white text-xs font-semibold"
+            >
+              {isDeadlineStripExpanded ? 'Collapse' : `Expand (${upcomingDeadlines.length})`}
+            </button>
+          </div>
+          
+          <AnimatePresence>
+            {isDeadlineStripExpanded && (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar pt-1">
+                  {upcomingDeadlines.map(event => {
+                    const eventDate = new Date(event.localDateStr);
+                    const now = new Date();
+                    const hoursLeft = (eventDate - now) / (1000 * 60 * 60);
+                    const urgencyClass = hoursLeft < 48 ? 'bg-red-500/10 border-red-500/30' : 'bg-amber-500/10 border-amber-500/30';
+                    const iconClass = hoursLeft < 48 ? 'text-red-400' : 'text-amber-400';
+
+                    return (
+                      <div 
+                        key={event._id}
+                        onClick={(e) => handleEventClick(event, e)}
+                        className={`flex-shrink-0 min-w-[240px] max-w-[280px] p-3 border rounded-xl cursor-pointer hover:brightness-110 transition-all ${urgencyClass}`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className={`text-[10px] font-bold uppercase ${iconClass}`}>
+                            {hoursLeft < 24 ? 'Ends Today/Tomorrow' : `In ${Math.ceil(hoursLeft / 24)} Days`}
+                          </span>
+                          <button 
+                            onClick={(e) => handleDismissDeadline(e, event._id)}
+                            className="text-slate-500 hover:text-white p-0.5 rounded"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <h4 className="text-sm font-bold text-white line-clamp-1">{event.title}</h4>
+                        <div className="mt-1 text-xs text-slate-400 font-medium">
+                          {format(eventDate, 'MMM d, yyyy')}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+      )}
+
       {/* Next 7 Days Strip */}
       <section className="mb-6 bg-white/5 border border-white/5 rounded-2xl p-4">
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Next 7 Days</h2>
@@ -1048,6 +1231,47 @@ const CalendarPage = () => {
               );
             })
           )}
+        </div>
+      </section>
+
+      {/* Time Commitment Density Strip */}
+      <section className="mb-6">
+        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-amber-500" /> Time Commitment Density (Visible Range)
+        </h2>
+        <div className="flex bg-[#13141f] border border-white/5 rounded-2xl p-3 gap-1.5 overflow-x-auto custom-scrollbar">
+          {gridCells.map(day => {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            const stats = densityData[dateStr] || { hours: 0, interviews: 0 };
+            
+            let colorClass = 'bg-white/5 text-slate-500'; // low/no load
+            let dotClass = 'hidden';
+            if (stats.interviews >= 3 || stats.hours >= 4) {
+              colorClass = 'bg-red-500/20 border border-red-500/30 text-red-300';
+              dotClass = 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.8)]';
+            } else if (stats.interviews >= 2 || stats.hours >= 2) {
+              colorClass = 'bg-amber-500/20 border border-amber-500/30 text-amber-300';
+              dotClass = 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]';
+            } else if (stats.hours > 0 || stats.interviews > 0) {
+              colorClass = 'bg-[#00f0ff]/10 border border-[#00f0ff]/20 text-[#00f0ff]';
+              dotClass = 'bg-[#00f0ff]';
+            }
+
+            return (
+              <div 
+                key={dateStr}
+                onClick={() => handleDateClick(day)}
+                className={`flex-shrink-0 w-[42px] h-[52px] rounded-xl flex flex-col items-center justify-center cursor-pointer hover:brightness-125 transition-all relative ${colorClass}`}
+                title={`${format(day, 'MMM d')}: ${stats.interviews} Interviews, ${Math.round(stats.hours)}h total`}
+              >
+                <span className="text-[10px] font-bold opacity-80 mb-0.5">{format(day, 'EEE')}</span>
+                <span className="text-[13px] font-extrabold">{format(day, 'd')}</span>
+                {stats.hours > 0 && (
+                  <span className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border border-[#13141f] ${dotClass}`} />
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -1154,6 +1378,7 @@ const CalendarPage = () => {
                                 <span className="truncate">
                                   {showText ? event.title : '\u00A0'}
                                 </span>
+                                {showText && event.is_official_drive && <Star className="w-2 h-2 inline-block ml-1 text-white shrink-0" />}
                                 {suffix}
                               </div>
                               {showText && event.source !== 'manual' && (
@@ -1203,7 +1428,8 @@ const CalendarPage = () => {
                             onClick={(e) => handleEventClick(event, e)}
                             className={`text-[8px] px-1 py-0.5 rounded truncate font-bold text-center cursor-pointer border ${colors.chip}`}
                           >
-                            {event.title}
+                            <span className="truncate">{event.title}</span>
+                            {event.is_official_drive && <Star className="w-2 h-2 inline-block ml-0.5 shrink-0" />}
                           </div>
                         );
                       })}
@@ -1269,7 +1495,10 @@ const CalendarPage = () => {
                               }`}
                             >
                               <div className="w-full overflow-hidden">
-                                <div className="font-bold truncate text-white mb-0.5">{event.title}</div>
+                                <div className="font-bold truncate text-white mb-0.5 flex items-center gap-1">
+                                  {event.title}
+                                  {event.is_official_drive && <Star className="w-2 h-2 shrink-0 text-white" />}
+                                </div>
                                 <div className="opacity-80 truncate text-[8px]">{event.localStartTime} - {event.localEndTime}</div>
                               </div>
                               {hasPrepWarning && (
@@ -1364,7 +1593,10 @@ const CalendarPage = () => {
                       >
                         <div>
                           <div className="flex justify-between items-start gap-2 mb-1.5">
-                            <span className="font-bold text-white text-sm truncate">{event.title}</span>
+                            <span className="font-bold text-white text-sm truncate flex items-center gap-1.5">
+                              {event.title}
+                              {event.is_official_drive && <Star className="w-3 h-3 shrink-0 text-white" />}
+                            </span>
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold capitalize ${colors.badge}`}>
                               {event.type.replace('_', ' ')}
                             </span>
@@ -1394,24 +1626,40 @@ const CalendarPage = () => {
         {calendarView === 'list' && (
           <div className="flex flex-col flex-1 p-6 overflow-y-auto">
             {/* Filter controls */}
-            <div className="flex gap-2 mb-6 border-b border-white/5 pb-4">
-              {[
-                { value: 'all', label: 'All Events' },
-                { value: 'interview', label: 'Interviews Only' },
-                { value: 'deadline', label: 'Deadlines Only' }
-              ].map(f => (
-                <button
-                  key={f.value}
-                  onClick={() => setListFilter(f.value)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                    listFilter === f.value
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-inner'
-                      : 'text-slate-400 hover:text-white border-transparent bg-white/5'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+            <div className="flex gap-2 mb-6 border-b border-white/5 pb-4 justify-between items-center">
+              <div className="flex gap-2">
+                {[
+                  { value: 'all', label: 'All Events' },
+                  { value: 'interview', label: 'Interviews Only' },
+                  { value: 'deadline', label: 'Deadlines Only' }
+                ].map(f => (
+                  <button
+                    key={f.value}
+                    onClick={() => setListFilter(f.value)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                      listFilter === f.value
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-inner'
+                        : 'text-slate-400 hover:text-white border-transparent bg-white/5'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              
+              {selectedEvents.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white bg-white/10 px-2 py-1 rounded">
+                    {selectedEvents.length} selected
+                  </span>
+                  <button 
+                    onClick={() => setSelectedEvents([])}
+                    className="text-xs font-medium text-slate-400 hover:text-white transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* List group */}
@@ -1461,18 +1709,39 @@ const CalendarPage = () => {
                             className="p-4 rounded-xl border border-white/5 bg-[#181926]/50 hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer flex flex-col gap-2"
                           >
                             <div className="flex items-center justify-between gap-4">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                  <span className={`w-2.5 h-2.5 rounded-full ${colors.indicator}`} />
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider capitalize">
-                                    {event.type.replace('_', ' ')}
-                                  </span>
+                              <div className="flex items-start gap-4">
+                                <input 
+                                  type="checkbox" 
+                                  className="mt-1 w-4 h-4 rounded border-white/20 bg-black/20 accent-[#00f0ff] cursor-pointer"
+                                  checked={selectedEvents.includes(event._id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    if (e.target.checked) {
+                                      setSelectedEvents(prev => [...prev, event._id]);
+                                    } else {
+                                      setSelectedEvents(prev => prev.filter(id => id !== event._id));
+                                    }
+                                  }}
+                                />
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                    <span className={`w-2.5 h-2.5 rounded-full ${colors.indicator}`} />
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider capitalize">
+                                      {event.type.replace('_', ' ')}
+                                    </span>
+                                    {event.is_official_drive && (
+                                      <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded border border-indigo-500/30 text-[9px] flex items-center gap-1 font-bold">
+                                        <Star className="w-2.5 h-2.5" /> Official
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h4 className="text-sm font-bold text-white mb-0.5">{event.title}</h4>
+                                  <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                                    {event.is_all_day ? 'All Day' : `${event.localStartTime} - ${event.localEndTime || 'None'}`}
+                                  </p>
                                 </div>
-                                <h4 className="text-sm font-bold text-white mb-0.5">{event.title}</h4>
-                                <p className="text-xs text-slate-400 flex items-center gap-1.5">
-                                  <Clock className="w-3.5 h-3.5 text-slate-500" />
-                                  {event.is_all_day ? 'All Day' : `${event.localStartTime} - ${event.localEndTime || 'None'}`}
-                                </p>
                               </div>
                               <ChevronRight className="w-5 h-5 text-slate-600" />
                             </div>
@@ -1491,6 +1760,98 @@ const CalendarPage = () => {
                 ))}
               </div>
             )}
+
+            {/* PIPELINE VIEW */}
+            {calendarView === 'pipeline' && (
+              <div className="flex-1 overflow-y-auto p-6 bg-[#0b0c15]">
+                <div className="max-w-4xl mx-auto space-y-12">
+                  {pipelineGroups.map(group => {
+                    return (
+                      <div key={group.company} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#13141f]">
+                          <div>
+                            <h3 className="text-lg font-bold text-white">{group.company}</h3>
+                            <p className="text-xs text-[#00f0ff] uppercase tracking-wider font-bold mt-0.5">{group.currentStage.replace('_', ' ')}</p>
+                          </div>
+                          <span className="bg-white/5 px-3 py-1 rounded-full text-xs font-bold text-slate-300">
+                            {group.events.length} items
+                          </span>
+                        </div>
+                        
+                        <div className="p-4 bg-[#0b0c15]">
+                          <div className="space-y-2">
+                            {group.events.map(event => {
+                              const colors = getEventColors(event.type, event.status);
+                              const isNextAction = group.nextAction?._id === event._id;
+                              return (
+                                <div
+                                  key={event._id}
+                                  onClick={(e) => handleEventClick(event, e)}
+                                  className={`p-3 rounded-lg border ${isNextAction ? 'border-[#00f0ff]/50 bg-[#00f0ff]/5' : 'border-white/5 bg-[#13141f]'} hover:bg-white/5 transition-all cursor-pointer flex items-center justify-between gap-4`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-2 h-2 rounded-full ${colors.indicator}`} />
+                                    <div>
+                                      <h4 className="text-sm font-bold text-white">{event.title}</h4>
+                                      <p className="text-xs text-slate-400 mt-0.5">
+                                        {format(new Date(event.date), 'MMM d, yyyy')} • {event.is_all_day ? 'All Day' : event.start_time}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {event.status === 'completed' && (
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                                  )}
+                                  {isNextAction && (
+                                    <span className="text-[10px] bg-[#00f0ff]/20 text-[#00f0ff] px-2 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">
+                                      Next Up
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Floating Action Bar */}
+            <AnimatePresence>
+              {selectedEvents.length > 0 && (
+                <motion.div 
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 50, opacity: 0 }}
+                  className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#1a1b26] border border-white/10 rounded-full px-6 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex items-center gap-4 z-[60]"
+                >
+                  <span className="text-sm font-bold text-white bg-white/10 px-2.5 py-1 rounded-full">
+                    {selectedEvents.length} selected
+                  </span>
+                  <div className="w-px h-5 bg-white/10" />
+                  <button 
+                    onClick={handleBatchComplete}
+                    className="text-sm font-medium text-emerald-400 hover:text-emerald-300 transition-colors whitespace-nowrap"
+                  >
+                    Mark Completed
+                  </button>
+                  <button 
+                    onClick={handleBatchDelete}
+                    className="text-sm font-medium text-red-400 hover:text-red-300 transition-colors whitespace-nowrap"
+                  >
+                    Delete
+                  </button>
+                  <button 
+                    onClick={() => setSelectedEvents([])}
+                    className="text-sm font-medium text-slate-400 hover:text-white transition-colors ml-2"
+                  >
+                    Cancel
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </div>
@@ -1550,6 +1911,21 @@ const CalendarPage = () => {
               {/* Body */}
               <div className="flex-1 overflow-y-auto p-6">
                 
+                {/* Density Warning in Day List View */}
+                {activeView === 'list' && selectedDate && densityData[format(selectedDate, 'yyyy-MM-dd')] && (
+                  (densityData[format(selectedDate, 'yyyy-MM-dd')].interviews >= 3 || densityData[format(selectedDate, 'yyyy-MM-dd')].hours >= 4) && (
+                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-sm font-bold text-red-400">High Load Warning</h4>
+                        <p className="text-xs text-red-300 mt-1 leading-relaxed">
+                          You have <strong>{densityData[format(selectedDate, 'yyyy-MM-dd')].interviews} interviews</strong> and approximately <strong>{Math.round(densityData[format(selectedDate, 'yyyy-MM-dd')].hours)} hours</strong> of commitments. Please ensure you have adequate preparation time.
+                        </p>
+                      </div>
+                    </div>
+                  )
+                )}
+
                 {/* 1. Day Event List View */}
                 {activeView === 'list' && (
                   <div className="flex flex-col h-full justify-between">
@@ -1576,6 +1952,11 @@ const CalendarPage = () => {
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider capitalize">
                                       {event.type.replace('_', ' ')}
                                     </span>
+                                    {event.is_official_drive && (
+                                      <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded border border-indigo-500/30 text-[9px] flex items-center gap-1 font-bold">
+                                        <Star className="w-2.5 h-2.5" /> Official
+                                      </span>
+                                    )}
                                     {event.source !== 'manual' && (
                                       <span className="px-1.5 py-0.5 bg-white/5 text-[9px] text-slate-500 rounded border border-white/10 flex items-center gap-1">
                                         <Link2 className="w-2.5 h-2.5" /> Synced
@@ -1642,10 +2023,15 @@ const CalendarPage = () => {
                     )}
 
                     <div className="space-y-4">
-                      <div>
+                      <div className="flex gap-2 items-center flex-wrap">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${getEventColors(selectedEvent.type, selectedEvent.status).badge}`}>
                           {selectedEvent.type.replace('_', ' ')}
                         </span>
+                        {selectedEvent.is_official_drive && (
+                          <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-full text-xs font-bold flex items-center gap-1.5">
+                            <Star className="w-3.5 h-3.5" /> Official Drive
+                          </span>
+                        )}
                       </div>
                       <h3 className="text-xl font-bold text-white leading-tight">{selectedEvent.title}</h3>
                     </div>
@@ -1669,10 +2055,36 @@ const CalendarPage = () => {
                         <Clock className="w-5 h-5 text-slate-500 shrink-0" />
                         <span>{selectedEvent.is_all_day ? 'All Day' : `${selectedEvent.start_time} - ${selectedEvent.end_time || 'None'}`}</span>
                       </div>
+                      {selectedEvent.meeting_link && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Link2 className="w-5 h-5 text-indigo-400 shrink-0" />
+                            <span className="truncate text-indigo-300">{selectedEvent.meeting_link}</span>
+                          </div>
+                          <a 
+                            href={selectedEvent.meeting_link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded text-xs font-bold transition-colors"
+                          >
+                            Join
+                          </a>
+                        </div>
+                      )}
                       {selectedEvent.location && (
-                        <div className="flex items-center gap-3">
-                          <MapPin className="w-5 h-5 text-slate-500 shrink-0" />
-                          <span className="truncate">{selectedEvent.location}</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <MapPin className="w-5 h-5 text-slate-500 shrink-0" />
+                            <span className="truncate">{selectedEvent.location}</span>
+                          </div>
+                          <a 
+                            href={`https://maps.google.com/?q=${encodeURIComponent(selectedEvent.location)}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold transition-colors"
+                          >
+                            Map
+                          </a>
                         </div>
                       )}
                     </div>
@@ -1702,6 +2114,192 @@ const CalendarPage = () => {
                           {selectedEvent.description}
                         </p>
                       </div>
+                    )}
+                    {/* Logistics Checklist */}
+                    {(selectedEvent.type === 'interview' || selectedEvent.type === 'event' || selectedEvent.is_official_drive) && (
+                      <div className="border-t border-white/5 pt-4">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-slate-500" /> Logistics Checklist
+                        </h4>
+                        <div className="space-y-2 bg-white/5 p-4 rounded-xl border border-white/5">
+                          {[
+                            { key: 'travel_booked', label: 'Travel Booked' },
+                            { key: 'accommodation_booked', label: 'Accommodation Booked' },
+                            { key: 'documents_printed', label: 'Documents Printed (Resume, ID)' }
+                          ].map(item => {
+                            const isChecked = selectedEvent.logistics?.[item.key] || false;
+                            return (
+                              <label key={item.key} className="flex items-center gap-3 cursor-pointer group">
+                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'bg-[#13141f] border-white/20 group-hover:border-white/40'}`}>
+                                  {isChecked && <Check className="w-3.5 h-3.5 text-white" />}
+                                </div>
+                                <span className={`text-sm ${isChecked ? 'text-slate-400 line-through' : 'text-slate-200 group-hover:text-white transition-colors'}`}>
+                                  {item.label}
+                                </span>
+                                <input 
+                                  type="checkbox"
+                                  className="hidden"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    const updatedLogistics = {
+                                      ...(selectedEvent.logistics || {}),
+                                      [item.key]: e.target.checked
+                                    };
+                                    // Optimistic update locally
+                                    setSelectedEvent({ ...selectedEvent, logistics: updatedLogistics });
+                                    // Send to server
+                                    updateMutation.mutate({ 
+                                      id: selectedEvent._id, 
+                                      data: { logistics: updatedLogistics, recurrenceEditMode: 'single' } 
+                                    });
+                                  }}
+                                />
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+
+                    {selectedEvent.type === 'interview' && selectedEvent.status === 'completed' && (
+                      <div className="border-t border-white/5 pt-4">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                          <Star className="w-4 h-4 text-emerald-400" /> Interview Reflection
+                        </h4>
+                        {!selectedEvent.reflection?.note && !selectedEvent.reflection?.confidence ? (
+                          <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
+                            <p className="text-sm text-emerald-300 mb-3">How did the interview go? Log your reflection while it's fresh.</p>
+                            {!isLoggingReflection && (
+                              <button 
+                                onClick={() => setLoggingReflection(true)}
+                                className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold transition-colors hover:bg-emerald-600"
+                              >
+                                Log Reflection
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                            {selectedEvent.reflection.confidence > 0 && (
+                              <div className="flex gap-1 mb-2">
+                                {[1,2,3,4,5].map(star => (
+                                  <Star key={star} className={`w-4 h-4 ${star <= selectedEvent.reflection.confidence ? 'text-amber-400 fill-amber-400' : 'text-slate-600'}`} />
+                                ))}
+                              </div>
+                            )}
+                            {selectedEvent.reflection.outcome && selectedEvent.reflection.outcome !== 'none' && (
+                              <span className="inline-block mb-2 px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400 capitalize">
+                                Outcome: {selectedEvent.reflection.outcome.replace('_', ' ')}
+                              </span>
+                            )}
+                            <p className="text-sm text-slate-300 whitespace-pre-line">
+                              {selectedEvent.reflection.note}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Inline Reflection Form */}
+                        {isLoggingReflection && (
+                          <div className="mt-3 bg-[#13141f] border border-white/10 p-4 rounded-xl space-y-4">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Confidence (1-5)</label>
+                              <div className="flex gap-2">
+                                {[1,2,3,4,5].map(star => (
+                                  <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setReflectionData({...reflectionData, confidence: star})}
+                                    className="p-1"
+                                  >
+                                    <Star className={`w-6 h-6 ${star <= reflectionData.confidence ? 'text-amber-400 fill-amber-400' : 'text-slate-600 hover:text-amber-400/50'}`} />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Outcome</label>
+                              <select 
+                                value={reflectionData.outcome}
+                                onChange={(e) => setReflectionData({...reflectionData, outcome: e.target.value})}
+                                className="w-full px-3 py-2 bg-[#1a1b26] border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 appearance-none"
+                              >
+                                <option value="none">Not decided yet</option>
+                                <option value="cleared">Cleared / Passed</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="awaiting_result">Awaiting Result</option>
+                                <option value="withdrew">Withdrew</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Notes</label>
+                              <textarea 
+                                value={reflectionData.note}
+                                onChange={(e) => setReflectionData({...reflectionData, note: e.target.value})}
+                                className="w-full px-3 py-2 bg-[#1a1b26] border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-500 text-sm min-h-[80px]"
+                                placeholder="What went well? What questions did they ask?"
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <button 
+                                onClick={() => setLoggingReflection(false)}
+                                className="px-3 py-1.5 text-slate-400 hover:text-white text-sm font-medium"
+                              >
+                                Cancel
+                              </button>
+                              <button 
+                                onClick={handleSaveReflection}
+                                disabled={!reflectionData.confidence || !reflectionData.note}
+                                className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg text-sm font-bold transition-colors"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Stepper Round-Sequence View */}
+                    {eventRoundsData && eventRoundsData.rounds.length > 0 && (
+                      <div className="border-t border-white/5 pt-4">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <GitCommit className="w-4 h-4 text-purple-400" /> {eventRoundsData.company} Process
+                        </h4>
+                        <div className="relative pl-3 space-y-4">
+                          <div className="absolute top-2 bottom-2 left-[15px] w-px bg-white/10" />
+                          {eventRoundsData.rounds.map((round) => (
+                            <div key={round.id} className="relative flex items-start gap-4">
+                              <div className={`w-3 h-3 rounded-full mt-1.5 shrink-0 z-10 ${
+                                round.isCurrentEvent ? 'bg-[#00f0ff] ring-4 ring-[#00f0ff]/20' : 
+                                round.status === 'COMPLETED' ? 'bg-emerald-400' : 'bg-slate-600'
+                              }`} />
+                              <div className={`flex-1 p-3 rounded-xl border ${
+                                round.isCurrentEvent ? 'bg-[#00f0ff]/10 border-[#00f0ff]/30' : 'bg-white/5 border-white/5'
+                              }`}>
+                                <p className={`text-sm font-bold ${round.isCurrentEvent ? 'text-[#00f0ff]' : 'text-slate-300'}`}>
+                                  {round.round}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1 capitalize">
+                                  {round.roundType?.replace('_', ' ')} • {format(new Date(round.date), 'MMM d')}
+                                </p>
+                                {round.outcome && round.outcome !== 'PENDING' && (
+                                  <span className={`inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                    round.outcome === 'PASSED' ? 'bg-emerald-500/20 text-emerald-400' :
+                                    round.outcome === 'FAILED' ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-slate-300'
+                                  }`}>
+                                    {round.outcome}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedEvent.type === 'offer_deadline' && (
+                      <DecisionTracker selectedEvent={selectedEvent} allEvents={eventsQuery.data || []} />
                     )}
 
                     <div className="border-t border-white/5 pt-4 space-y-2">
@@ -1801,6 +2399,7 @@ const CalendarPage = () => {
                           <option value="event" className="bg-[#13141f]">Event</option>
                           <option value="deadline" className="bg-[#13141f]">Deadline</option>
                           <option value="interview" className="bg-[#13141f]">Interview</option>
+                          <option value="academic" className="bg-[#13141f]">Academic</option>
                           <option value="application_deadline" className="bg-[#13141f]">App Deadline</option>
                           <option value="offer_deadline" className="bg-[#13141f]">Offer Deadline</option>
                           <option value="follow_up" className="bg-[#13141f]">Follow Up</option>
@@ -1865,6 +2464,38 @@ const CalendarPage = () => {
                         className="w-5 h-5 rounded border-white/20 bg-[#13141f] text-[#ff6b00] focus:ring-[#ff6b00] focus:ring-offset-[#13141f]"
                       />
                     </div>
+
+                    {/* Official Drive toggle */}
+                    {(formData.type === 'event' || formData.type === 'interview') && (
+                      <div className="flex items-center justify-between p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+                        <div>
+                          <label className="text-sm font-semibold text-indigo-400 block flex items-center gap-1.5">
+                            <Star className="w-4 h-4" /> Official College Drive
+                          </label>
+                          <p className="text-xs text-indigo-300/80">Triggers special reschedule alerts</p>
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={formData.is_official_drive} 
+                          onChange={(e) => setFormData({...formData, is_official_drive: e.target.checked})} 
+                          className="w-5 h-5 rounded border-indigo-500/30 bg-[#13141f] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-[#13141f]"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Expected Response Date (for Interviews) */}
+                    {formData.type === 'interview' && (
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Expected Response Date</label>
+                        <input 
+                          type="date" 
+                          value={formData.expected_response_date} 
+                          onChange={(e) => setFormData({...formData, expected_response_date: e.target.value})} 
+                          className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#ff6b00] text-sm [color-scheme:dark]" 
+                        />
+                        <p className="text-[10px] text-slate-500 mt-1">We'll remind you to follow up if you haven't heard back by this date.</p>
+                      </div>
+                    )}
 
                     {/* Start/End Times (hidden if all-day) */}
                     {!formData.is_all_day && (

@@ -25,13 +25,13 @@ const PeerBenchmarkCard = ({ user }) => {
     );
   }
 
-  if (user?.publicProfileSettings?.benchmarkOptOut) {
+  if (!user?.benchmarkOptIn) {
     return (
       <div className="glass-card p-5 border border-white/5 bg-[#13141f]">
         <h3 className="font-bold text-white flex items-center gap-2 mb-2 text-sm">
           <Activity className="w-4 h-4 text-[#00f0ff]" /> How You Compare
         </h3>
-        <p className="text-xs text-slate-400">You have opted out of peer benchmarking. Enable it in settings to view these insights.</p>
+        <p className="text-xs text-slate-400">You must opt-in to peer benchmarking in Settings (Data & Privacy) to view these insights.</p>
       </div>
     );
   }

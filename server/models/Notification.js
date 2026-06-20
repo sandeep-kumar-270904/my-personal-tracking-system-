@@ -16,7 +16,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['INTERVIEW', 'APPLICATION_STALE', 'DSA_REMINDER', 'SYSTEM', 'CALENDAR', 'FOLLOW_UP_NUDGE'],
+    enum: ['INTERVIEW', 'APPLICATION_STALE', 'DSA_REMINDER', 'SYSTEM', 'CALENDAR', 'FOLLOW_UP_NUDGE', 'DRIVE_RESCHEDULED'],
     default: 'SYSTEM',
   },
   link: {

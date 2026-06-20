@@ -7,7 +7,8 @@ import {
 } from 'date-fns';
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
-  Clock, MapPin, ChevronRight as ChevronRightIcon, X
+  Clock, MapPin, ChevronRight as ChevronRightIcon, X, 
+  Target, TrendingUp 
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -361,7 +362,52 @@ const PublicCalendarPage = () => {
         </div>
       </header>
 
-      {/* Views Container */}
+      {/* Summary View Mode */}
+      {data.mode === 'summary' ? (
+        <div className="flex-1 flex flex-col justify-center max-w-3xl mx-auto w-full mt-8">
+          <div className="glass-card rounded-2xl border border-white/5 bg-[#13141f] p-8 space-y-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-white mb-2">Weekly Summary</h2>
+              <p className="text-slate-400">Here's what {userName} has coming up this week.</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-6 bg-white/5 border border-white/5 rounded-xl text-center">
+                <div className="text-4xl font-black text-amber-400">{processedEvents.length}</div>
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-2">Upcoming Events</div>
+              </div>
+              <div className="p-6 bg-white/5 border border-white/5 rounded-xl text-center">
+                <div className="text-4xl font-black text-emerald-400">{processedEvents.filter(e => e.type === 'interview').length}</div>
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-2">Interviews</div>
+              </div>
+            </div>
+
+            {data.seasonSummary && (
+              <div className="pt-6 border-t border-white/5">
+                <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#00f0ff]" />
+                  Season Progress
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 bg-white/5 border border-white/5 rounded-xl text-center">
+                    <div className="text-2xl font-black text-white">{data.seasonSummary.successRate}%</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase mt-1">Success Rate</div>
+                  </div>
+                  <div className="p-4 bg-white/5 border border-white/5 rounded-xl text-center">
+                    <div className="text-2xl font-black text-white">{data.seasonSummary.totalCompaniesApplied}</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase mt-1">Companies</div>
+                  </div>
+                  <div className="p-4 bg-white/5 border border-white/5 rounded-xl text-center">
+                    <div className="text-2xl font-black text-white">{data.seasonSummary.offers}</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase mt-1">Offers</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+      /* Views Container */
       <div className="flex-1 flex flex-col min-h-[500px] bg-[#0b0c15] border border-white/5 rounded-2xl overflow-hidden">
         
         {/* MONTH VIEW */}
@@ -744,7 +790,6 @@ const PublicCalendarPage = () => {
           </div>
         </>
       )}
-
     </div>
   );
 };

@@ -111,13 +111,36 @@ const startCronJobs = () => {
         }
       }
 
+      // Post-Interview Ghosting Nudges
+      const ghostingEvents = await Event.find({
+        type: 'interview',
+        expected_response_date: { $lte: today, $ne: null },
+        ghosting_nudge_sent: false,
+        response_received: false,
+        response_follow_up_sent: false,
+        status: { $in: ['upcoming', 'completed'] },
+        'reflection.outcome': { $in: ['none', 'awaiting_result'] }
+      });
+
+      for (const ev of ghostingEvents) {
+        await Notification.create({
+          userId: ev.user,
+          title: 'Interview Follow-Up Reminder',
+          message: `It's past the expected response date for your "${ev.title}" interview. Consider sending a polite follow-up.`,
+          type: 'FOLLOW_UP_NUDGE',
+          eventId: ev._id
+        });
+        ev.ghosting_nudge_sent = true;
+        await ev.save();
+      }
+
       // Peer Benchmarking Aggregation
       console.log('Running daily peer benchmarking aggregation...');
       const AggregatedStats = require('../models/AggregatedStats');
       // Group users by gradYear who haven't opted out
       const eligibleUsers = await User.find({ 
         gradYear: { $exists: true, $ne: '' },
-        'publicProfileSettings.benchmarkOptOut': { $ne: true }
+        benchmarkOptIn: true
       });
       
       const usersByCohort = {};
@@ -261,59 +284,108 @@ const startCronJobs = () => {
       const now = new Date();
       // Find events that have active reminders and haven't sent yet
       const eventsWithReminders = await Event.find({
-        reminder_minutes_before: { $ne: null },
-        reminderSent: false,
         status: 'upcoming'
-      });
+      }).populate('user', 'calendarSettings');
 
       const Notification = require('../models/Notification');
 
       for (const event of eventsWithReminders) {
-        const eventDate = new Date(event.date);
+        const userSettings = event.user.calendarSettings || {};
         
-        // Set time part
+        const eventDate = new Date(event.date);
         if (event.start_time && !event.is_all_day) {
           const [h, m] = event.start_time.split(':').map(Number);
           eventDate.setHours(h, m, 0, 0);
         } else {
-          // All-day default 9:00 AM local time
           eventDate.setHours(9, 0, 0, 0);
         }
 
-        const triggerTime = new Date(eventDate.getTime() - event.reminder_minutes_before * 60000);
+        const timeToEventMs = eventDate.getTime() - now.getTime();
+        const timeToEventHrs = timeToEventMs / (1000 * 60 * 60);
 
-        if (now >= triggerTime) {
-          // Send notification
-          let icon = '🗓️';
-          if (event.type === 'interview') icon = '🎯';
-          else if (event.type === 'application_deadline' || event.type === 'deadline') icon = '⏳';
-          else if (event.type === 'offer_deadline') icon = '💸';
-
-          // Determine dayString (today / tomorrow / date)
-          const todayDate = new Date();
-          todayDate.setHours(0,0,0,0);
-          const compDate = new Date(event.date);
-          compDate.setHours(0,0,0,0);
+        // Escalation Logic for High-Stakes (Interviews)
+        if (event.type === 'interview' && !event.disableReminderEscalation && !userSettings.suppressIndividualReminders) {
+          if (!event.highStakesRemindersSent) {
+             event.highStakesRemindersSent = { oneWeek: false, oneDay: false, twoHours: false };
+          }
           
-          const diffDays = Math.round((compDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+          let escalationSent = false;
           
-          let dayString = `on ${eventDate.toLocaleDateString()}`;
-          if (diffDays === 0) dayString = 'today';
-          else if (diffDays === 1) dayString = 'tomorrow';
+          if (timeToEventHrs <= 168 && timeToEventHrs > 167 && !event.highStakesRemindersSent.oneWeek) {
+            await Notification.create({
+              userId: event.user._id,
+              title: `One Week Prep Warning: ${event.title}`,
+              message: `Your interview is in exactly one week. Have you started preparing?`,
+              type: 'CALENDAR',
+              link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
+            });
+            event.highStakesRemindersSent.oneWeek = true;
+            escalationSent = true;
+          }
+          
+          if (timeToEventHrs <= 24 && timeToEventHrs > 23 && !event.highStakesRemindersSent.oneDay) {
+            await Notification.create({
+              userId: event.user._id,
+              title: `Tomorrow: ${event.title}`,
+              message: `Your interview is tomorrow! Ensure your setup is ready and get a good night's sleep.`,
+              type: 'CALENDAR',
+              link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
+            });
+            event.highStakesRemindersSent.oneDay = true;
+            escalationSent = true;
+          }
+          
+          if (timeToEventHrs <= 2 && timeToEventHrs > 1 && !event.highStakesRemindersSent.twoHours) {
+            await Notification.create({
+              userId: event.user._id,
+              title: `Almost Time: ${event.title}`,
+              message: `Your interview starts in 2 hours. Final review of your prep notes!`,
+              type: 'CALENDAR',
+              link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
+            });
+            event.highStakesRemindersSent.twoHours = true;
+            escalationSent = true;
+          }
+          
+          if (escalationSent) {
+            await event.save();
+          }
+        }
 
-          const timeString = event.is_all_day ? 'all day' : `at ${event.start_time}`;
+        // Standard Reminder Logic
+        if (event.reminder_minutes_before !== null && !event.reminderSent && !userSettings.suppressIndividualReminders) {
+          const triggerTime = new Date(eventDate.getTime() - event.reminder_minutes_before * 60000);
+          
+          if (now >= triggerTime) {
+            let icon = '🗓️';
+            if (event.type === 'interview') icon = '🎯';
+            else if (event.type === 'application_deadline' || event.type === 'deadline') icon = '⏳';
+            else if (event.type === 'offer_deadline') icon = '💸';
 
-          await Notification.create({
-            userId: event.user,
-            title: `Reminder: ${event.title}`,
-            message: `${icon} ${event.title} — ${timeString} ${dayString}`,
-            type: 'CALENDAR',
-            link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
-          });
+            const todayDate = new Date();
+            todayDate.setHours(0,0,0,0);
+            const compDate = new Date(event.date);
+            compDate.setHours(0,0,0,0);
+            
+            const diffDays = Math.round((compDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            let dayString = `on ${eventDate.toLocaleDateString()}`;
+            if (diffDays === 0) dayString = 'today';
+            else if (diffDays === 1) dayString = 'tomorrow';
 
-          // Mark reminder as sent
-          event.reminderSent = true;
-          await event.save();
+            const timeString = event.is_all_day ? 'all day' : `at ${event.start_time}`;
+
+            await Notification.create({
+              userId: event.user._id,
+              title: `Reminder: ${event.title}`,
+              message: `${icon} ${event.title} — ${timeString} ${dayString}`,
+              type: 'CALENDAR',
+              link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
+            });
+
+            event.reminderSent = true;
+            await event.save();
+          }
         }
       }
     } catch (err) {

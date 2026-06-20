@@ -12,19 +12,23 @@ import DashboardBanner from '../components/dashboard/DashboardBanner';
 import StatCardRow from '../components/dashboard/StatCardRow';
 import PipelineKanban from '../components/dashboard/PipelineKanban';
 import GoalRings from '../components/dashboard/GoalRings';
-import UpcomingStrip from '../components/dashboard/UpcomingStrip';
+import WhatsNextWidget from '../components/dashboard/WhatsNextWidget';
 import UpcomingCampusDrivesStrip from '../components/dashboard/UpcomingCampusDrivesStrip';
 import DashboardCharts from '../components/dashboard/DashboardCharts';
 import ActivityFeed from '../components/dashboard/ActivityFeed';
 import PeerBenchmarkCard from '../components/dashboard/PeerBenchmarkCard';
+import SeasonSummaryCard from '../components/dashboard/SeasonSummaryCard';
 import AIInsightsBanner from '../components/dashboard/AIInsightsBanner';
 import ReadinessGauge from '../components/dashboard/ReadinessGauge';
 import StreakAlertBanner from '../components/dashboard/StreakAlertBanner';
 import OnboardingFlow from '../components/dashboard/OnboardingFlow';
 import { QuickAddModals } from '../components/dashboard/QuickAddModals';
+import DailyDigestModal from '../components/dashboard/DailyDigestModal';
 import ShortcutHintCard from '../components/dashboard/ShortcutHintCard';
 import DashboardCoverageAlerts from '../components/dashboard/DashboardCoverageAlerts';
 import DashboardNetworkRecommendations from '../components/dashboard/DashboardNetworkRecommendations';
+import LiveFeedWidget from '../components/dashboard/LiveFeedWidget';
+import ActiveRoundsWidget from '../components/dashboard/ActiveRoundsWidget';
 
 // Hooks
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
@@ -54,6 +58,7 @@ const fetchDashboardData = async () => {
 const DashboardPage = () => {
   const { user } = useContext(AuthContext);
   const [activeModal, setActiveModal] = useState(null);
+  const [showDailyDigest, setShowDailyDigest] = useState(false);
   
   // Layout Preference
   const [isCompact, setIsCompact] = useState(() => {
@@ -122,6 +127,7 @@ const DashboardPage = () => {
           onActionClick={setActiveModal} 
         />
         <QuickAddModals activeModal={activeModal} onClose={() => setActiveModal(null)} />
+      <DailyDigestModal isOpen={showDailyDigest} onClose={() => setShowDailyDigest(false)} />
       </>
     );
   }
@@ -130,7 +136,7 @@ const DashboardPage = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`max-w-[1600px] mx-auto pb-20 ${isCompact ? 'space-y-4' : 'space-y-8'}`}>
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <DashboardBanner user={user} stats={data.stats} upcoming={data.upcoming} />
+          <DashboardBanner user={user} stats={data.stats} upcoming={data.upcoming} onShowDigest={() => setShowDailyDigest(true)} />
         </div>
         
         {/* Layout Toggle */}
@@ -196,7 +202,7 @@ const DashboardPage = () => {
         {/* Left/Center Main Column */}
         <div className={`lg:col-span-3 ${isCompact ? 'space-y-4' : 'space-y-8'}`}>
           <UpcomingCampusDrivesStrip />
-          <UpcomingStrip upcoming={data.upcoming} />
+          <WhatsNextWidget upcoming={data.upcoming} />
           <PipelineKanban pipeline={data.pipeline} />
           <GoalRings goalsData={data.stats?.weeklyGoals} stats={data.stats} />
           <DashboardCharts charts={data.charts} heatmap={data.heatmap} roi={data.roi} isCompact={isCompact} />
@@ -204,6 +210,7 @@ const DashboardPage = () => {
 
         {/* Right Sidebar Column */}
         <div className="lg:col-span-1 relative flex flex-col gap-6">
+          <SeasonSummaryCard />
           <PeerBenchmarkCard user={user} />
           <ActivityFeed feed={data.feed} isCompact={isCompact} />
         </div>
@@ -211,6 +218,7 @@ const DashboardPage = () => {
       
       <QuickAddFab onActionClick={setActiveModal} />
       <QuickAddModals activeModal={activeModal} onClose={() => setActiveModal(null)} />
+      <DailyDigestModal isOpen={showDailyDigest} onClose={() => setShowDailyDigest(false)} />
       <ShortcutHintCard />
     </motion.div>
   );

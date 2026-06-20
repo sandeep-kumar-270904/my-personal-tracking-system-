@@ -99,9 +99,41 @@ const handleNotificationAction = async (req, res) => {
   }
 };
 
+const getDailyDigest = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const twoDaysFromNow = new Date(today);
+    twoDaysFromNow.setDate(today.getDate() + 2);
+
+    const upcomingEvents = await Event.find({
+      user: req.user._id,
+      date: { $gte: today, $lt: twoDaysFromNow },
+      status: 'upcoming'
+    }).sort({ date: 1, start_time: 1 });
+
+    const digest = {
+      events: upcomingEvents,
+      stats: {
+        totalUpcoming: upcomingEvents.length,
+        interviews: upcomingEvents.filter(e => e.type === 'interview').length,
+        deadlines: upcomingEvents.filter(e => ['deadline', 'application_deadline', 'offer_deadline'].includes(e.type)).length,
+      }
+    };
+    
+    res.json(digest);
+  } catch (error) {
+    console.error('Error in daily digest:', error);
+    res.status(500).json({ message: 'Failed to fetch daily digest' });
+  }
+};
+
 module.exports = {
   getNotifications,
   markAsRead,
   markAllAsRead,
-  handleNotificationAction
+  handleNotificationAction,
+  getDailyDigest
 };

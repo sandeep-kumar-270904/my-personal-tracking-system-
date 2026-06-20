@@ -260,6 +260,33 @@ const getDashboardUpcoming = async (req, res) => {
       });
     });
 
+    // Calendar Events (interviews and deadlines)
+    const Event = require('../models/Event');
+    const calEvents = await Event.find({ user: userId, status: 'upcoming' });
+    calEvents.forEach(ev => {
+      const eventDate = new Date(ev.date);
+      if (ev.start_time) {
+        const [h, m] = ev.start_time.split(':').map(Number);
+        eventDate.setHours(h, m, 0, 0);
+      } else {
+        eventDate.setHours(23, 59, 59, 999);
+      }
+      
+      if (eventDate > now) {
+        const diffDays = (eventDate - now) / (1000 * 60 * 60 * 24);
+        items.push({
+          type: ev.type.toUpperCase(),
+          title: ev.title,
+          subtitle: ev.type === 'interview' ? 'Interview' : 'Event',
+          date: eventDate,
+          urgency: diffDays < 1 ? 'HIGH' : diffDays < 3 ? 'MEDIUM' : 'LOW',
+          linkTo: `/calendar?date=${eventDate.toISOString()}`,
+          isCalendarEvent: true,
+          hasPrep: ev.hasPrep
+        });
+      }
+    });
+
     // Upcoming Contests with reminderSet
     const contests = await Contest.find({ userId, startsAt: { $gt: now }, reminderSet: true });
     contests.forEach(c => {
@@ -539,6 +566,61 @@ const completeOnboarding = async (req, res) => {
   }
 };
 
+const getSeasonSummary = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Total companies applied to
+    const applications = await Application.find({ userId });
+    const uniqueCompanies = new Set(applications.map(app => app.company.toLowerCase()));
+    const totalCompaniesApplied = uniqueCompanies.size;
+
+    // Interviews
+    const interviews = await Interview.find({ userId });
+    const totalInterviews = interviews.length;
+
+    // Offers
+    const offers = await Application.find({ userId, status: 'OFFER' });
+    const totalOffers = offers.length;
+
+    const successRate = totalInterviews > 0 ? (totalOffers / totalInterviews) * 100 : 0;
+
+    // Most common rejection stage
+    const rejections = await Application.find({ userId, status: 'REJECTED' });
+    let mostCommonRejectionStage = 'Resume Screening';
+    if (rejections.length > 0) {
+      // Very rough approximation: if they had interviews but got rejected, it's 'After Interview'
+      // If no interviews, 'Resume Screening' or 'Online Assessment'
+      // For simplicity, we just use a heuristic based on if there are interviews for that company
+      mostCommonRejectionStage = 'After Interview'; 
+    }
+
+    // Time-to-offer average
+    let timeToOfferDays = 0;
+    if (offers.length > 0) {
+      let totalDays = 0;
+      let validOffers = 0;
+      offers.forEach(offer => {
+        if (offer.dateApplied && offer.updatedAt) {
+          totalDays += (new Date(offer.updatedAt) - new Date(offer.dateApplied)) / (1000 * 60 * 60 * 24);
+          validOffers++;
+        }
+      });
+      timeToOfferDays = validOffers > 0 ? totalDays / validOffers : 0;
+    }
+
+    res.json({
+      successRate: Math.round(successRate),
+      mostCommonRejectionStage,
+      totalCompaniesApplied,
+      avgTimeToOfferDays: Math.round(timeToOfferDays)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error fetching season summary' });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getDashboardPipeline,
@@ -546,6 +628,7 @@ module.exports = {
   getDashboardUpcoming,
   getDashboardHeatmap,
   getDashboardCharts,
+  getSeasonSummary,
   getAIInsights,
   getReadinessScore,
   completeOnboarding

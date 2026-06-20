@@ -47,6 +47,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  role: {
+    type: String,
+    enum: ['student', 'placement_cell_admin'],
+    default: 'student'
+  },
   aiInsightsCache: {
     text: String,
     generatedAt: Date
@@ -80,7 +85,8 @@ const userSchema = new mongoose.Schema({
     showStreak: { type: Boolean, default: true },
     showTargetCompanies: { type: Boolean, default: true },
     isOpenToOpportunities: { type: Boolean, default: true },
-    benchmarkOptOut: { type: Boolean, default: false }
+    benchmarkOptOut: { type: Boolean, default: false }, // Legacy
+    benchmarkOptIn: { type: Boolean, default: false }
   },
   cgpa: {
     type: Number,
@@ -108,8 +114,28 @@ const userSchema = new mongoose.Schema({
     timezone: { type: String, default: '' },
     preferredView: { type: String, default: 'month' },
     disablePrepSuggestions: { type: Boolean, default: false },
-    shareToken: { type: String, default: null },
-    shareInterviewsOnly: { type: Boolean, default: false }
+    shareToken: { type: String, default: null }, // Legacy
+    shareInterviewsOnly: { type: Boolean, default: false }, // Legacy
+    shareLinks: [{
+      token: String,
+      name: String,
+      mode: { type: String, enum: ['full', 'summary'], default: 'full' },
+      createdAt: { type: Date, default: Date.now }
+    }],
+    recruiterLinks: [{
+      token: String,
+      startDate: Date,
+      endDate: Date,
+      duration: Number,
+      createdAt: { type: Date, default: Date.now }
+    }],
+    dailyDigestEnabled: { type: Boolean, default: false },
+    dailyDigestTime: { type: String, default: '08:00' },
+    suppressIndividualReminders: { type: Boolean, default: false }
+  },
+  benchmarkOptIn: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

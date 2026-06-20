@@ -14,6 +14,10 @@ const getBenchmarks = async (req, res) => {
       return res.status(400).json({ message: 'Graduation year required for benchmarking' });
     }
 
+    if (!user.benchmarkOptIn) {
+      return res.status(403).json({ message: 'You must opt-in to benchmarking to view cohort data.' });
+    }
+
     // Get today's date and set to 00:00:00 to match cron job
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -24,6 +28,10 @@ const getBenchmarks = async (req, res) => {
 
     if (!aggregatedStats) {
       return res.status(404).json({ message: 'No benchmarking data available yet for your cohort' });
+    }
+
+    if (aggregatedStats.totalUsersSampled < 20) {
+      return res.status(403).json({ message: 'Not enough data yet. Benchmarking requires a minimum of 20 participating students in your cohort to protect privacy.' });
     }
 
     // Calculate user's current stats

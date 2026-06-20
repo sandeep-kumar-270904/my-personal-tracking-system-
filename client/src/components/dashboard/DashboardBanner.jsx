@@ -60,13 +60,22 @@ const DashboardBanner = ({ user, stats, upcoming }) => {
       </div>
       
       {daysRemaining !== null && (
-        <div className="text-right hidden sm:block">
-          <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-            {daysRemaining}
+        <div className="text-right hidden sm:flex flex-col items-end gap-2">
+          <div>
+            <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+              {daysRemaining}
+            </div>
+            <div className="text-xs uppercase tracking-widest text-slate-400 mt-1 font-bold">
+              Days to Placement Season
+            </div>
           </div>
-          <div className="text-xs uppercase tracking-widest text-slate-400 mt-1 font-bold">
-            Days to Placement Season
-          </div>
+          <button
+            onClick={onShowDigest}
+            className="px-4 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            View Daily Digest
+          </button>
         </div>
       )}
     </motion.div>

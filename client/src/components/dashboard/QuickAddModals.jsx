@@ -75,21 +75,73 @@ export const QuickAddModals = ({ activeModal, onClose }) => {
     }
   };
 
+  const { data: allEvents } = useQuery({ 
+    queryKey: ['events'], 
+    queryFn: async () => {
+      const res = await api.get('/events');
+      return res.data;
+    }
+  });
+
   // Add Interview Form
-  const [intData, setIntData] = useState({ company: '', role: '', round: '', date: new Date().toISOString().slice(0,16) });
+  const [intData, setIntData] = useState({ 
+    title: '', date: new Date().toISOString().split('T')[0], start_time: '10:00', duration: 60, location: '', reminder_minutes_before: 15
+  });
+  const [autofilled, setAutofilled] = useState(false);
+
+  useEffect(() => {
+    if (!allEvents) return;
+    if (intData.title.length > 2) {
+      const companyWord = intData.title.split(' ')[0].toLowerCase();
+      const pastEvents = allEvents.filter(e => e.type === 'interview' && e.title.toLowerCase().includes(companyWord));
+      
+      if (pastEvents.length > 0 && !autofilled) {
+        const latest = pastEvents.sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+        let duration = 60;
+        if (latest.end_time && latest.start_time) {
+          const startM = parseInt(latest.start_time.split(':')[0]) * 60 + parseInt(latest.start_time.split(':')[1]);
+          const endM = parseInt(latest.end_time.split(':')[0]) * 60 + parseInt(latest.end_time.split(':')[1]);
+          duration = endM - startM;
+        }
+        
+        setIntData(prev => ({
+          ...prev,
+          duration: duration > 0 ? duration : 60,
+          location: latest.location || '',
+          reminder_minutes_before: latest.reminder_minutes_before ?? 15
+        }));
+        setAutofilled(true);
+      }
+    } else {
+      setAutofilled(false);
+    }
+  }, [intData.title, allEvents, autofilled]);
+
   const submitInt = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Need an applicationId ideally, but for quick add we can create a generic interview or handle if API requires app ID.
-      // Assuming API allows creating standalone interviews or we need to fetch apps. 
-      // If API requires app ID, we'd need a dropdown. Let's assume the user can just type company and we figure it out or it's allowed.
-      // *Wait, schema requires applicationId. Let's add a simple fetch for apps.*
-      toast.error("Please use the Applications page to schedule an interview for a specific application for now.");
-      setLoading(false);
-      onClose();
+      const [sh, sm] = intData.start_time.split(':').map(Number);
+      const endMinutes = sh * 60 + sm + Number(intData.duration);
+      const eh = Math.floor(endMinutes / 60) % 24;
+      const em = endMinutes % 60;
+      const end_time = `${String(eh).padStart(2,'0')}:${String(em).padStart(2,'0')}`;
+
+      await api.post('/events', {
+        title: intData.title,
+        date: intData.date,
+        start_time: intData.start_time,
+        end_time,
+        location: intData.location,
+        reminder_minutes_before: Number(intData.reminder_minutes_before),
+        type: 'interview',
+        source: 'manual'
+      });
+      invalidateAndClose('Interview event added');
+      setIntData({ title: '', date: new Date().toISOString().split('T')[0], start_time: '10:00', duration: 60, location: '', reminder_minutes_before: 15 });
+      setAutofilled(false);
     } catch (err) {
-      toast.error('Failed to add interview');
+      toast.error('Failed to add interview event');
       setLoading(false);
     }
   };
@@ -166,6 +218,53 @@ export const QuickAddModals = ({ activeModal, onClose }) => {
           </div>
           <button disabled={loading} type="submit" className="w-full bg-[#ff6b00] hover:bg-[#EA6C0A] text-white py-2.5 rounded-lg font-medium transition-colors mt-2">
             {loading ? 'Logging...' : 'Log Problem'}
+          </button>
+        </form>
+      </ModalWrapper>
+
+      <ModalWrapper isOpen={activeModal === 'ADD_INTERVIEW'} onClose={onClose} title="Quick Add Interview Event">
+        <form onSubmit={submitInt} className="space-y-4">
+          {autofilled && (
+            <div className="bg-[#00f0ff]/10 border border-[#00f0ff]/20 p-2.5 rounded-lg text-xs text-[#00f0ff] font-medium flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00f0ff] animate-pulse"></span>
+              Autofilled defaults based on your history
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Title</label>
+            <input required type="text" placeholder="e.g. Google First Round" value={intData.title} onChange={e => setIntData({...intData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ff6b00]" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Date</label>
+              <input required type="date" value={intData.date} onChange={e => setIntData({...intData, date: e.target.value})} className="w-full bg-[#1a1b26] border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ff6b00] [color-scheme:dark]" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Start Time</label>
+              <input required type="time" value={intData.start_time} onChange={e => setIntData({...intData, start_time: e.target.value})} className="w-full bg-[#1a1b26] border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ff6b00] [color-scheme:dark]" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Duration (mins)</label>
+              <input required type="number" min="15" step="15" value={intData.duration} onChange={e => setIntData({...intData, duration: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ff6b00]" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Reminder</label>
+              <select value={intData.reminder_minutes_before} onChange={e => setIntData({...intData, reminder_minutes_before: e.target.value})} className="w-full bg-[#1a1b26] border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ff6b00]">
+                <option value="0">None</option>
+                <option value="15">15 minutes before</option>
+                <option value="60">1 hour before</option>
+                <option value="1440">1 day before</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Location</label>
+            <input type="text" placeholder="e.g. Zoom link or address" value={intData.location} onChange={e => setIntData({...intData, location: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ff6b00]" />
+          </div>
+          <button disabled={loading} type="submit" className="w-full bg-[#ff6b00] hover:bg-[#EA6C0A] text-white py-2.5 rounded-lg font-medium transition-colors mt-2">
+            {loading ? 'Adding...' : 'Add Interview'}
           </button>
         </form>
       </ModalWrapper>

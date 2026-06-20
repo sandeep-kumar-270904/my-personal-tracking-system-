@@ -9,7 +9,8 @@ const {
   getDashboardCharts,
   getAIInsights,
   getReadinessScore,
-  completeOnboarding
+  completeOnboarding,
+  getSeasonSummary
 } = require('../controllers/dashboardController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -19,6 +20,7 @@ router.route('/activity-feed').get(protect, getDashboardActivityFeed);
 router.route('/upcoming').get(protect, getDashboardUpcoming);
 router.route('/heatmap').get(protect, getDashboardHeatmap);
 router.route('/charts').get(protect, getDashboardCharts);
+router.route('/season-summary').get(protect, getSeasonSummary);
 router.route('/ai-insights').get(protect, getAIInsights);
 router.route('/readiness-score').get(protect, getReadinessScore);
 router.route('/onboard').post(protect, completeOnboarding);
