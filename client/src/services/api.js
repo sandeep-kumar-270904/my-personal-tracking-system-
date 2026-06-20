@@ -44,10 +44,12 @@ api.interceptors.response.use(
       try {
         if (response.config.url === '/applications') {
           await db.applications.clear();
-          await db.applications.bulkAdd(response.data);
+          const appsData = Array.isArray(response.data) ? response.data : (response.data.applications || []);
+          if (appsData.length > 0) await db.applications.bulkAdd(appsData);
         } else if (response.config.url === '/interviews') {
           await db.interviews.clear();
-          await db.interviews.bulkAdd(response.data);
+          const intsData = Array.isArray(response.data) ? response.data : (response.data.interviews || []);
+          if (intsData.length > 0) await db.interviews.bulkAdd(intsData);
         }
         // Could add more endpoints to cache
       } catch (e) {

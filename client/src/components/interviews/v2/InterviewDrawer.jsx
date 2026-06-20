@@ -262,7 +262,7 @@ function PrepTab({ details, interview }) {
       {interview.roundType === 'SYSTEM_DESIGN' && (
         <div className="bg-indigo-900/10 border border-indigo-500/30 p-5 rounded-xl">
           <h4 className="font-bold text-indigo-400 mb-2 flex items-center"><Brain className="w-5 h-5 mr-2" /> System Design Prep</h4>
-          <p className="text-sm text-gray-300 mb-4">Recommended Framework: Clarify -> Capacity -> High Level -> Deep Dive</p>
+          <p className="text-sm text-gray-300 mb-4">Recommended Framework: Clarify -&gt; Capacity -&gt; High Level -&gt; Deep Dive</p>
           <button onClick={() => setShowCanvas(true)} className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">
             Practice on Canvas
           </button>

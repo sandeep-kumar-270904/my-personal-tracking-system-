@@ -58,6 +58,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/networking', require('./routes/networkingRoutes'));
 app.use('/api/prephub', require('./routes/prepHubRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/data', exportRoutes);

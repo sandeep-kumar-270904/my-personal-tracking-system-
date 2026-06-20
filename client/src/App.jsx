@@ -33,6 +33,7 @@ import SettingsPage from './pages/SettingsPage';
 import PublicProfile from './pages/PublicProfile';
 import ReviewPage from './pages/ReviewPage';
 import JourneyPage from './pages/JourneyPage';
+import TrainingHub from './pages/TrainingHub';
 
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -80,6 +81,7 @@ function App() {
             <Route path="interviews" element={<InterviewsV2Page />} />
             <Route path="interviews/stories" element={<BehavioralStoryBank />} />
             <Route path="interviews/command-center" element={<InterviewCommandCenter />} />
+            <Route path="interviews/training" element={<TrainingHub />} />
             <Route path="interviews/:id/live-notes" element={<LiveNotesWidget />} />
             <Route path="network" element={<NetworkPage />} />
             <Route path="calendar" element={<CalendarPage />} />

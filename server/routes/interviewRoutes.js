@@ -127,7 +127,7 @@ router.get('/application-context/:applicationId', getApplicationContext);
 
 const {
   evalOpeningRitual, evalTalkWhileCoding, evalStuckRecovery,
-  getQuestionBank, addQuestionToBank, logSkillCalibration, updateSkillCalibration,
+  getQuestionBank: getV5QuestionBank, addQuestionToBank, logSkillCalibration, updateSkillCalibration,
   evalFollowUpDepth, logTimeAllocation, evalStoryNaturalness,
   startColdSimulation, answerColdSimulation, evalWrongAnswerRecovery,
   getSignalVocabulary, evalDetailCalibration, getPreInterviewProtocol, generatePreInterviewProtocol,
@@ -138,11 +138,11 @@ const {
 router.post('/v4/intelligence-loop/:id', intelligenceLoop);
 router.post('/:id/networking-context', getNetworkingContext);
 
-// V5 Addons: Training Hub routes
+// V5: Training Mechanics Routes
 router.post('/training/opening-ritual', evalOpeningRitual);
 router.post('/training/talk-while-coding', evalTalkWhileCoding);
 router.post('/training/stuck-recovery', evalStuckRecovery);
-router.route('/training/question-bank').get(getQuestionBank).post(addQuestionToBank);
+router.route('/training/question-bank').get(getV5QuestionBank).post(addQuestionToBank);
 router.post('/training/skill-calibration', logSkillCalibration);
 router.patch('/training/skill-calibration/:interviewId', updateSkillCalibration);
 router.post('/training/follow-up-depth', evalFollowUpDepth);

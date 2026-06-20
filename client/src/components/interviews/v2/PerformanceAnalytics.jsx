@@ -35,7 +35,7 @@ export default function PerformanceAnalytics({ stats }) {
         <div className="bg-gray-950 p-5 rounded-xl border border-gray-800">
           <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Performance Trajectory</h4>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <LineChart data={timeSeriesData}>
                 <XAxis dataKey="name" stroke="#4b5563" fontSize={12} />
                 <YAxis domain={[0, 10]} stroke="#4b5563" fontSize={12} />
@@ -50,7 +50,7 @@ export default function PerformanceAnalytics({ stats }) {
         <div className="bg-gray-950 p-5 rounded-xl border border-gray-800">
           <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Stress vs Performance</h4>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <ScatterChart>
                 <XAxis type="number" dataKey="stress" name="Stress" domain={[0, 10]} stroke="#4b5563" fontSize={12} />
                 <YAxis type="number" dataKey="performance" name="Performance" domain={[0, 10]} stroke="#4b5563" fontSize={12} />
@@ -65,7 +65,7 @@ export default function PerformanceAnalytics({ stats }) {
         <div className="bg-gray-950 p-5 rounded-xl border border-gray-800 lg:col-span-2">
           <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Round Type Distribution</h4>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <BarChart data={roundData}>
                 <XAxis dataKey="name" stroke="#4b5563" fontSize={12} />
                 <YAxis stroke="#4b5563" fontSize={12} />

@@ -1,10 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Target, Mic, FileQuestion, BookOpen, Brain, Clock, Camera, FileText, Zap, Crosshair, Users, AlignLeft, ShieldAlert, Award } from 'lucide-react';
+import { Target, Mic, FileQuestion, BookOpen, Brain, Clock, Camera, FileText, Zap, Crosshair, Users, AlignLeft, ShieldAlert, Award, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+import OpeningRitualTrainer from '../components/interviews/v5/OpeningRitualTrainer';
+import TalkWhileCodingTrainer from '../components/interviews/v5/TalkWhileCodingTrainer';
+import StuckRecoveryTrainer from '../components/interviews/v5/StuckRecoveryTrainer';
+import QuestionBankBuilder from '../components/interviews/v5/QuestionBankBuilder';
+import FollowUpDepthTrainer from '../components/interviews/v5/FollowUpDepthTrainer';
+import StoryNaturalnessTrainer from '../components/interviews/v5/StoryNaturalnessTrainer';
+import ColdInterviewerSimulator from '../components/interviews/v5/ColdInterviewerSimulator';
+import DetailCalibrationTrainer from '../components/interviews/v5/DetailCalibrationTrainer';
+import SkillCalibrationCoach from '../components/interviews/v5/SkillCalibrationCoach';
+import TimeAllocationCoach from '../components/interviews/v5/TimeAllocationCoach';
+import MemoryCaptureSystem from '../components/interviews/v5/MemoryCaptureSystem';
+import WrongAnswerRecoveryTrainer from '../components/interviews/v5/WrongAnswerRecoveryTrainer';
+import SignalReaderTrainer from '../components/interviews/v5/SignalReaderTrainer';
+import HumanPresenceTrainer from '../components/interviews/v5/HumanPresenceTrainer';
+import PreInterviewProtocolViewer from '../components/interviews/v5/PreInterviewProtocolViewer';
 
 export default function TrainingHub() {
   const [dashboard, setDashboard] = useState(null);
+  const [activeModule, setActiveModule] = useState(null);
 
   useEffect(() => {
     axios.get('/api/interviews/training/performance-dashboard')
@@ -17,20 +34,52 @@ export default function TrainingHub() {
     { id: 'talk-coding', title: 'Talk While Coding', icon: <AlignLeft />, pain: 'Learn to narrate your thought process', desc: 'Code with live silence detection.' },
     { id: 'stuck', title: 'Stuck Recovery', icon: <ShieldAlert />, pain: 'Know exactly what to say when blanking', desc: 'Practice professional pivots.' },
     { id: 'question-bank', title: 'Question Bank', icon: <FileQuestion />, pain: 'Ask questions that make them remember you', desc: 'Build and categorize your end-of-interview questions.' },
-    { id: 'skill-cal', title: 'Skill Calibration', icon: <Target />, pain: 'Fix over/under confidence gaps', desc: 'Align your claimed skills with your actual depth.' },
     { id: 'follow-up', title: 'Follow-Up Depth', icon: <Brain />, pain: 'Survive the 3rd layer of questioning', desc: 'Endurance training for deep-dive follow-ups.' },
-    { id: 'time', title: 'Time Allocation', icon: <Clock />, pain: 'Stop running out of time during coding', desc: 'Train your internal phase clock.' },
     { id: 'story', title: 'Story Naturalness', icon: <BookOpen />, pain: 'Sound human, not rehearsed', desc: 'Deliver behavioral stories without sounding robotic.' },
     { id: 'cold', title: 'Cold Interviewer', icon: <Zap />, pain: 'Perform without validation', desc: 'Simulate a session with zero positive feedback.' },
+    { id: 'detail', title: 'Detail Calibration', icon: <FileText />, pain: 'Stop rambling or being too brief', desc: 'Learn to budget your answer length.' },
+    { id: 'skill-cal', title: 'Skill Calibration', icon: <Target />, pain: 'Fix over/under confidence gaps', desc: 'Align your claimed skills with your actual depth.' },
+    { id: 'time', title: 'Time Allocation', icon: <Clock />, pain: 'Stop running out of time during coding', desc: 'Train your internal phase clock.' },
     { id: 'memory', title: 'Memory Capture', icon: <Camera />, pain: 'Stop forgetting the interview 5 mins later', desc: 'Instant post-interview debrief questions.' },
     { id: 'wrong', title: 'Wrong Answer Recovery', icon: <Crosshair />, pain: 'Bounce back from a bad approach', desc: 'Practice receiving correction gracefully.' },
     { id: 'signal', title: 'Signal Reader', icon: <Users />, pain: 'Read the room', desc: 'Learn to decode subtle interviewer cues.' },
     { id: 'video', title: 'Human Presence', icon: <Camera />, pain: 'Master the video interview', desc: 'Train eye contact and composure on camera.' },
-    { id: 'detail', title: 'Detail Calibration', icon: <FileText />, pain: 'Stop rambling or being too brief', desc: 'Learn to budget your answer length.' },
     { id: 'protocol', title: 'Pre-Interview Protocol', icon: <Award />, pain: 'Optimize the 24 hours before', desc: 'Your data-backed ritual for peak performance.' }
   ];
 
   if (!dashboard) return <div className="p-8 text-white">Loading Training Hub...</div>;
+
+  const renderActiveModule = () => {
+    switch (activeModule) {
+      case 'ritual': return <OpeningRitualTrainer />;
+      case 'talk-coding': return <TalkWhileCodingTrainer />;
+      case 'stuck': return <StuckRecoveryTrainer />;
+      case 'question-bank': return <QuestionBankBuilder />;
+      case 'follow-up': return <FollowUpDepthTrainer />;
+      case 'story': return <StoryNaturalnessTrainer />;
+      case 'cold': return <ColdInterviewerSimulator />;
+      case 'detail': return <DetailCalibrationTrainer />;
+      case 'skill-cal': return <SkillCalibrationCoach />;
+      case 'time': return <TimeAllocationCoach />;
+      case 'memory': return <MemoryCaptureSystem />;
+      case 'wrong': return <WrongAnswerRecoveryTrainer />;
+      case 'signal': return <SignalReaderTrainer />;
+      case 'video': return <HumanPresenceTrainer />;
+      case 'protocol': return <PreInterviewProtocolViewer />;
+      default: return <div className="text-white p-8">Module under construction.</div>;
+    }
+  };
+
+  if (activeModule) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto space-y-6">
+        <button onClick={() => setActiveModule(null)} className="flex items-center text-gray-400 hover:text-white font-bold transition-colors">
+          <ArrowLeft className="w-5 h-5 mr-2" /> Back to Training Hub
+        </button>
+        {renderActiveModule()}
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -75,7 +124,11 @@ export default function TrainingHub() {
         <h2 className="text-xl font-bold text-white mb-4">Training Modules</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {trainers.map(trainer => (
-            <div key={trainer.id} className="bg-gray-900 border border-gray-800 hover:border-indigo-500 transition-colors p-5 rounded-xl flex flex-col h-full cursor-pointer group relative overflow-hidden">
+            <div 
+              key={trainer.id} 
+              onClick={() => !trainer.pending && setActiveModule(trainer.id)}
+              className={`bg-gray-900 border border-gray-800 transition-colors p-5 rounded-xl flex flex-col h-full relative overflow-hidden ${trainer.pending ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-500 cursor-pointer group'}`}
+            >
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 {React.cloneElement(trainer.icon, { className: 'w-24 h-24 text-white' })}
               </div>
@@ -89,7 +142,9 @@ export default function TrainingHub() {
               <p className="text-sm text-gray-400 flex-grow relative z-10">{trainer.desc}</p>
               <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center relative z-10">
                 <span className="text-xs text-gray-500">0 sessions</span>
-                <span className="text-sm text-indigo-400 font-bold group-hover:text-indigo-300">Start Session &rarr;</span>
+                <span className={`text-sm font-bold ${trainer.pending ? 'text-gray-500' : 'text-indigo-400 group-hover:text-indigo-300'}`}>
+                  {trainer.pending ? 'Coming Soon' : 'Start Session \u2192'}
+                </span>
               </div>
             </div>
           ))}

@@ -54,7 +54,34 @@ const networkSchema = new mongoose.Schema({
   linkedApplication: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Application'
-  }
+  },
+  firstName: { type: String },
+  lastName: { type: String },
+  previousCompanies: [{ type: String }],
+  college: { type: String },
+  graduationYear: { type: Number },
+  yearsOfExperience: { type: Number },
+  email: { type: String },
+  phone: { type: String },
+  twitterHandle: { type: String },
+  githubUrl: { type: String },
+  connectionStrength: { type: String, enum: ['WEAK', 'MODERATE', 'STRONG', 'CLOSE'], default: 'WEAK' },
+  contactType: { type: String, enum: ['ALUMNI', 'SENIOR_STUDENT', 'RECRUITER', 'HIRING_MANAGER', 'ENGINEER', 'FOUNDER', 'MENTOR', 'PEER'], default: 'ENGINEER' },
+  howMet: { type: String },
+  sharedInterests: [{ type: String }],
+  mutualConnections: { type: Number, default: 0 },
+  lastInteractionAt: { type: Date },
+  nextFollowUpAt: { type: Date },
+  relationshipHealthScore: { type: Number, default: 0 },
+  isReferralSource: { type: Boolean, default: false },
+  referralStatus: { type: String, enum: ['NOT_ASKED', 'ASKED', 'AGREED', 'SUBMITTED', 'DECLINED'], default: 'NOT_ASKED' },
+  interviewInsightsShared: { type: String },
+  companyInsightsShared: { type: String },
+  isPublic: { type: Boolean, default: false },
+  isMentor: { type: Boolean, default: false },
+  tags: [{ type: String }],
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date }
 }, { timestamps: true });
 
 networkSchema.plugin(timelinePlugin);

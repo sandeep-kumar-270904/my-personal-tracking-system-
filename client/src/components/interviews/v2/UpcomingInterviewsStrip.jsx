@@ -11,7 +11,7 @@ export default function UpcomingInterviewsStrip({ upcoming, onCardClick }) {
       .catch(console.error);
   }, []);
 
-  if (!upcoming || upcoming.length === 0) return null;
+  if (!upcoming || !Array.isArray(upcoming) || upcoming.length === 0) return null;
 
   const getUrgencyClass = (dateString) => {
     const days = (new Date(dateString) - new Date()) / (1000 * 60 * 60 * 24);

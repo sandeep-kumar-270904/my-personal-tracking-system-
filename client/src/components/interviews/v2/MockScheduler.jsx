@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Target, Brain, Users, Calendar, Clock, Video, Building, Monitor, Phone, FileText } from 'lucide-react';
-import SimulationEnvironment from './v3/SimulationEnvironment';
+import SimulationEnvironment from '../v3/SimulationEnvironment';
 
 export default function MockScheduler({ onClose, onStartAIMock }) {
   const [loading, setLoading] = useState(false);

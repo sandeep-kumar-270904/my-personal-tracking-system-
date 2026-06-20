@@ -3,7 +3,7 @@ import { X, Zap, TrendingUp, AlertTriangle, Flag, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function InsightsPanel({ insights, onDismiss }) {
-  if (!insights || insights.length === 0) {
+  if (!insights || !Array.isArray(insights) || insights.length === 0) {
     return (
       <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6 text-center text-gray-500 h-full">
         <Target className="w-10 h-10 mx-auto mb-3 opacity-20" />

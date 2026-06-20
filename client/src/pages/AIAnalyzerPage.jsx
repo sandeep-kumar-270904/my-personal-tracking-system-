@@ -58,7 +58,7 @@ const AIAnalyzerPage = () => {
     queryKey: ['applications'],
     queryFn: async () => {
       const res = await api.get('/applications');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (res.data.applications || []);
     }
   });
 
