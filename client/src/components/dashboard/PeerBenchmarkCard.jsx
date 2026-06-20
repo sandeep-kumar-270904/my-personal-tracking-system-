@@ -11,7 +11,8 @@ const PeerBenchmarkCard = ({ user }) => {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['benchmarks'],
     queryFn: fetchBenchmarks,
-    retry: 1
+    retry: 1,
+    enabled: !!user?.gradYear && !!user?.benchmarkOptIn
   });
 
   if (!user?.gradYear) {

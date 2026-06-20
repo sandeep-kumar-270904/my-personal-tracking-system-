@@ -42,6 +42,12 @@ startCronJobs();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Needed for Twilio Webhooks
+
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.url}`);
+  next();
+});
 
 // Serve static files from uploads
 const path = require('path');

@@ -28,6 +28,7 @@ import ShortcutHintCard from '../components/dashboard/ShortcutHintCard';
 import DashboardCoverageAlerts from '../components/dashboard/DashboardCoverageAlerts';
 import DashboardNetworkRecommendations from '../components/dashboard/DashboardNetworkRecommendations';
 import PinnedGoalsWidget from '../components/dashboard/PinnedGoalsWidget';
+import WhatsAppConnectWidget from '../components/dashboard/WhatsAppConnectWidget';
 
 
 // Hooks
@@ -212,6 +213,7 @@ const DashboardPage = () => {
 
         {/* Right Sidebar Column */}
         <div className="lg:col-span-1 relative flex flex-col gap-6">
+          <WhatsAppConnectWidget />
           <SeasonSummaryCard />
           <PeerBenchmarkCard user={user} />
           <ActivityFeed feed={data.feed} isCompact={isCompact} />

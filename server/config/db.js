@@ -7,10 +7,10 @@ const connectDB = async () => {
     
     try {
       // First try to connect to the provided URI (e.g., local mongodb or Atlas)
-      const conn = await mongoose.connect(uri, { serverSelectionTimeoutMS: 2000 });
+      const conn = await mongoose.connect(uri, { serverSelectionTimeoutMS: 30000 });
       console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (err) {
-      console.log('Failed to connect to primary MongoDB. Starting in-memory fallback for preview...');
+      console.log(`Failed to connect to primary MongoDB: ${err.message}. Starting in-memory fallback for preview...`);
       // Fallback to in-memory server
       const mongod = await MongoMemoryServer.create();
       uri = mongod.getUri();

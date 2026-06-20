@@ -71,46 +71,50 @@ const DashboardCharts = ({ charts, heatmap, roi, isCompact = false }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       {/* Applications Growth */}
-      <div className={`glass-card p-6 rounded-2xl border border-white/5 ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 flex flex-col ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
         <h3 className="text-lg font-bold text-white mb-6">Applications (Last 30 Days)</h3>
         {charts?.applicationsLast30Days && charts.applicationsLast30Days.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={charts.applicationsLast30Days}>
-              <defs>
-                <linearGradient id="colorApp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ff6b00" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#ff6b00" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-              <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
-              <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
-              <Area type="monotone" dataKey="count" stroke="#ff6b00" strokeWidth={3} fillOpacity={1} fill="url(#colorApp)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="flex-1 w-full min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={charts.applicationsLast30Days}>
+                <defs>
+                  <linearGradient id="colorApp" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ff6b00" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ff6b00" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
+                <Area type="monotone" dataKey="count" stroke="#ff6b00" strokeWidth={3} fillOpacity={1} fill="url(#colorApp)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex h-full items-center justify-center"><p className="text-slate-500">No data</p></div>
+          <div className="flex-1 h-full flex items-center justify-center"><p className="text-slate-500">No data</p></div>
         )}
       </div>
 
       {/* Pipeline Status */}
-      <div className={`glass-card p-6 rounded-2xl border border-white/5 ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 flex flex-col ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
         <h3 className="text-lg font-bold text-white mb-6">Pipeline Breakdown</h3>
         {pipelineData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={pipelineData} cx="50%" cy="45%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
-                {pipelineData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
-              <Legend verticalAlign="bottom" height={36} iconType="circle" />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex-1 w-full min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pipelineData} cx="50%" cy="45%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
+                  {pipelineData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex h-full items-center justify-center"><p className="text-slate-500">No applications</p></div>
+          <div className="flex-1 h-full flex items-center justify-center"><p className="text-slate-500">No applications</p></div>
         )}
       </div>
 
@@ -133,50 +137,54 @@ const DashboardCharts = ({ charts, heatmap, roi, isCompact = false }) => {
       </div>
 
       {/* DSA Difficulty */}
-      <div className={`glass-card p-6 rounded-2xl border border-white/5 ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 flex flex-col ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
         <h3 className="text-lg font-bold text-white mb-6">DSA Difficulty</h3>
         {dsaDifficultyData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dsaDifficultyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-              <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-              <Tooltip cursor={{ fill: '#334155', opacity: 0.4 }} contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
-              <Bar dataKey="count" name="Problems Solved" fill="#8b5cf6" radius={[6, 6, 0, 0]}>
-                {dsaDifficultyData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.name === 'Easy' ? '#10b981' : entry.name === 'Medium' ? '#f59e0b' : '#ef4444'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="flex-1 w-full min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dsaDifficultyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: '#334155', opacity: 0.4 }} contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }} />
+                <Bar dataKey="count" name="Problems Solved" fill="#8b5cf6" radius={[6, 6, 0, 0]}>
+                  {dsaDifficultyData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.name === 'Easy' ? '#10b981' : entry.name === 'Medium' ? '#f59e0b' : '#ef4444'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex h-full items-center justify-center"><p className="text-slate-500">No DSA problems solved</p></div>
+          <div className="flex-1 h-full flex items-center justify-center"><p className="text-slate-500">No DSA problems solved</p></div>
         )}
       </div>
 
       {/* Application ROI by Source */}
-      <div className={`glass-card p-6 rounded-2xl border border-white/5 ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
+      <div className={`glass-card p-6 rounded-2xl border border-white/5 flex flex-col ${isCompact ? 'h-[280px]' : 'h-[350px]'}`}>
         <h3 className="text-lg font-bold text-white mb-6">Application ROI by Source</h3>
         {roi && roi.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={roi} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
-              <XAxis type="number" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}%`} />
-              <YAxis dataKey="source" type="category" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} width={80} />
-              <Tooltip 
-                cursor={{ fill: '#334155', opacity: 0.4 }} 
-                contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }}
-                formatter={(value, name) => [name === 'roiPercent' ? `${value}%` : value, name === 'roiPercent' ? 'ROI (Interview Rate)' : name]}
-              />
-              <Bar dataKey="roiPercent" name="ROI (Interview Rate)" fill="#10b981" radius={[0, 4, 4, 0]}>
-                {roi.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="flex-1 w-full min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={roi} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                <XAxis type="number" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}%`} />
+                <YAxis dataKey="source" type="category" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} width={80} />
+                <Tooltip 
+                  cursor={{ fill: '#334155', opacity: 0.4 }} 
+                  contentStyle={{ backgroundColor: '#13141f', borderColor: '#334155', borderRadius: '0.75rem', color: '#fff' }}
+                  formatter={(value, name) => [name === 'roiPercent' ? `${value}%` : value, name === 'roiPercent' ? 'ROI (Interview Rate)' : name]}
+                />
+                <Bar dataKey="roiPercent" name="ROI (Interview Rate)" fill="#10b981" radius={[0, 4, 4, 0]}>
+                  {roi.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex h-full items-center justify-center"><p className="text-slate-500">No ROI data</p></div>
+          <div className="flex-1 h-full flex items-center justify-center"><p className="text-slate-500">No ROI data</p></div>
         )}
       </div>
     </div>

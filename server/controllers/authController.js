@@ -84,6 +84,8 @@ const loginUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
+        role: user.role,
         college: user.college,
         branch: user.branch,
         gradYear: user.gradYear,
@@ -111,6 +113,8 @@ const getMe = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
+      role: user.role,
       college: user.college,
       branch: user.branch,
       gradYear: user.gradYear,
@@ -146,6 +150,7 @@ const updateUser = async (req, res) => {
     user.college = req.body.college || user.college;
     user.branch = req.body.branch || user.branch;
     user.gradYear = req.body.gradYear || user.gradYear;
+    if (req.body.phone !== undefined) user.phone = req.body.phone;
     if (req.body.username !== undefined) user.username = req.body.username;
     if (req.body.isPublicProfile !== undefined) user.isPublicProfile = req.body.isPublicProfile;
     if (req.body.benchmarkOptIn !== undefined) user.benchmarkOptIn = req.body.benchmarkOptIn;
@@ -162,6 +167,7 @@ const updateUser = async (req, res) => {
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
+      phone: updatedUser.phone,
       college: updatedUser.college,
       branch: updatedUser.branch,
       gradYear: updatedUser.gradYear,
@@ -174,6 +180,7 @@ const updateUser = async (req, res) => {
       token: generateToken(updatedUser._id),
     });
   } catch (error) {
+    console.error("Profile Update Error:", error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
         college: 'Preview Institute of Technology',
         branch: 'Computer Science',
         gradYear: '2025',
+        phone: '',
         username: 'demo_admin',
         googleCalendarSync: { connected: false },
         calendarSettings: {

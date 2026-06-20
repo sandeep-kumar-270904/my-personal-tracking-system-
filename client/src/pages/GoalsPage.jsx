@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Target, Edit2, Check, TrendingUp, Plus, Briefcase, Code, Users, Zap, Calendar, History, Undo, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -73,6 +73,7 @@ const GoalsPage = () => {
 
   const [dismissedStageMsg, setDismissedStageMsg] = useState(localStorage.getItem('dismissed_stage_msg'));
   const [dismissedPaceMsg, setDismissedPaceMsg] = useState(localStorage.getItem('dismissed_pace_msg'));
+  const [dismissedCapacityMsg, setDismissedCapacityMsg] = useState(localStorage.getItem('dismissed_capacity_msg'));
 
   if (isLoading) {
     return (
@@ -107,7 +108,6 @@ const GoalsPage = () => {
   const showStageSuggestion = userStage !== 'Pre-interview' && dismissedStageMsg !== userStage;
   const isPaceDismissedToday = dismissedPaceMsg === new Date().toISOString().split('T')[0];
 
-  const [dismissedCapacityMsg, setDismissedCapacityMsg] = useState(localStorage.getItem('dismissed_capacity_msg'));
   const handleDismissCapacity = () => {
     const today = new Date().toISOString().split('T')[0];
     localStorage.setItem('dismissed_capacity_msg', today);

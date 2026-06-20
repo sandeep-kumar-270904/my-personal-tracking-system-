@@ -146,7 +146,7 @@ const GoalCard = ({ goal, getIcon, onEdit, hasAcademicConflict }) => {
   const isSuggestionCoolingDown = dismissedSuggestion && (Date.now() - parseInt(dismissedSuggestion)) < 7 * 24 * 60 * 60 * 1000;
   const showSuggestion = suggestedValue && suggestedValue !== goal.target_value && !isSuggestionCoolingDown && goal.status === 'active';
 
-  const isBehindPace = goal.status === 'active' && 
+  const isHistoricallyBehindPace = goal.status === 'active' && 
                        goal.period === 'weekly' && 
                        insightsData?.recentPacing?.trend === 'behind' && 
                        insightsData?.recentPacing?.expectedPace > goal.currentProgress;

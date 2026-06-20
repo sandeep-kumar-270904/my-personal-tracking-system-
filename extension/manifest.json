@@ -23,8 +23,5 @@
       "matches": ["https://www.linkedin.com/jobs/*"],
       "js": ["content.js"]
     }
-  ],
-  "icons": {
-    "48": "icon.png"
-  }
+  ]
 }

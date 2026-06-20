@@ -16,11 +16,13 @@ exports.handleWhatsAppMessage = async (req, res) => {
     // 1. Identify User by Phone Number
     // Note: User model would need a `phone` field for this to work natively.
     // For now, we mock lookup or return error if user not found.
-    const user = await User.findOne({ phone: fromPhone.replace('whatsapp:', '') });
+    const cleanPhone = fromPhone.replace('whatsapp:', '');
+    const last10Digits = cleanPhone.slice(-10);
+    const user = await User.findOne({ phone: new RegExp(last10Digits + '$') });
     if (!user) {
-      // Return 200 so webhook doesn't retry, but send response to user
       console.log(`Unrecognized phone number: ${fromPhone}`);
-      return res.status(200).send('User not found. Please link your phone number in StudentTracker.');
+      res.set('Content-Type', 'text/xml');
+      return res.status(200).send('<Response><Message>User not found. Please link your phone number in StudentTracker.</Message></Response>');
     }
 
     let responseMessage = 'Command not understood. Try "applied to [Company]" or "interview done with [Company]".';
@@ -33,7 +35,7 @@ exports.handleWhatsAppMessage = async (req, res) => {
         userId: user._id,
         company: company,
         role: 'Unknown Role (WhatsApp)',
-        source: 'OTHER',
+        source: 'ONLINE',
         status: 'APPLIED',
         dateApplied: new Date()
       });
@@ -56,17 +58,82 @@ exports.handleWhatsAppMessage = async (req, res) => {
       // Triggers 'interviews' goal progress since outcome is completed
       await recordGoalProgress(user._id, 'interviews', 1, interview._id);
       responseMessage = `✅ Logged: Interview completed with ${company}. Goals updated!`;
+
+    } else if (messageBody.startsWith('clear ')) {
+      const company = messageBody.replace('clear ', '').trim();
+      const app = await Application.findOne({ 
+        userId: user._id, 
+        company: { $regex: new RegExp(`^${company}$`, 'i') } 
+      }).sort({ dateApplied: -1 });
+
+      if (app) {
+        await Application.findByIdAndDelete(app._id);
+        responseMessage = `🗑️ Deleted: Most recent application for ${company}.`;
+      } else {
+        responseMessage = `⚠️ Could not find any application for ${company} to delete.`;
+      }
+    } else if (messageBody.startsWith('update ') && messageBody.includes(' status to ')) {
+      const match = messageBody.match(/^update\s+(.+?)\s+status to\s+(.+)$/i);
+      if (match) {
+        const company = match[1].trim();
+        let newStatus = match[2].trim().toUpperCase().replace(/\s+/g, '_');
+        
+        if (newStatus === 'OFFERS' || newStatus === 'OFFERED') newStatus = 'OFFER';
+        if (newStatus === 'SHORTLIST') newStatus = 'SHORTLISTED';
+        if (newStatus === 'REJECT') newStatus = 'REJECTED';
+        if (newStatus === 'INTERVIEW') newStatus = 'INTERVIEW_SCHEDULED';
+
+        const validStatuses = ['APPLIED', 'OA_PENDING', 'OA_DONE', 'INTERVIEW_SCHEDULED', 'SHORTLISTED', 'REJECTED', 'OFFER'];
+        
+        if (!validStatuses.includes(newStatus)) {
+          responseMessage = `⚠️ Invalid status. Valid options: Applied, OA Pending, OA Done, Interview Scheduled, Shortlisted, Rejected, Offer.`;
+        } else {
+          const app = await Application.findOne({ 
+            userId: user._id, 
+            company: { $regex: new RegExp(`^${company}$`, 'i') } 
+          }).sort({ dateApplied: -1 });
+
+          if (app) {
+            app.status = newStatus;
+            await app.save();
+            responseMessage = `✅ Updated: ${company} application status changed to ${newStatus}.`;
+          } else {
+            responseMessage = `⚠️ Could not find any application for ${company} to update.`;
+          }
+        }
+      }
     }
 
     // 3. Send Response via Provider (Twilio Example)
-    // const twilioClient = require('twilio')(process.env.TWILIO_SID, process.env.TWILIO_AUTH);
-    // await twilioClient.messages.create({ body: responseMessage, from: req.body.To, to: fromPhone });
+    // Send a TwiML response back to Twilio so it texts the user
+    const twimlResponse = `
+      <Response>
+        <Message>${responseMessage}</Message>
+      </Response>
+    `;
 
-    // In a Meta WhatsApp API setup, you'd use Axios to hit graph.facebook.com
-
-    res.status(200).send('<Response></Response>'); // Twilio expects empty TwiML or 200 OK
+    res.set('Content-Type', 'text/xml');
+    res.status(200).send(twimlResponse.trim());
   } catch (error) {
     console.error('WhatsApp Bot Error:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    WhatsApp Status Callback
+// @route   POST /api/bot/whatsapp/status
+// @access  Public
+exports.handleWhatsAppStatus = async (req, res) => {
+  try {
+    const messageSid = req.body.MessageSid;
+    const messageStatus = req.body.MessageStatus;
+    
+    // We just log the delivery status. If we wanted to, we could update the DB.
+    console.log(`WhatsApp Message [${messageSid}] status changed to: ${messageStatus}`);
+    
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('WhatsApp Status Error:', error);
+    res.status(500).send('Error');
   }
 };

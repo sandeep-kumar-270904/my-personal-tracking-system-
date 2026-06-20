@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-const DashboardBanner = ({ user, stats, upcoming }) => {
+const DashboardBanner = ({ user, stats, upcoming, onShowDigest }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';

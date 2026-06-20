@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import { User, Bell, Shield, LogOut, Save, Download, Moon, Sun, Activity, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
@@ -17,6 +17,7 @@ const SettingsPage = () => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    phone: user?.phone || '',
     college: user?.college || '',
     branch: user?.branch || '',
     gradYear: user?.gradYear || '',
@@ -28,6 +29,7 @@ const SettingsPage = () => {
       setFormData({
         name: user.name || '',
         email: user.email || '',
+        phone: user.phone || '',
         college: user.college || '',
         branch: user.branch || '',
         gradYear: user.gradYear || '',
@@ -344,6 +346,10 @@ const SettingsPage = () => {
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
                     <input type="email" className="w-full bg-[#13141f]/50 border border-white/10 rounded-xl px-4 py-2.5 text-slate-400 cursor-not-allowed" value={formData.email} disabled />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">WhatsApp Phone Number</label>
+                    <input type="tel" className="w-full bg-[#13141f] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff]" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="e.g. +1234567890" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">College / University</label>
