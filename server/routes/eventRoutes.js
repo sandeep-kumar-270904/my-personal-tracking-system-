@@ -22,6 +22,9 @@ router.get('/:id/ics', require('../controllers/eventController').exportICS);
 router.put('/batch-update', require('../controllers/eventController').batchUpdateEvents);
 router.post('/batch-delete', require('../controllers/eventController').batchDeleteEvents);
 
+router.post('/archive-season', require('../controllers/eventController').archiveSeason);
+router.get('/shared-timing', require('../controllers/eventController').getSharedTimingVisibility);
+
 router.get('/:id/rounds', require('../controllers/eventController').getEventRounds);
 
 router.route('/:id')

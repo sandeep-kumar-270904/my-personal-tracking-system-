@@ -3,9 +3,9 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 const DashboardCharts = ({ charts, heatmap, roi, isCompact = false }) => {
   const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981', '#6366f1', '#14b8a6'];
 
-  // Format pipeline data for PieChart
+  // Format pipeline data for PieChart (v6: Effort-Framed Guardrail - exclude REJECTED)
   const pipelineData = charts?.pipelineBreakdown ? Object.entries(charts.pipelineBreakdown)
-    .filter(([_, value]) => value > 0)
+    .filter(([key, value]) => value > 0 && key !== 'REJECTED')
     .map(([key, value]) => ({ name: key.replace('_', ' '), value })) : [];
 
   // Format DSA difficulty for BarChart

@@ -71,27 +71,38 @@ exports.getGoalsOverview = async (req, res) => {
       });
     }
 
-    // Calculate streak across all goals
+    // Calculate streak across all goals using a Rolling Window definition
+    // "Active on at least 5 of the last 7 days"
     const allEntries = await GoalProgressEntry.find({ user_id: req.user.id }).sort({ logged_at: -1 });
     let streak = 0;
-    let prevDateStr = null;
-    let todayStr = new Date().toISOString().split('T')[0];
-    let yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-
-    // Simple consecutive day counter
+    
+    // Get unique days where the user was active
     const uniqueDays = [...new Set(allEntries.map(e => new Date(e.logged_at).toISOString().split('T')[0]))];
     
-    if (uniqueDays.includes(todayStr) || uniqueDays.includes(yesterdayStr)) {
+    if (uniqueDays.length > 0) {
       let checkDate = new Date();
-      if (!uniqueDays.includes(todayStr)) checkDate.setDate(checkDate.getDate() - 1);
-      
-      while (true) {
-        const dStr = checkDate.toISOString().split('T')[0];
-        if (uniqueDays.includes(dStr)) {
+      checkDate.setHours(0, 0, 0, 0);
+
+      const isConsistentOnDate = (d) => {
+        let activeCount = 0;
+        for (let i = 0; i < 7; i++) {
+          const windowDay = new Date(d);
+          windowDay.setDate(d.getDate() - i);
+          const dStr = windowDay.toISOString().split('T')[0];
+          if (uniqueDays.includes(dStr)) activeCount++;
+        }
+        return activeCount >= 5;
+      };
+
+      if (isConsistentOnDate(checkDate) || isConsistentOnDate(new Date(checkDate.getTime() - 86400000))) {
+        let currentDate = new Date(checkDate);
+        if (!isConsistentOnDate(currentDate)) {
+           currentDate.setDate(currentDate.getDate() - 1);
+        }
+        
+        while (isConsistentOnDate(currentDate)) {
           streak++;
-          checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-          break;
+          currentDate.setDate(currentDate.getDate() - 1);
         }
       }
     }
@@ -262,6 +273,7 @@ exports.addManualProgress = async (req, res) => {
       logged_at: date || new Date(),
       note
     });
+    await User.findByIdAndUpdate(req.user.id, { lastGoalActivityAt: new Date() });
     res.status(201).json(entry);
   } catch (error) {
     res.status(400).json({ message: error.message });

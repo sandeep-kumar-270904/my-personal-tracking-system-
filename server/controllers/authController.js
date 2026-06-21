@@ -150,7 +150,9 @@ const updateUser = async (req, res) => {
     user.college = req.body.college || user.college;
     user.branch = req.body.branch || user.branch;
     user.gradYear = req.body.gradYear || user.gradYear;
-    if (req.body.phone !== undefined) user.phone = req.body.phone;
+    if (req.body.phone !== undefined) {
+      user.phone = req.body.phone.replace(/[\s-()]/g, '');
+    }
     if (req.body.username !== undefined) user.username = req.body.username;
     if (req.body.isPublicProfile !== undefined) user.isPublicProfile = req.body.isPublicProfile;
     if (req.body.benchmarkOptIn !== undefined) user.benchmarkOptIn = req.body.benchmarkOptIn;

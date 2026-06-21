@@ -111,17 +111,23 @@ const OnboardingFlow = ({ stats, userName, onComplete, onActionClick }) => {
       animate={{ opacity: 1, scale: 1 }}
       className="max-w-2xl mx-auto mt-12"
     >
-      <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-white mb-3">Welcome, {userName}! 👋</h1>
-        <p className="text-slate-400">Let's get your workspace set up for placement season.</p>
-      </div>
-
       <div className="glass-card rounded-2xl border border-white/5 overflow-hidden">
         <div className="p-6 border-b border-white/5 bg-white/[0.02]">
           <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold text-white">Setup Progress</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Setup Progress</h2>
+              <p className="text-sm text-slate-400 mt-1">Let's get your workspace set up for placement season.</p>
+            </div>
+            <button 
+              onClick={() => {
+                api.post('/dashboard/onboard').then(() => onComplete());
+              }}
+              className="text-xs text-slate-400 hover:text-white underline underline-offset-2 transition-colors"
+            >
+              Skip Setup
+            </button>
           </div>
-          <div className="w-full bg-slate-800 rounded-full h-2">
+          <div className="w-full bg-slate-800 rounded-full h-2 mt-4">
             <motion.div 
               className="bg-[#ff6b00] h-2 rounded-full"
               initial={{ width: 0 }}

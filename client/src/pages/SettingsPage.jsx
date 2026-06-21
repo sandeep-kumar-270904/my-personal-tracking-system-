@@ -503,6 +503,30 @@ const SettingsPage = () => {
                 </label>
               </div>
 
+              {/* WhatsApp Nudges */}
+              <div className="flex items-center justify-between py-4 border-b border-white/5">
+                <div>
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-[#25D366]" /> WhatsApp Nudges
+                  </h3>
+                  <p className="text-sm text-slate-400 mt-1 max-w-sm">Receive immediate alerts for high-stakes moments like rescheduled drives.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={user?.notificationPreferences?.whatsappAlerts || false} 
+                    onChange={(e) => updateProfileMutation.mutate({ 
+                      notificationPreferences: { 
+                        ...user?.notificationPreferences, 
+                        whatsappAlerts: e.target.checked 
+                      } 
+                    })}
+                  />
+                  <div className="w-11 h-6 bg-[#13141f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00f0ff] border border-white/10"></div>
+                </label>
+              </div>
+
               {/* Display Timezone Dropdown */}
               <div className="flex items-center justify-between py-4 border-b border-white/5">
                 <div>

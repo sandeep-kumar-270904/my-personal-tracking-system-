@@ -2,110 +2,161 @@ const User = require('../models/User');
 const Application = require('../models/Application');
 const Interview = require('../models/Interview');
 const { recordGoalProgress } = require('../services/goalTrackingService');
+const { GoogleGenAI } = require('@google/genai');
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // @desc    WhatsApp Webhook (Twilio / Meta format)
 // @route   POST /api/bot/whatsapp
 // @access  Public (Uses standard webhook signature verification in production)
 exports.handleWhatsAppMessage = async (req, res) => {
   try {
-    // Basic extraction assuming Twilio format for simplicity. 
-    // In production with Meta API, shape would be req.body.entry[0].changes[0].value.messages[0]
     const fromPhone = req.body.From; 
-    const messageBody = (req.body.Body || '').trim().toLowerCase();
+    const messageBody = (req.body.Body || '').trim();
 
     // 1. Identify User by Phone Number
-    // Note: User model would need a `phone` field for this to work natively.
-    // For now, we mock lookup or return error if user not found.
     const cleanPhone = fromPhone.replace('whatsapp:', '');
     const last10Digits = cleanPhone.slice(-10);
+    console.log(`[BotController] Received from: ${fromPhone}, message: "${messageBody}"`);
+    
     const user = await User.findOne({ phone: new RegExp(last10Digits + '$') });
     if (!user) {
-      console.log(`Unrecognized phone number: ${fromPhone}`);
       res.set('Content-Type', 'text/xml');
-      return res.status(200).send('<Response><Message>User not found. Please link your phone number in StudentTracker.</Message></Response>');
+      return res.status(200).send('<Response><Message>User not found. Please link your phone number in StudentTracker settings.</Message></Response>');
     }
 
-    let responseMessage = 'Command not understood. Try "applied to [Company]" or "interview done with [Company]".';
+    let responseMessage = 'I am not sure how to handle that. Try asking to log an application, update a status, or list your interviews.';
 
-    // 2. Parse Commands
-    if (messageBody.startsWith('applied to ')) {
-      const company = messageBody.replace('applied to ', '').trim();
-      
-      const app = await Application.create({
-        userId: user._id,
-        company: company,
-        role: 'Unknown Role (WhatsApp)',
-        source: 'ONLINE',
-        status: 'APPLIED',
-        dateApplied: new Date()
+    // 2. LLM Intent Parsing
+    try {
+      const prompt = `You are a helpful assistant for a placement tracking platform called StudentTracker.
+User message: "${messageBody}"
+
+Determine the user's intent and extract relevant data.
+Return ONLY a raw JSON object (no markdown, no backticks).
+Valid intents:
+- "LOG_APPLICATION": if they applied to a company. Extract "company".
+- "LOG_INTERVIEW": if they completed or scheduled an interview. Extract "company".
+- "UPDATE_STATUS": if they are updating status (e.g. got an offer, rejected, screening done, round 1 done). Extract "company" and "newStatus".
+  *CRITICAL*: You MUST map their status to exactly one of these: APPLIED, OA_PENDING, OA_DONE, INTERVIEW_SCHEDULED, SHORTLISTED, REJECTED, OFFER. 
+  Example: "Round 1 done" -> SHORTLISTED. "Screening" -> INTERVIEW_SCHEDULED. "Got job" -> OFFER. "Failed" -> REJECTED.
+- "DELETE_APPLICATION": if they want to delete or clear an app. Extract "company".
+- "QUERY_INTERVIEWS": if they ask what interviews they have coming up.
+- "QUERY_ANALYTICS": if they ask for stats, like "how many interviews are pending", "how many jobs did I apply to", "show my stats".
+- "UNKNOWN": if you don't understand or it's a general question.
+
+Output format example:
+{"intent": "UPDATE_STATUS", "company": "Google", "newStatus": "OFFER"}
+`;
+
+      const aiResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
       });
 
-      await recordGoalProgress(user._id, 'applications', 1, app._id);
-      responseMessage = `✅ Logged: Application for ${company}. Goals updated!`;
+      const cleanText = aiResponse.text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleanText);
 
-    } else if (messageBody.startsWith('interview done with ')) {
-      const company = messageBody.replace('interview done with ', '').trim();
+      console.log('[BotController] Parsed Intent:', parsed);
 
-      const interview = await Interview.create({
-        userId: user._id,
-        company: company,
-        role: 'Unknown Role (WhatsApp)',
-        round: '1',
-        scheduledAt: new Date(),
-        outcome: 'AWAITING_RESULT'
-      });
+      const intent = parsed.intent;
+      const company = parsed.company;
 
-      // Triggers 'interviews' goal progress since outcome is completed
-      await recordGoalProgress(user._id, 'interviews', 1, interview._id);
-      responseMessage = `✅ Logged: Interview completed with ${company}. Goals updated!`;
+      if (intent === 'LOG_APPLICATION' && company) {
+        const app = await Application.create({
+          userId: user._id,
+          company: company,
+          role: 'Unknown Role (WhatsApp)',
+          source: 'ONLINE',
+          status: 'APPLIED',
+          dateApplied: new Date()
+        });
+        await recordGoalProgress(user._id, 'applications', 1, app._id);
+        responseMessage = `✅ I've logged your application to ${company}. Great job keeping your pipeline active!`;
 
-    } else if (messageBody.startsWith('clear ')) {
-      const company = messageBody.replace('clear ', '').trim();
-      const app = await Application.findOne({ 
-        userId: user._id, 
-        company: { $regex: new RegExp(`^${company}$`, 'i') } 
-      }).sort({ dateApplied: -1 });
+      } else if (intent === 'LOG_INTERVIEW' && company) {
+        const interview = await Interview.create({
+          userId: user._id,
+          company: company,
+          role: 'Unknown Role (WhatsApp)',
+          round: '1',
+          scheduledAt: new Date(),
+          outcome: 'AWAITING_RESULT'
+        });
+        await recordGoalProgress(user._id, 'interviews', 1, interview._id);
+        responseMessage = `📅 Got it! I've logged an interview with ${company}. Good luck!`;
 
-      if (app) {
-        await Application.findByIdAndDelete(app._id);
-        responseMessage = `🗑️ Deleted: Most recent application for ${company}.`;
-      } else {
-        responseMessage = `⚠️ Could not find any application for ${company} to delete.`;
-      }
-    } else if (messageBody.startsWith('update ') && messageBody.includes(' status to ')) {
-      const match = messageBody.match(/^update\s+(.+?)\s+status to\s+(.+)$/i);
-      if (match) {
-        const company = match[1].trim();
-        let newStatus = match[2].trim().toUpperCase().replace(/\s+/g, '_');
-        
-        if (newStatus === 'OFFERS' || newStatus === 'OFFERED') newStatus = 'OFFER';
-        if (newStatus === 'SHORTLIST') newStatus = 'SHORTLISTED';
-        if (newStatus === 'REJECT') newStatus = 'REJECTED';
-        if (newStatus === 'INTERVIEW') newStatus = 'INTERVIEW_SCHEDULED';
+      } else if (intent === 'DELETE_APPLICATION' && company) {
+        const app = await Application.findOne({ 
+          userId: user._id, 
+          company: { $regex: new RegExp(`^${company}$`, 'i') } 
+        }).sort({ dateApplied: -1 });
 
-        const validStatuses = ['APPLIED', 'OA_PENDING', 'OA_DONE', 'INTERVIEW_SCHEDULED', 'SHORTLISTED', 'REJECTED', 'OFFER'];
-        
-        if (!validStatuses.includes(newStatus)) {
-          responseMessage = `⚠️ Invalid status. Valid options: Applied, OA Pending, OA Done, Interview Scheduled, Shortlisted, Rejected, Offer.`;
+        if (app) {
+          await Application.findByIdAndDelete(app._id);
+          responseMessage = `🗑️ I've deleted the application for ${company}.`;
         } else {
-          const app = await Application.findOne({ 
-            userId: user._id, 
-            company: { $regex: new RegExp(`^${company}$`, 'i') } 
-          }).sort({ dateApplied: -1 });
-
-          if (app) {
-            app.status = newStatus;
-            await app.save();
-            responseMessage = `✅ Updated: ${company} application status changed to ${newStatus}.`;
-          } else {
-            responseMessage = `⚠️ Could not find any application for ${company} to update.`;
-          }
+          responseMessage = `⚠️ I couldn't find an application for ${company} to delete.`;
         }
+
+      } else if (intent === 'UPDATE_STATUS' && company && parsed.newStatus) {
+        const newStatus = parsed.newStatus;
+        const app = await Application.findOne({ 
+          userId: user._id, 
+          company: { $regex: new RegExp(`^${company}$`, 'i') } 
+        }).sort({ dateApplied: -1 });
+
+        if (app) {
+          app.status = newStatus;
+          await app.save();
+          if (newStatus === 'OFFER') {
+            responseMessage = `🎉 INCREDIBLE! Huge congratulations on the offer from ${company}! I've updated your status. Celebrate! 🎊`;
+          } else if (newStatus === 'REJECTED') {
+            responseMessage = `📝 Status updated to Rejected for ${company}. Don't worry, rejection is just redirection. Keep going!`;
+          } else {
+            responseMessage = `✅ I've updated your application for ${company} to ${newStatus}.`;
+          }
+        } else {
+          responseMessage = `⚠️ I couldn't find an application for ${company}. Would you like to log it first?`;
+        }
+
+      } else if (intent === 'QUERY_INTERVIEWS') {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        const upcomingInterviews = await Interview.find({ 
+          userId: user._id,
+          scheduledAt: { $gte: today }
+        }).sort({ scheduledAt: 1 }).limit(5);
+
+        if (upcomingInterviews.length > 0) {
+          responseMessage = `Here are your upcoming interviews:\n\n` + 
+            upcomingInterviews.map((i, idx) => `${idx + 1}. ${i.company} on ${i.scheduledAt ? i.scheduledAt.toLocaleDateString() : 'TBD'}`).join('\n');
+        } else {
+          responseMessage = `You don't have any interviews scheduled right now. Time to send out more applications!`;
+        }
+      } else if (intent === 'QUERY_ANALYTICS') {
+        const totalApps = await Application.countDocuments({ userId: user._id });
+        const pendingInterviews = await Interview.countDocuments({ userId: user._id, outcome: 'AWAITING_RESULT' });
+        const totalOffers = await Application.countDocuments({ userId: user._id, status: 'OFFER' });
+        const rejections = await Application.countDocuments({ userId: user._id, status: 'REJECTED' });
+        
+        responseMessage = `📊 *Your Placement Stats*\n\n` +
+          `• Total Applications: ${totalApps}\n` +
+          `• Pending Interviews: ${pendingInterviews}\n` +
+          `• Offers Received: ${totalOffers}\n` +
+          `• Rejections: ${rejections}\n\n` +
+          (totalOffers > 0 ? `Keep up the amazing work! 🚀` : `Keep grinding, your breakthrough is coming! 💪`);
+      } else {
+        responseMessage = "Hmm, I didn't quite catch that. You can say things like 'I applied to Amazon', 'List my interviews', 'Show my stats', or 'Update Google status to offer'.";
       }
+
+    } catch (llmError) {
+      console.error('[BotController] LLM Parsing Error:', llmError);
+      responseMessage = `Sorry, my AI brain is having a slight hiccup processing that request. Please try again in a moment!`;
     }
 
     // 3. Send Response via Provider (Twilio Example)
-    // Send a TwiML response back to Twilio so it texts the user
     const twimlResponse = `
       <Response>
         <Message>${responseMessage}</Message>
@@ -135,5 +186,33 @@ exports.handleWhatsAppStatus = async (req, res) => {
   } catch (error) {
     console.error('WhatsApp Status Error:', error);
     res.status(500).send('Error');
+  }
+};
+
+// @desc    Send outbound WhatsApp message
+// @access  Internal
+exports.sendWhatsAppMessage = async (phone, message) => {
+  if (!phone) return;
+  console.log(`\n[Twilio Outbound] WhatsApp message to ${phone}:\n${message}\n`);
+  
+  try {
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+      const twilio = require('twilio');
+      const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+      const fromNumber = process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886'; // Sandbox default
+      
+      await client.messages.create({ 
+        body: message, 
+        from: fromNumber, 
+        to: `whatsapp:${phone}` 
+      });
+      return true;
+    } else {
+      console.log('Twilio credentials missing. Running in mock mode.');
+      return true;
+    }
+  } catch (error) {
+    console.error('Error sending Twilio message:', error);
+    return false;
   }
 };

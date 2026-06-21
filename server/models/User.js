@@ -64,6 +64,10 @@ const userSchema = new mongoose.Schema({
     weeklyEmail: {
       type: Boolean,
       default: true
+    },
+    whatsappAlerts: {
+      type: Boolean,
+      default: false
     }
   },
   username: {
@@ -78,6 +82,10 @@ const userSchema = new mongoose.Schema({
   gfgUsername: {
     type: String,
     default: ''
+  },
+  lastGoalActivityAt: {
+    type: Date,
+    default: Date.now
   },
   isPublicProfile: {
     type: Boolean,

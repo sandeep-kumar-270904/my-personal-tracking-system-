@@ -236,17 +236,25 @@ const startCronJobs = () => {
         );
       }
 
-      // Send emails
+      // Send emails and WhatsApp messages
+      const { sendWhatsAppMessage } = require('../controllers/botController');
       for (const userId in userReminders) {
         const user = await User.findById(userId);
-        if (user && user.email) {
+        if (user) {
           const reminders = userReminders[userId];
-          
-          await sendEmail({
-            to: user.email,
-            subject: 'StudentTracker - Your Daily Reminders',
-            text: `Hello ${user.name},\n\nHere are your reminders for today and tomorrow:\n\n${reminders.join('\n')}\n\nGood luck!`,
-          });
+          const messageText = `Hello ${user.name},\n\nHere are your reminders for today and tomorrow:\n\n${reminders.join('\n')}\n\nGood luck!`;
+
+          if (user.email) {
+            await sendEmail({
+              to: user.email,
+              subject: 'StudentTracker - Your Daily Reminders',
+              text: messageText,
+            });
+          }
+
+          if (user.phone) {
+            await sendWhatsAppMessage(user.phone, messageText);
+          }
         }
       }
 
@@ -301,7 +309,7 @@ const startCronJobs = () => {
       // Find events that have active reminders and haven't sent yet
       const eventsWithReminders = await Event.find({
         status: 'upcoming'
-      }).populate('user', 'calendarSettings');
+      }).populate('user', 'calendarSettings phone');
 
       const Notification = require('../models/Notification');
 
@@ -327,38 +335,46 @@ const startCronJobs = () => {
           
           let escalationSent = false;
           
+          const { sendWhatsAppMessage } = require('../controllers/botController');
+
           if (timeToEventHrs <= 168 && timeToEventHrs > 167 && !event.highStakesRemindersSent.oneWeek) {
+            const msg = `Your interview is in exactly one week. Have you started preparing?`;
             await Notification.create({
               userId: event.user._id,
               title: `One Week Prep Warning: ${event.title}`,
-              message: `Your interview is in exactly one week. Have you started preparing?`,
+              message: msg,
               type: 'CALENDAR',
               link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
             });
+            if (event.user.phone) await sendWhatsAppMessage(event.user.phone, `🎯 One Week Prep Warning: ${event.title}\n\n${msg}`);
             event.highStakesRemindersSent.oneWeek = true;
             escalationSent = true;
           }
           
           if (timeToEventHrs <= 24 && timeToEventHrs > 23 && !event.highStakesRemindersSent.oneDay) {
+            const msg = `Your interview is tomorrow! Ensure your setup is ready and get a good night's sleep.`;
             await Notification.create({
               userId: event.user._id,
               title: `Tomorrow: ${event.title}`,
-              message: `Your interview is tomorrow! Ensure your setup is ready and get a good night's sleep.`,
+              message: msg,
               type: 'CALENDAR',
               link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
             });
+            if (event.user.phone) await sendWhatsAppMessage(event.user.phone, `🎯 Tomorrow: ${event.title}\n\n${msg}`);
             event.highStakesRemindersSent.oneDay = true;
             escalationSent = true;
           }
           
           if (timeToEventHrs <= 2 && timeToEventHrs > 1 && !event.highStakesRemindersSent.twoHours) {
+            const msg = `Your interview starts in 2 hours. Final review of your prep notes!`;
             await Notification.create({
               userId: event.user._id,
               title: `Almost Time: ${event.title}`,
-              message: `Your interview starts in 2 hours. Final review of your prep notes!`,
+              message: msg,
               type: 'CALENDAR',
               link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
             });
+            if (event.user.phone) await sendWhatsAppMessage(event.user.phone, `🎯 Almost Time: ${event.title}\n\n${msg}`);
             event.highStakesRemindersSent.twoHours = true;
             escalationSent = true;
           }
@@ -391,13 +407,20 @@ const startCronJobs = () => {
 
             const timeString = event.is_all_day ? 'all day' : `at ${event.start_time}`;
 
+            const msgText = `${icon} Reminder: ${event.title} — ${timeString} ${dayString}`;
+
             await Notification.create({
               userId: event.user._id,
               title: `Reminder: ${event.title}`,
-              message: `${icon} ${event.title} — ${timeString} ${dayString}`,
+              message: msgText,
               type: 'CALENDAR',
               link: `/calendar?date=${new Date(event.date).toISOString().split('T')[0]}`
             });
+
+            if (event.user.phone) {
+              const { sendWhatsAppMessage } = require('../controllers/botController');
+              await sendWhatsAppMessage(event.user.phone, msgText);
+            }
 
             event.reminderSent = true;
             await event.save();

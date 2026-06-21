@@ -5,6 +5,7 @@ const Application = require('../models/Application');
 
 const { pushEventToGoogle, deleteEventFromGoogle, getAuthUrl, exchangeCode, pullEventsFromGoogle } = require('../utils/googleSync');
 const Notification = require('../models/Notification');
+const { sendWhatsAppMessage } = require('./botController');
 
 const DEFAULT_DURATIONS = { interview: 60, event: 60, follow_up: 30, deadline: 0, application_deadline: 0, offer_deadline: 0, academic: 60 };
 const BUFFER_MINUTES = 90;
@@ -593,6 +594,14 @@ exports.updateEvent = async (req, res) => {
           link: '/calendar',
           eventId: updatedEvent._id
         });
+
+        const eventOwner = await User.findById(req.user._id);
+        if (eventOwner?.notificationPreferences?.whatsappAlerts && eventOwner.phone) {
+          await sendWhatsAppMessage(
+            eventOwner.phone, 
+            `🚨 *Drive Rescheduled*\n${updatedEvent.title} has been moved. Old time: ${event.date.toISOString().split('T')[0]} ${event.start_time || 'All Day'}. Check StudentTracker for new timing.`
+          );
+        }
       }
 
       return res.json(updatedEvent);
@@ -631,6 +640,14 @@ exports.updateEvent = async (req, res) => {
           link: '/calendar',
           eventId: updatedEvent._id
         });
+
+        const eventOwner = await User.findById(req.user._id);
+        if (eventOwner?.notificationPreferences?.whatsappAlerts && eventOwner.phone) {
+          await sendWhatsAppMessage(
+            eventOwner.phone, 
+            `🚨 *Drive Rescheduled*\n${updatedEvent.title} has been moved. Old time: ${oldDate.toISOString().split('T')[0]} ${oldStartTime || 'All Day'}. Check StudentTracker for new timing.`
+          );
+        }
       }
 
       // Push single event
@@ -1138,6 +1155,83 @@ exports.getEventRounds = async (req, res) => {
   } catch (error) {
     console.error('Error in getEventRounds:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.archiveSeason = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    // Archive all events that happened before today and are not recurring
+    const result = await Event.updateMany(
+      { 
+        user: req.user._id, 
+        date: { $lt: today },
+        is_recurring: false,
+        isArchived: false
+      },
+      { $set: { isArchived: true } }
+    );
+    
+    // We can return a small summary
+    const totalArchived = result.modifiedCount;
+    res.json({
+      message: 'Season archived successfully',
+      archivedCount: totalArchived
+    });
+  } catch (error) {
+    console.error('Error archiving season:', error);
+    res.status(500).json({ message: 'Failed to archive season' });
+  }
+};
+
+exports.getSharedTimingVisibility = async (req, res) => {
+  try {
+    const { company } = req.query;
+    if (!company) {
+      return res.status(400).json({ message: 'Company name is required' });
+    }
+    
+    // Find all interviews for this company across all users in the same cohort (gradYear)
+    // For simplicity and anonymity, we'll just count them by date.
+    
+    const User = require('../models/User');
+    const myUser = await User.findById(req.user._id);
+    
+    // Default to all if gradYear not set
+    const userQuery = myUser.gradYear ? { gradYear: myUser.gradYear } : {};
+    const peers = await User.find(userQuery).select('_id');
+    const peerIds = peers.map(p => p._id);
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const upcomingInterviews = await Event.aggregate([
+      { 
+        $match: { 
+          user: { $in: peerIds },
+          type: 'interview',
+          date: { $gte: today },
+          title: { $regex: new RegExp(company, 'i') }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+    
+    res.json({
+      company,
+      peerInterviewsByDate: upcomingInterviews
+    });
+  } catch (error) {
+    console.error('Error in shared timing visibility:', error);
+    res.status(500).json({ message: 'Server error fetching timing visibility' });
   }
 };
 

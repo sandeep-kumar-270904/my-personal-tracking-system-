@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Search, Bell, X, Briefcase, Users, Code, Calendar, WifiOff } from 'lucide-react';
+import { useState, useEffect, useContext, useRef } from 'react';
+import { Search, Bell, X, Briefcase, Users, Code, Calendar, WifiOff, FileText, ChevronDown, User, Settings, LogOut, Target, BadgeDollarSign, Trophy, BookOpen, CalendarDays, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import NotificationDropdown from './NotificationDropdown';
+import { AuthContext } from '../context/AuthContext';
 
 const useOnline = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -19,12 +20,35 @@ const useOnline = () => {
   return isOnline;
 };
 
+// Hook for closing dropdowns when clicking outside
+const useOutsideClick = (ref, callback) => {
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) {
+        callback();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [ref, callback]);
+};
+
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
   const navigate = useNavigate();
+  const location = useLocation();
   const isOnline = useOnline();
+  const { user, logout } = useContext(AuthContext);
+
+  const moreDropdownRef = useRef(null);
+  const profileDropdownRef = useRef(null);
+
+  useOutsideClick(moreDropdownRef, () => setIsMoreOpen(false));
+  useOutsideClick(profileDropdownRef, () => setIsProfileOpen(false));
 
   // Handle Cmd+K / Ctrl+K
   useEffect(() => {
@@ -35,17 +59,13 @@ const Header = () => {
       }
       if (e.key === 'Escape') {
         setIsSearchOpen(false);
-        setIsNotificationsOpen(false);
+        setIsMoreOpen(false);
+        setIsProfileOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  const dummyNotifications = [
-    { id: 1, text: 'Flipkart interview in 24 hours', time: '2h ago' },
-    { id: 2, text: 'LeetCode Weekly Contest starts in 1 hour', time: '3h ago' }
-  ];
 
   const handleSearchNav = (path) => {
     navigate(path);
@@ -53,108 +73,217 @@ const Header = () => {
     setSearchQuery('');
   };
 
+  const navItems = [
+    { name: 'Dashboard', path: '/dashboard' },
+    { name: 'AI Analyzer', path: '/ai-analyzer' },
+    { name: 'Applications', path: '/applications' },
+    { name: 'DSA Tracker', path: '/dsa' },
+    { name: 'Interviews', path: '/interviews' },
+  ];
+
+  const moreItems = [
+    { name: 'Resumes', path: '/resumes', icon: FileText },
+    { name: 'Networking', path: '/network', icon: Users },
+    { name: 'Calendar', path: '/calendar', icon: CalendarDays },
+    { name: 'Goals', path: '/goals', icon: Target },
+    { name: 'Offers', path: '/offers', icon: BadgeDollarSign },
+    { name: 'Contests', path: '/contests', icon: Trophy },
+    { name: 'PrepHub', path: '/resources', icon: BookOpen },
+  ];
+
+  if (user?.role === 'placement_cell_admin') {
+    moreItems.push({ name: 'Admin Dashboard', path: '/admin', icon: Briefcase });
+  }
+
   return (
     <>
-      <header className="h-20 border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 md:px-8">
-        <div className="flex-1 max-w-xl hidden md:block">
-          <button 
-            onClick={() => setIsSearchOpen(true)}
-            className="w-full flex items-center px-4 py-2.5 bg-[#13141f] hover:bg-[#1a1c29] border border-white/5 hover:border-white/10 rounded-xl text-slate-400 transition-colors"
-          >
-            <Search className="w-5 h-5 mr-3 text-slate-500" />
-            <span className="flex-1 text-left text-sm">Search across the app...</span>
-            <div className="flex items-center gap-1 text-xs font-semibold bg-white/5 px-2 py-1 rounded-md">
-              <span>Cmd</span><span>K</span>
+      <header className="h-[60px] border-b border-white/10 bg-[#010409] sticky top-0 z-30 flex items-center justify-between px-4 lg:px-6 font-sans">
+        
+        {/* Left Section: Logo & Nav Links */}
+        <div className="flex items-center gap-6">
+          {/* Logo */}
+          <Link to="/dashboard" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff6b00] to-[#ff007b] flex items-center justify-center shadow-[0_0_10px_rgba(255,107,0,0.3)]">
+              <span className="font-bold text-white text-[15px]">S</span>
             </div>
-          </button>
+            <span className="text-white font-semibold tracking-tight text-[15px] hidden xl:block">StudentTracker</span>
+          </Link>
+
+          {/* Primary Nav Links */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map(item => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link 
+                  key={item.name} 
+                  to={item.path}
+                  className={`px-3 py-1.5 rounded-md text-[14px] font-medium transition-colors ${isActive ? 'text-white' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
+                >
+                  {item.name}
+                </Link>
+              )
+            })}
+            
+            {/* More Dropdown */}
+            <div className="relative" ref={moreDropdownRef}>
+              <button 
+                onClick={() => setIsMoreOpen(!isMoreOpen)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[14px] font-medium transition-colors ${moreItems.some(i => i.path === location.pathname) ? 'text-white' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
+              >
+                More <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+              </button>
+              
+              <AnimatePresence>
+                {isMoreOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 mt-2 w-56 bg-[#161b22] border border-white/10 rounded-lg shadow-xl overflow-hidden py-1 z-50"
+                  >
+                    {moreItems.map(item => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname === item.path;
+                      return (
+                        <Link 
+                          key={item.name} 
+                          to={item.path}
+                          onClick={() => setIsMoreOpen(false)}
+                          className={`flex items-center px-4 py-2 text-[14px] ${isActive ? 'text-white bg-white/5' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
+                        >
+                          <Icon className="w-4 h-4 mr-3 opacity-70" />
+                          {item.name}
+                        </Link>
+                      )
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </nav>
         </div>
 
-        {/* Mobile Left Side - Logo & Search */}
-        <div className="flex-1 flex md:hidden items-center gap-3">
-          <div className="w-8 h-8 rounded bg-[#F97316] flex items-center justify-center">
-            <span className="font-bold text-white text-sm">S</span>
-          </div>
+        {/* Right Section: Search, Offline, Notifications, Profile */}
+        <div className="flex items-center gap-3">
+          
+          {/* GitHub-style Search Bar */}
           <button 
             onClick={() => setIsSearchOpen(true)}
-            className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+            className="hidden sm:flex items-center w-64 px-3 py-1.5 bg-[#0d1117] border border-white/20 hover:border-slate-500 rounded-md text-slate-400 transition-colors"
+          >
+            <Search className="w-4 h-4 mr-2" />
+            <span className="flex-1 text-left text-[13px]">Search or jump to...</span>
+            <div className="flex items-center justify-center border border-white/10 rounded px-1.5 py-0.5 text-[10px] font-mono text-slate-500 bg-[#161b22]">
+              /
+            </div>
+          </button>
+          
+          {/* Mobile Search Icon */}
+          <button 
+            onClick={() => setIsSearchOpen(true)} 
+            className="sm:hidden p-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-md transition-colors"
           >
             <Search className="w-5 h-5" />
           </button>
-        </div>
 
-        <div className="flex items-center gap-4 ml-auto">
           {/* Connection Status */}
           {!isOnline && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-              </span>
-              <span className="text-xs font-bold text-amber-500">Offline</span>
-            </div>
-          )}
-          {/* Mobile Offline Icon */}
-          {!isOnline && (
-            <div className="sm:hidden flex items-center justify-center text-amber-500">
-              <WifiOff className="w-5 h-5" />
+            <div className="flex items-center justify-center text-amber-500 px-2" title="Offline">
+              <WifiOff className="w-4 h-4" />
             </div>
           )}
 
-          {/* Notifications */}
-          {/* Notifications */}
           <NotificationDropdown />
+
+          {/* User Profile */}
+          <div className="relative" ref={profileDropdownRef}>
+            <button 
+              onClick={() => setIsProfileOpen(!isProfileOpen)} 
+              className="w-8 h-8 rounded-full bg-[#161b22] border border-white/20 flex items-center justify-center overflow-hidden hover:border-white/40 transition-colors ml-1"
+            >
+              <User className="w-4 h-4 text-slate-300" />
+            </button>
+            
+            <AnimatePresence>
+              {isProfileOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full right-0 mt-2 w-56 bg-[#161b22] border border-white/10 rounded-lg shadow-xl overflow-hidden py-1 z-50"
+                >
+                  <div className="px-4 py-3 border-b border-white/10">
+                    <p className="text-[13px] text-slate-400">Signed in as</p>
+                    <p className="text-[14px] font-semibold text-white truncate mt-0.5">{user?.name || 'User'}</p>
+                  </div>
+                  <div className="py-1">
+                    <Link to="/settings" onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2 text-[14px] text-slate-300 hover:text-white hover:bg-white/5 transition-colors">
+                      <Settings className="w-4 h-4 mr-3 opacity-70" /> Settings
+                    </Link>
+                  </div>
+                  <div className="border-t border-white/10 py-1">
+                    <button onClick={logout} className="w-full flex items-center px-4 py-2 text-[14px] text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                      <LogOut className="w-4 h-4 mr-3 opacity-70" /> Sign out
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
       {/* Global Search Modal */}
       <AnimatePresence>
         {isSearchOpen && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[20vh] px-4">
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[20vh] px-4 font-sans">
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
               onClick={() => setIsSearchOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#010409]/80 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
-              className="relative w-full max-w-2xl bg-[#13141f] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-2xl bg-[#161b22] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
             >
-              <div className="flex items-center px-4 py-4 border-b border-white/10">
+              <div className="flex items-center px-4 py-4 border-b border-white/10 bg-[#0d1117]">
                 <Search className="w-5 h-5 text-slate-400 mr-3" />
                 <input 
                   type="text"
                   autoFocus
                   placeholder="Search applications, contacts, topics..."
-                  className="flex-1 bg-transparent text-white placeholder-slate-500 focus:outline-none text-lg"
+                  className="flex-1 bg-transparent text-white placeholder-slate-500 focus:outline-none text-[15px]"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <button onClick={() => setIsSearchOpen(false)} className="p-1 text-slate-400 hover:text-white bg-white/5 rounded-lg">
+                <button onClick={() => setIsSearchOpen(false)} className="p-1 text-slate-400 hover:text-white bg-white/5 rounded-md">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-2 max-h-[60vh] overflow-y-auto">
-                <div className="px-3 py-2 text-[13px] font-bold text-slate-500 uppercase tracking-wider">Quick Actions</div>
-                <button onClick={() => handleSearchNav('/applications')} className="w-full flex items-center px-3 py-3 rounded-xl hover:bg-[#ff6b00]/10 text-slate-300 hover:text-[#ff6b00] group transition-colors">
-                  <Briefcase className="w-5 h-5 mr-3" />
-                  <span className="flex-1 text-left">Go to Applications</span>
+                <div className="px-3 py-2 text-[12px] font-semibold text-slate-500 uppercase tracking-wider">Quick Actions</div>
+                <button onClick={() => handleSearchNav('/applications')} className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-[#1f6feb]/15 text-slate-300 hover:text-blue-400 group transition-colors">
+                  <Briefcase className="w-4 h-4 mr-3 opacity-70 group-hover:opacity-100" />
+                  <span className="flex-1 text-left text-[14px]">Go to Applications</span>
                 </button>
-                <button onClick={() => handleSearchNav('/network')} className="w-full flex items-center px-3 py-3 rounded-xl hover:bg-[#ff007b]/10 text-slate-300 hover:text-[#ff007b] group transition-colors">
-                  <Users className="w-5 h-5 mr-3" />
-                  <span className="flex-1 text-left">Go to Networking</span>
+                <button onClick={() => handleSearchNav('/network')} className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-[#1f6feb]/15 text-slate-300 hover:text-blue-400 group transition-colors">
+                  <Users className="w-4 h-4 mr-3 opacity-70 group-hover:opacity-100" />
+                  <span className="flex-1 text-left text-[14px]">Go to Networking</span>
                 </button>
-                <button onClick={() => handleSearchNav('/dsa')} className="w-full flex items-center px-3 py-3 rounded-xl hover:bg-emerald-500/10 text-slate-300 hover:text-emerald-500 group transition-colors">
-                  <Code className="w-5 h-5 mr-3" />
-                  <span className="flex-1 text-left">Go to DSA Tracker</span>
+                <button onClick={() => handleSearchNav('/dsa')} className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-[#1f6feb]/15 text-slate-300 hover:text-blue-400 group transition-colors">
+                  <Code className="w-4 h-4 mr-3 opacity-70 group-hover:opacity-100" />
+                  <span className="flex-1 text-left text-[14px]">Go to DSA Tracker</span>
                 </button>
-                <button onClick={() => handleSearchNav('/interviews')} className="w-full flex items-center px-3 py-3 rounded-xl hover:bg-purple-500/10 text-slate-300 hover:text-purple-500 group transition-colors">
-                  <Calendar className="w-5 h-5 mr-3" />
-                  <span className="flex-1 text-left">Go to Interviews</span>
+                <button onClick={() => handleSearchNav('/interviews')} className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-[#1f6feb]/15 text-slate-300 hover:text-blue-400 group transition-colors">
+                  <Calendar className="w-4 h-4 mr-3 opacity-70 group-hover:opacity-100" />
+                  <span className="flex-1 text-left text-[14px]">Go to Interviews</span>
                 </button>
               </div>
             </motion.div>

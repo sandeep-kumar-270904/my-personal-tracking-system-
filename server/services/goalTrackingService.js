@@ -1,5 +1,7 @@
 const Goal = require('../models/Goal');
 const GoalProgressEntry = require('../models/GoalProgressEntry');
+const User = require('../models/User');
+
 
 /**
  * Automatically logs progress for goals linked to a specific module.
@@ -34,6 +36,10 @@ const recordGoalProgress = async (userId, linkedModule, amount = 1, sourceRefId 
         source_ref_id: sourceRefId,
         logged_at: date
       });
+    }
+    
+    if (linkedGoals.length > 0) {
+      await User.findByIdAndUpdate(userId, { lastGoalActivityAt: new Date() });
     }
   } catch (error) {
     console.error(`Error in recordGoalProgress for ${linkedModule}:`, error);

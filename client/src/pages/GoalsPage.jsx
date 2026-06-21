@@ -20,6 +20,8 @@ const GoalsPage = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRetroModalOpen, setIsRetroModalOpen] = useState(false);
+  const [showCognitiveWarning, setShowCognitiveWarning] = useState(false);
+  const [hasSeenCognitiveWarning, setHasSeenCognitiveWarning] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
 
   const { data, isLoading } = useQuery({
@@ -27,7 +29,21 @@ const GoalsPage = () => {
     queryFn: fetchGoalsOverview
   });
 
+  const goals = data?.goals || [];
+
   const handleAddGoal = () => {
+    const activeGoals = goals.filter(g => g.status === 'active');
+    if (activeGoals.length >= 5 && !hasSeenCognitiveWarning) {
+      setShowCognitiveWarning(true);
+      setHasSeenCognitiveWarning(true);
+    } else {
+      setEditingGoal(null);
+      setIsModalOpen(true);
+    }
+  };
+
+  const proceedWithNewGoal = () => {
+    setShowCognitiveWarning(false);
     setEditingGoal(null);
     setIsModalOpen(true);
   };
@@ -84,7 +100,6 @@ const GoalsPage = () => {
   }
 
   const { 
-    goals = [], 
     momentum = 0, 
     streak = 0, 
     calendarLoad = 0, 
@@ -283,6 +298,39 @@ const GoalsPage = () => {
         <div className="text-center py-20 text-slate-500 border border-dashed border-white/10 rounded-2xl">
           <Target className="w-12 h-12 mx-auto mb-3 opacity-20" />
           <p>No active goals found. Create one to get started.</p>
+        </div>
+      )}
+
+      {showCognitiveWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-[#13141f] border border-white/10 p-6 rounded-2xl max-w-md w-full relative"
+          >
+            <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center mb-4 text-orange-400">
+              <Zap className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Too Many Active Goals?</h3>
+            <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+              Tracking many goals at once tends to make each one harder to stick with. 
+              Want to review what's already active first, or proceed anyway?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setShowCognitiveWarning(false)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors font-medium text-sm"
+              >
+                Review Active Goals
+              </button>
+              <button 
+                onClick={proceedWithNewGoal}
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium text-sm shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+              >
+                Proceed Anyway
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
 

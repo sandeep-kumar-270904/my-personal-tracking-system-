@@ -159,7 +159,12 @@ const eventSchema = new mongoose.Schema({
     travel_booked: { type: Boolean, default: false },
     accommodation_booked: { type: Boolean, default: false },
     documents_printed: { type: Boolean, default: false }
+  },
+  isArchived: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Event', eventSchema);
+

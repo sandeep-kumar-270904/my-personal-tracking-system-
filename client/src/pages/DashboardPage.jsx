@@ -60,6 +60,7 @@ const DashboardPage = () => {
   const { user } = useContext(AuthContext);
   const [activeModal, setActiveModal] = useState(null);
   const [showDailyDigest, setShowDailyDigest] = useState(false);
+  const [showReentry, setShowReentry] = useState(false);
   
   // Layout Preference
   const [isCompact, setIsCompact] = useState(() => {
@@ -68,8 +69,23 @@ const DashboardPage = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem('dashboardLayout', isCompact ? 'compact' : 'default');
+    if (isCompact) {
+      localStorage.setItem('dashboardLayout', 'compact');
+    } else {
+      localStorage.setItem('dashboardLayout', 'comfortable');
+    }
   }, [isCompact]);
+
+  useEffect(() => {
+    if (user?.lastGoalActivityAt && !sessionStorage.getItem('reentryShown')) {
+      const msGap = Date.now() - new Date(user.lastGoalActivityAt).getTime();
+      const daysGap = msGap / (1000 * 60 * 60 * 24);
+      if (daysGap > 10) {
+        setShowReentry(true);
+        sessionStorage.setItem('reentryShown', 'true');
+      }
+    }
+  }, [user]);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboardData'],
@@ -118,23 +134,21 @@ const DashboardPage = () => {
   const stats = data.stats;
   const isBrandNew = stats.totalApplications === 0 && stats.dsaTopicsTracked === 0 && stats.activeInterviews === 0 && !user?.isOnboarded;
 
-  if (isBrandNew) {
-    return (
-      <>
-        <OnboardingFlow 
-          stats={stats} 
-          userName={user.name} 
-          onComplete={() => refetch()} 
-          onActionClick={setActiveModal} 
-        />
-        <QuickAddModals activeModal={activeModal} onClose={() => setActiveModal(null)} />
-      <DailyDigestModal isOpen={showDailyDigest} onClose={() => setShowDailyDigest(false)} />
-      </>
-    );
-  }
+  // We will conditionally render the OnboardingFlow below instead of returning early
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`max-w-[1600px] mx-auto pb-20 ${isCompact ? 'space-y-4' : 'space-y-8'}`}>
+      {isBrandNew && (
+        <div className="mb-8">
+          <OnboardingFlow 
+            stats={stats} 
+            userName={user.name} 
+            onComplete={() => refetch()} 
+            onActionClick={setActiveModal} 
+          />
+        </div>
+      )}
+
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <DashboardBanner user={user} stats={data.stats} upcoming={data.upcoming} onShowDigest={() => setShowDailyDigest(true)} />
@@ -223,6 +237,32 @@ const DashboardPage = () => {
       <QuickAddFab onActionClick={setActiveModal} />
       <QuickAddModals activeModal={activeModal} onClose={() => setActiveModal(null)} />
       <DailyDigestModal isOpen={showDailyDigest} onClose={() => setShowDailyDigest(false)} />
+      
+      {/* Calm Re-Entry Modal */}
+      {showReentry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-[#13141f] border border-white/10 p-6 rounded-2xl max-w-md w-full relative text-center"
+          >
+            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">☕</span>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Welcome Back</h3>
+            <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+              It's been a bit — totally fine if you needed a break. Pick back up whenever you're ready, or adjust your goals if priorities shifted.
+            </p>
+            <button 
+              onClick={() => setShowReentry(false)}
+              className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
+            >
+              Sounds Good
+            </button>
+          </motion.div>
+        </div>
+      )}
+
       <ShortcutHintCard />
     </motion.div>
   );

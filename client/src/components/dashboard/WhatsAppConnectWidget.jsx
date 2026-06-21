@@ -81,18 +81,34 @@ const WhatsAppConnectWidget = () => {
           )}
         </form>
       ) : (
-        <div className="mt-5 bg-[#0a0a0a] border border-white/5 rounded-2xl p-4 relative z-10">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-xs font-medium text-slate-400">Bot Phone Number:</span>
-            <span className="text-sm font-mono text-emerald-300 font-medium">+1 (555) 000-1234</span>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs text-slate-500">Try texting:</p>
-            <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs font-mono text-slate-300">
-              "applied to Google"
+        <div className="mt-5 bg-[#0a0a0a] border border-white/5 rounded-2xl p-4 relative z-10 flex flex-col md:flex-row gap-4 items-center md:items-start">
+          <div className="flex-1 space-y-4 w-full">
+            <div className="flex justify-between items-center bg-white/5 border border-white/10 p-3 rounded-xl">
+              <span className="text-xs font-medium text-slate-400">Bot Phone Number</span>
+              <a href="https://wa.me/14155238886" target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1">
+                +1 415 523 8886
+              </a>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs font-mono text-slate-300">
-              "solved 2 leetcode problems"
+            
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Try texting:</p>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs font-mono text-slate-300">
+                "applied to Google"
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs font-mono text-slate-300">
+                "interview done with Amazon"
+              </div>
+            </div>
+          </div>
+          
+          <div className="shrink-0 flex flex-col items-center bg-white/5 border border-white/10 p-3 rounded-xl">
+            <p className="text-[10px] text-slate-400 mb-2 uppercase tracking-wider font-semibold">Scan to Chat</p>
+            <div className="bg-white p-2.5 rounded-xl">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://wa.me/14155238886?text=join%20purple-moon')}`}
+                alt="WhatsApp QR Code"
+                className="w-32 h-32"
+              />
             </div>
           </div>
         </div>
