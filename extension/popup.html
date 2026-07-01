@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 300px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0a0a0f;
+      color: white;
+      margin: 0;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #60a5fa;
+    }
+    p {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+      background: #13141f;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+      border-radius: 6px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <h2>StudentTracker Logger</h2>
+  <p>To auto-log jobs from LinkedIn or Naukri, provide your API token (find this in Web App Settings).</p>
+  
+  <div id="setup-view">
+    <input type="text" id="token-input" placeholder="Paste Auth Token here" />
+    <button id="save-btn">Save Configuration</button>
+  </div>
+  
+  <div id="success-view" style="display: none; text-align: center;">
+    <p style="color: #34d399; font-weight: bold;">✅ Connected & Ready!</p>
+    <p>We'll prompt you to log when you apply to jobs.</p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<USER_REQUEST>
+You are doing a complete, production-grade upgrade of a web app called StudentTracker — a placement and job hunt dashboard built for Indian college students. 
+
+IMPORTANT: This prompt is tech-stack agnostic. Implement everything using whatever stack this project already uses. Do not switch frameworks, do not change the database, do not change the auth system. Detect the existing stack from the codebase and work within it. If something is unclear about the stack, ask before proceeding.
+
+Work through all phases IN ORDER. Complete each phase fully before moving to the next. Do not skip anything.
+
+════════════════════════════════════════════════
+PHASE 1 — MAKE ALL PAGES FULLY FUNCTIONAL
+════════════════════════════════════════════════
+
+GLOBAL RULES FOR ALL PAGES:
+- Every page must do full CRUD (create, read, update, delete) wired to the existing database
+- All forms must save data and reload on mount
+- All deletes need a confirmation dialog
+- Use one unified toast/notification system across the entire app (success, error, loading states)
+- Every empty state must have: an icon + heading + subtext + inline CTA button (not top-right corner)
+- Show skeleton loaders while data is fetching — never a blank screen
+- All data is scoped to the logged-in user — never show another user's data
+
+── DASHBOARD ──
+- Pull real live counts: Total Applications, Active Interviews, Offers Received, DSA Topics Tracked, Current Streak (days)
+- Replace all "No data available" chart placeholders with:
+  → If data exists: real charts (Applications pie, Status bar, Growth line, Activity by day bar, DSA difficulty donut)
+  → If no data: onboarding checklist card inside each chart area with a link to add data
+- Weekly Goals Progress: real percentage bars pulling from Goals table
+- Add a "Quick Add" floating button (bottom-right, primary color) — opens a command palette with options: Add Application, Log DSA Problem, Add Interview, Add Contact. Keyboard shortcut: Cmd+K
+- Add a Weekly Digest card (shows every Monday): last week's stats vs the week before, with up/down indicators
+- Add a Placement Funnel visualization: Applied → OA → Interview → Offer with real conversion percentages
+- Add Streak stat card: current streak days + longest streak, with a flame icon
+
+── APPLICATIONS ──
+- Add three view modes toggled by icon buttons: Kanban / Table / Timeline
+- Kanban columns: Applied, OA, Interview, Offer, Rejected — with drag-and-drop between columns
+- Kanban cards show: company logo placeholder, role, date applied, color-coded status badge
+- Table view: sortable columns (Company, Role, Status, Date Applied, Next Step), zebra striping, sticky header
+- Timeline view: a vertical chronological feed of all application activity
+- Filters: Status dropdown, Date range, Search by company name
+- Each item has: Edit, Delete, View Details actions
+- Application Detail Drawer (slides in from right): full status change timeline, notes field, contact person, next action date, which resume version was sent
+- Add "Anti-Ghosting" flag: if no status update in 14 days, auto-mark as "Ghosted?" and prompt to send a follow-up email. Generate the follow-up email template pre-filled with company name, role, and application date.
+
+── RESUMES ──
+- Upload resume files to storage, show as cards: filename, upload date, size, version tag (v1/v2/Final/etc.)
+- Actions per card: Preview, Download, Delete, Set as Primary, Rename version tag
+- Primary resume gets a green "Primary" badge
+- Add Resume Tailoring Engine: paste a job description → AI analyzes it → shows match % score → highlights missing keywords → suggests 3 specific bullet point edits to improve match score → saves as a new tailored version linked to that JD
+- Track which resume version was sent to which application (link from Applications drawer)
+- If the tailored version gets a callback, auto-mark it as "High Performing"
+
+── DSA TRACKER ──
+- Full CRUD on topics: name, difficulty (Easy/Medium/Hard), problems solved count, status (Not Started/In Progress/Completed), last practiced date
+- Inline row editing: click any cell to edit directly, Enter to save
+- Above the table, add two widgets side by side:
+  1. Donut chart: Easy/Medium/Hard topic distribution
+  2. Activity heatmap: last 60 days, color intensity = problems solved that day (like GitHub contribution graph)
+- "DSA Roadmap" button opens a modal with a visual clickable roadmap: Arrays → Strings → Linked Lists → Stacks → Queues → Trees → Graphs → Dynamic Programming → Greedy → Backtracking. Clicking any node adds it to the tracker.
+- Streak tracking: consecutive days where at least 1 problem was logged
+
+── INTERVIEWS ──
+- Interview cards: Company, Role, Round type (HR/Technical/System Design/Cultural), Date, Time, Mode (Online/Offline), Status (Upcoming/Completed/Cancelled)
+- Clicking a card expands a prep section: markdown notes editor, prep checklist, resource links
+- Add Interview Debrief form (shown after marking as Completed): questions asked, difficulty rating, topics that stumped them, overall feeling (1-5)
+- AI Debrief Analysis: after 3+ debriefs, show a pattern insight panel: "You've struggled with Graph questions in 3 of 5 technical interviews. Your DSA tracker shows 0 Graph problems solved."
+- Add a Question Bank tab: stores all interview questions the user has encountered, tagged by topic and company, marked as Easy to answer / Need practice / Got stumped. Searchable and filterable.
+
+── NETWORKING ──
+- Contact cards: Name, Company, Role, LinkedIn URL, Referral Status (Not Asked/Asked/Received), Last Contact Date, Relationship Strength (1-5 stars), Notes
+- Filter by: Company, Referral Status, Relationship Strength
+- "Generate Message" button per contact: opens modal with a pre-filled cold outreach LinkedIn DM template using their name, company, role. One-click copy.
+- "Request Referral" workflow: button that generates a referral request message template
+- Add follow-up reminder: set a date to follow up with a contact, shows on Calendar
+
+── CALENDAR ──
+- Auto-populate events from all other modules:
+  → Interviews → orange events
+  → Contest dates → purple events
+  → Application deadlines → red events
+  → Goal review dates → green events
+  → Networking follow-up reminders → blue events
+- Month/Week view toggle
+- Clicking a date: side panel shows all events that day
+- Clicking an event: navigates to that item's detail page
+- Today's date: filled circle highlight in primary color (not just a border)
+- Date cells with events: show colored dot indicators
+
+── GOALS ──
+- Goal cards show animated circular SVG progress rings (animate from 0 to actual % on page load)
+- Inline editing: click the target number to edit it directly
+- Custom goal creation: add goals beyond the 3 defaults (name, icon, weekly target, metric type)
+- Streak counter: consecutive weeks where user hit 100% of all goals
+- Collapse/expand the "Why Weekly Goals?" section
+
+── OFFERS ──
+- Offer cards: Company, Role, Total CTC, Base, Bonus, ESOPs, Joining Date, Deadline to Accept, Location, Status (Considering/Accepted/Declined/Negotiating)
+- Deadline countdown badge: "X days left to decide" — red if under 7 days
+- When 2+ offers exist: show a side-by-side CTC comparison bar chart with breakdown (Base/Bonus/ESOP)
+- Add static salary benchmark widget: show where the offer sits vs market tiers (FAANG/Product/Service/Startup)
+- Negotiation notes field per offer
+- Accept/Decline/Negotiating status action buttons per offer
+
+── CONTESTS ──
+- Live countdown timer on the next upcoming contest card (real-time ticking: "Starts in 2h 14m 33s")
+- "Set Reminder" button: saves contest to Calendar as a purple event
+- "Completed" toggle on past contests with: rating (1-5 stars), rank achieved, problems solved count, personal notes
+- Add HackerEarth and HackerRank as filter tabs alongside LeetCode, Codeforces, CodeChef
+- Pulsing green dot animation next to "Real-Time Tracking" badge
+
+── PREPHUB ──
+- Bookmark toggle per resource card (persisted to database)
+- "Saved" filter tab showing only bookmarked resources
+- "Mark as Used" toggle with completion date
+- User-submitted resources form: URL, name, category, description — adds to personal resource list
+- Resource completion progress bar: X of Y resources used in each category
+
+── SETTINGS ──
+- Profile tab: all fields save to database with inline success confirmation ("Profile updated ✓")
+- Preferences tab: working dark/light mode toggle persisted to localStorage
+- Preferences tab: notification preference toggles (Contest reminders, Application deadlines, Weekly summary)
+- Account tab: Export Data button (downloads all user data as JSON), Delete Account with double confirmation
+- Add Placement Season Mode toggle: when ON, dashboard shows placement season countdown and sorts everything by urgency
+
+════════════════════════════════════════════════
+PHASE 2 — UI/UX POLISH (ALL PAGES)
+════════════════════════════════════════════════
+
+GLOBAL FIXES:
+1. BUTTON CONSISTENCY: Pick ONE primary button style from what already exists in the codebase. Apply it everywhere. Remove all gradient variants, pink-red variants, and size inconsistencies. One style, entire app.
+
+2. SIDEBAR UPGRADES:
+   - Collapse/expand toggle → icon-only mode
+   - Tooltip on hover for each nav item when collapsed
+   - User avatar + name at top with dropdown: Settings, Logout
+   - Active state indicator: left border accent, not just background highlight
+
+3. ANIMATIONS:
+   - Page transition: 150ms fade-in on every route change
+   - Modal/drawer: slide-up + backdrop blur, close on Escape and backdrop click
+   - Progress rings: animate from 0 to value on mount
+   - Stat counters: count up animation on Dashboard load
+   - Streak flame: subtle pulse animation
+
+4. TYPOGRAPHY: Standardize across all pages:
+   - Page titles: 28px, weight 600
+   - Page subtitles: 14px, muted color
+   - Section headers: 13px, uppercase, letter-spacing, muted
+   - Body: 14px, line-height 1.6
+   - Currently inconsistent between Dashboard (small) and other pages (larger) — fix this
+
+5. EMPTY STATES: Standardize to this exact pattern on every page:
+   - Icon: 48px, muted color
+   - Heading: 18px, "No [items] yet"
+   - Subtext: 14px, muted, one helpful line
+   - CTA button: primary style, centered below subtext
+
+6. TABLES: Zebra striping, sticky header, hover row highlight, sortable column headers with sort direction arrow
+
+7. GLOBAL SEARCH (Cmd+K): searches across Applications, Contacts, DSA Topics, Interviews simultaneously. Results grouped by type. Keyboard navigable.
+
+8. NOTIFICATION BELL: Top-right header area. Badge count for unread. Dropdown shows: upcoming interview reminders (24h before), contests starting soon (1h before), application deadlines (3 days before), ghosted application alerts, weekly goal summary (Sundays). Mark all as read.
+
+9. MOBILE RESPONSIVE: Sidebar collapses to bottom navigation bar on screens below 768px. All pages scroll properly on mobile. Touch-friendly tap targets (min 44px).
+
+10. KANBAN DRAG-AND-DROP: Use the existing project's drag-and-drop library if any, otherwise add @dnd-kit/core. Dragging a card between columns auto-updates the application status in the database.
+
+PAGE-SPECIFIC POLISH:
+
+Dashboard:
+- Stat cards: add left border accent matching the icon color
+- Replace raw "0%" text in goals section with animated progress bars
+
+Applications:
+- Kanban cards: color-coded left border per status (Applied=blue, OA=yellow, Interview=orange, Offer=green, Rejected=red)
+
+Contests:
+- Platform badges: LeetCode=yellow, Codeforces=blue, CodeChef=orange — consistent everywhere
+
+Calendar:
+- Event dots inside date cells using the color system (orange/purple/red/green/blue per event type)
+
+Offers:
+- Red urgency state on deadline cards under 7 days (border, badge, countdown all red)
+
+════════════════════════════════════════════════
+PHASE 3 — REVOLUTIONARY NEW FEATURES
+════════════════════════════════════════════════
+
+── 1. AI PLACEMENT COACH ──
+Add a persistent chat widget (bottom-right corner, above Quick Add button).
+- Has full context of the user's data: applications, DSA progress, interviews, goals, offers
+- Answers questions like:
+  "What should I focus on this week?"
+  "How do I negotiate this Flipkart offer?"
+  "Which companies should I apply to next?"
+  "Am I on track for placement season?"
+- Uses the app's existing AI integration if any. If none, integrate with the appropriate AI API.
+- Conversation history persisted per user
+- Suggested prompts shown when chat is empty
+
+── 2. JD INTELLIGENCE — AUTO-FILL FROM JOB LINK ──
+In the Add Application form, add a URL field at the top.
+- User pastes any job posting URL (LinkedIn, Naukri, Unstop, Internshala, company site)
+- System fetches and parses the page, extracts: Company name, Role title, JD summary, Required skills, Salary range if present, Application deadline if present
+- Auto-fills all form fields from the extracted data
+- Shows a "Skills match" section: highlights which skills from the JD match the user's profile and which are gaps
+- Label the button: "Auto-fill from link"
+
+── 3. PLACEMENT WRAPPED ──
+Add a "My Journey" page (new nav item or inside Dashboard).
+- Generates a beautiful shareable card showing the user's complete placement journey stats:
+  Total applications, OA conversion rate, Interview conversion rate, Offer rate
+  DSA problems solved, Topics mastered, Longest streak
+  Most applied company type, Best performing resume version
+  Timeline of major milestones
+- Card is visually rich: stats big and bold, progress arcs, color-coded
+- "Download as Image" button (use html2canvas)
+- "Share to LinkedIn" button that opens LinkedIn share with a pre-filled caption
+- Auto-generates at end of each month and at end of placement season
+
+── 4. ANONYMOUS COLLEGE LEADERBOARD ──
+Add a "My College" section inside the Goals page or as a new tab.
+- Shows anonymous ranking within the same college (matched by college field in profile):
+  Most applications this week
+  Most DSA problems solved this week
+  Most interviews completed
+  Longest active streak
+- Names are hidden, replaced with "Student #1", "Student #2" etc.
+- User sees their own rank highlighted
+- Opt-in only: Settings toggle "Participate in college leaderboard"
+- Resets every Monday
+
+── 5. PLACEMENT EXPERIENCE SHARING ──
+After marking any interview as Completed, show a prompt:
+"Share your experience anonymously to help fellow students?"
+If yes, collect:
+- Round structure (how many rounds, what type each)
+- Approximate difficulty (1-5)
+- Topics/questions asked (general, not exact)
+- Overall process rating
+- Offer received? (yes/no)
+Store in a shared community table.
+Add a "Company Intel" tab inside PrepHub:
+- Search any company name
+- See aggregated anonymous experiences from all users who interviewed there
+- Shows: average rounds, common topics, difficulty rating, offer rate
+- Filter by year, college tier
+
+── 6. ACCOUNTABILITY PODS ──
+Add a "My Pod" section (new page or inside Networking).
+- User creates or joins a pod of 3-5 people (invite by email or username)
+- Pod members see each other's: weekly application count, DSA problems solved, interview schedule (optional), goal completion %
+- Names are visible within the pod (private group, not public)
+- Send encouragement nudge button per member
+- Weekly pod summary digest: who's leading, who needs support
+- Pod leaderboard within the group
+
+── 7. ANTI-GHOSTING SYSTEM ──
+(Already in Applications phase above — ensure it also appears as a Dashboard widget)
+- Dashboard card: "X companies haven't responded in 14+ days"
+- Bulk follow-up: select multiple ghosted applications, generate follow-up emails for all at once
+- Track follow-up sent date on each application
+
+── 8. INTERVIEW QUESTION BANK ──
+(Already in Interviews phase above — ensure it also has:)
+- Community questions tab: anonymously shared questions from the Experience Sharing feature, organized by company
+- My questions tab: private questions I've personally encountered
+- Practice mode: flashcard-style review of questions marked "Need practice"
+
+── 9. BURNOUT DETECTOR ──
+Track user activity silently (any login, any data added counts as activity).
+If no activity for 5+ consecutive days during an active placement period:
+- Show a gentle check-in banner on Dashboard (not a popup): "Hey, you've been away for a few days. Placement season is tough — that's okay. Here's a light 3-day plan to ease back in."
+- Suggest a reduced goal: "This week, just do 3 problems and 2 applications. That's enough."
+- Automatically reduce this week's goal targets by 50% with a note: "Ease-back mode active. Targets reduced. You can restore them anytime."
+
+── 10. PLACEMENT SEASON TIME MACHINE ──
+Inside Dashboard, add a "How am I tracking?" section.
+- Based on user's college tier and target companies, show a benchmark:
+  "Students who got offers at Product companies typically had by Week 8 of placement season:
+   → 150+ DSA problems solved
+   → 20+ applications sent  
+   → 3+ mock interviews done"
+- Show the user's current numbers vs these benchmarks with a gap indicator
+- Benchmarks sourced from the community Experience Sharing data (aggregate)
+- If not enough community data yet, use reasonable static benchmarks
+
+── 11. PUBLIC PROFILE PAGE ──
+Each user gets a public URL: /u/[username]
+Page shows (only what the user has made public in Settings):
+- Name, college, branch, grad year
+- DSA stats: problems solved, topics mastered, current streak
+- Skills (editable list in Settings)
+- Projects (add in Settings: title, description, link)
+- Placement journey summary (opt-in)
+- A "Connect on LinkedIn" button
+Settings toggle per section: "Show on public profile / Hide"
+Shareable to recruiters as a dynamic portfolio
+
+── 12. OFFER BENCHMARKING WITH COMMUNITY DATA ──
+Inside Offers page, when a user adds an offer:
+- Prompt: "Contribute anonymously to help others? Your CTC will be added to the community dataset."
+- If yes, store: company, role level, total CTC, year, college tier (not name)
+- Show benchmark widget per offer: "Amazon SDE-1 2025: Community average ₹34.5L across 47 reported offers. Your offer: ₹32L — slightly below average."
+- Add a "CTC Explorer" tab inside Offers: search any company + role, see distribution of reported CTCs
+
+── 13. PLACEMENT SEASON MODE ──
+(Settings toggle triggers this)
+When Placement Season Mode is ON:
+- Dashboard shows a countdown to the user's placement season start date (set in Settings)
+- All pages prioritize urgency: applications sorted by deadline, interviews by nearest date
+- A special "On-Campus Drive" type appears in Applications
+- Dashboard shows a "Days remaining" progress bar
+- Goal targets auto-increase by 20% with a note: "Placement season targets active"
+- Burnout detector sensitivity increases (3 days instead of 5)
+
+════════════════════════════════════════════════
+PHASE 4 — ONBOARDING + RETENTION SYSTEMS
+════════════════════════════════════════════════
+
+── ONBOARDING FLOW ──
+First login (detected by empty profile): show a 4-step modal that cannot be dismissed until complete:
+Step 1: "Set your profile" — College, Branch, Grad Year, Username (for public profile URL)
+Step 2: "Set your weekly goals" — default targets pre-filled, user can adjust
+Step 3: "Add your first application or DSA topic" — choose one to start
+Step 4: "You're set!" — shows a summary and links to key pages
+Progress dots at top. "Skip for now" only available on steps 3 and 4.
+Save completion state to database.
+
+── WEEKLY DIGEST EMAIL / IN-APP ──
+Every Sunday evening, generate a weekly digest:
+- This week vs last week (applications, DSA problems, interviews)
+- Streak status
+- Next week's contests
+- One AI-generated tip based on weakest area
+Show as an in-app card on Dashboard every Monday morning
+If email is available in the stack, send as email too
+
+── NOTIFICATION CENTER ──
+Bell icon top-right in the header. Badge shows unread count.
+Notifications include:
+- Interview in 24 hours
+- Contest starting in 1 hour
+- Application deadline in 3 days
+- Application ghosted (14 days no response)
+- Weekly goal summary every Sunday
+- Pod member milestone ("Ravi just got an interview at Google!")
+- Leaderboard rank change
+Mark individual as read, Mark all as read, Clear all
+
+════════════════════════════════════════════════
+PHASE 5 — DATA + EXPORT
+════════════════════════════════════════════════
+
+- Export all user data as JSON from Settings → Account tab
+- Export Report as PDF: uses html2canvas or equivalent to capture a summary report card showing all key stats, downloadable as PDF
+- Import: accept a JSON export file to restore data (useful if user switches accounts)
+- All charts must be exportable as PNG individually (right-click or download icon on each chart)
+
+════════════════════════════════════════════════
+IMPLEMENTATION RULES
+════════════════════════════════════════════════
+
+1. TECH STACK: Work within the existing stack. Do not introduce new frameworks or replace existing ones. Add libraries only when necessary and only if they don't conflict with existing dependencies.
+
+2. DATABASE: Use the existing database and ORM/query layer. All new tables/collections follow the same conventions already in the codebase. All data is user-scoped with proper access control.
+
+3. AUTH: Do not touch the existing authentication system. All new features assume the user is already authenticated.
+
+4. AI FEATURES: For AI-powered features (Coach, JD Intelligence, Resume Scorer, Debrief Analysis), use the existing AI integration if any exists in the codebase. If none exists, add a clean abstraction layer (a single AI service file) so the AI provider can be swapped easily. Use environment variables for API keys.
+
+5. STATE MANAGEMENT: Use whatever state management already exists in the project. Do not add a new state library if one already exists.
+
+6. ROUTING: Use the existing router. All new pages follow the existing route naming convention.
+
+7. COMPONENTS: Reuse existing UI components wherever possible. Only create new components when nothing existing fits.
+
+8. MOBILE: Every new feature must work on mobile. Test at 375px width minimum.
+
+9. PERFORMANCE: Paginate any list that could exceed 20 items. Lazy load charts. Debounce search inputs.
+
+10. ERROR HANDLING: Every async operation has a loading state, success state, and error state. Never show a blank screen or silent failure.
+
+11. DO NOT BREAK EXISTING FUNCTIONALITY: Before modifying any existing file, understand what it does. Preserve all existing features. Run through the existing pages after each phase to confirm nothing broke.
+
+12. WORK ORDER: Complete Phase 1 fully → confirm → Phase 2 → confirm → Phase 3 → confirm → Phase 4 → confirm → Phase 5. Ask for confirmation after each phase before proceeding.
+
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-16T01:02:11+05:30.
+</ADDITIONAL_METADATA>

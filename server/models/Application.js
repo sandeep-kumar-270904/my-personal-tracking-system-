@@ -1,0 +1,147 @@
+const mongoose = require('mongoose');
+const timelinePlugin = require('../utils/timelinePlugin');
+
+const applicationSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'User'
+  },
+  company: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    required: true,
+    enum: ['APPLIED', 'OA_PENDING', 'OA_DONE', 'INTERVIEW_SCHEDULED', 'SHORTLISTED', 'REJECTED', 'OFFER'],
+    default: 'APPLIED'
+  },
+  dateApplied: {
+    type: Date,
+    required: true,
+    default: Date.now
+  },
+  resumeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Resume'
+  },
+  abTestId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ResumeABTest'
+  },
+  notes: {
+    type: String,
+    default: ''
+  },
+  link: {
+    type: String,
+    default: ''
+  },
+  jobDescriptionUrl: {
+    type: String,
+    default: ''
+  },
+  ctcOffered: {
+    type: Number,
+  },
+  followUpDate: {
+    type: Date,
+  },
+  deadline: {
+    type: Date,
+  },
+  source: {
+    type: String,
+    enum: ['CAMPUS', 'ONLINE', 'REFERRAL', 'COLD_EMAIL', 'LINKEDIN', 'JOB_PORTAL'],
+    default: 'ONLINE'
+  },
+  priority: {
+    type: String,
+    enum: ['HIGH', 'MEDIUM', 'LOW'],
+    default: 'MEDIUM'
+  },
+  tags: [{
+    type: String
+  }],
+  fitScore: {
+    type: Number,
+    default: 0
+  },
+  fitScoreBreakdown: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  rejectionAnalysis: {
+    reason: String,
+    improvementArea: String,
+    actionableFeedback: String,
+    analyzedAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  // V3 Addons
+  momentumScore: {
+    type: Number,
+    default: 100,
+    min: 0,
+    max: 100
+  },
+  momentumDecay: {
+    type: Boolean,
+    default: true
+  },
+  isArchived: {
+    type: Boolean,
+    default: false
+  },
+  archivedAt: {
+    type: Date
+  },
+  effortMinutes: {
+    type: Number,
+    default: 0
+  },
+  deletedAt: {
+    type: Date,
+    default: null
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+applicationSchema.plugin(timelinePlugin);
+
+const axios = require('axios');
+
+applicationSchema.post('save', async function(doc) {
+  // Terminal states: OFFER, REJECTED
+  if (doc.status === 'OFFER' || doc.status === 'REJECTED') {
+    if (doc.resumeId) {
+      axios.post(`http://localhost:${process.env.PORT || 5000}/api/resumes/${doc.resumeId}/outcome-learning/process`, {
+        applicationId: doc._id,
+        status: doc.status
+      }).catch(err => console.error("Outcome learning failed:", err.message));
+    }
+  }
+});
+
+applicationSchema.post('findOneAndUpdate', async function(doc) {
+  if (doc && (doc.status === 'OFFER' || doc.status === 'REJECTED')) {
+    if (doc.resumeId) {
+      axios.post(`http://localhost:${process.env.PORT || 5000}/api/resumes/${doc.resumeId}/outcome-learning/process`, {
+        applicationId: doc._id,
+        status: doc.status
+      }).catch(err => console.error("Outcome learning failed:", err.message));
+    }
+  }
+});
+
+module.exports = mongoose.model('Application', applicationSchema);
