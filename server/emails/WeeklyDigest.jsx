@@ -1,5 +1,5 @@
-const React = require('react');
-const {
+import React from 'react';
+import {
   Html,
   Head,
   Preview,
@@ -10,7 +10,7 @@ const {
   Button,
   Heading,
   Hr,
-} = require('@react-email/components');
+} from '@react-email/components';
 
 const WeeklyDigest = ({
   firstName,
@@ -111,4 +111,4 @@ const WeeklyDigest = ({
   );
 };
 
-module.exports = WeeklyDigest;
+export default WeeklyDigest;

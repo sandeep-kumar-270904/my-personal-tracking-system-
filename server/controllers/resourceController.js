@@ -218,7 +218,7 @@ const recommendResources = async (req, res) => {
 
     if (weakTopics.length === 0 && failedInterviews.length === 0) {
       // Fallback
-      return res.status(404).json({ message: 'Complete some DSA problems or interviews to get personalized picks' });
+      return res.json([]);
     }
 
     const prompt = `
@@ -263,7 +263,7 @@ const recommendResources = async (req, res) => {
   }
 };
 
-exports.reportBrokenLink = async (req, res) => {
+const reportBrokenLink = async (req, res) => {
   try {
     const resource = await Resource.findById(req.params.id);
     if (!resource) return res.status(404).json({ message: 'Resource not found' });

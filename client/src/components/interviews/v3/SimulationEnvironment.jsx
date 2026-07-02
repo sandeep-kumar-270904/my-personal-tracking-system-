@@ -47,7 +47,7 @@ export default function SimulationEnvironment({ onClose, simulationType, targetC
     setIsListening(!isListening);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if(!currentInput.trim()) return;
     
     const newMessages = [...messages, { role: 'student', text: currentInput }];
@@ -59,16 +59,26 @@ export default function SimulationEnvironment({ onClose, simulationType, targetC
       setIsListening(false);
     }
     
-    // Mocking LLM response delay
-    setTimeout(() => {
-      const mockReply = "That's an interesting approach. Can you elaborate on the trade-offs you considered?";
-      setMessages([...newMessages, { role: 'interviewer', text: mockReply }]);
+    try {
+      const res = await axios.post('/api/interviews/simulations/chat', {
+        messages: newMessages,
+        targetCompany,
+        targetRole,
+        roundType,
+        simulationType
+      });
+      
+      const aiReply = res.data.reply || "That's an interesting approach. Let's move on.";
+      setMessages([...newMessages, { role: 'interviewer', text: aiReply }]);
       
       if (simulationType === 'PHONE' && 'speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(mockReply);
+        const utterance = new SpeechSynthesisUtterance(aiReply);
         window.speechSynthesis.speak(utterance);
       }
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      setMessages([...newMessages, { role: 'interviewer', text: "Sorry, I had trouble processing that. Can you repeat?" }]);
+    }
   };
 
   const finishSimulation = async () => {

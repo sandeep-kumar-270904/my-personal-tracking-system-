@@ -54,14 +54,14 @@ const SignupPage = () => {
   });
 
   const handleGithubSignup = () => {
-    const clientId = 'Ov23lieR3QvH9yKO3AEf';
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || 'Ov23lieR3QvH9yKO3AEf';
     const redirectUri = `${window.location.origin}/oauth/callback`;
     const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=github`;
     window.location.href = url;
   };
 
   const handleLinkedinSignup = () => {
-    const clientId = '777sk8quuct4a4';
+    const clientId = import.meta.env.VITE_LINKEDIN_CLIENT_ID || '777sk8quuct4a4';
     const redirectUri = `${window.location.origin}/oauth/callback`;
     const scope = 'openid profile email';
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=linkedin`;

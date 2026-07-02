@@ -148,8 +148,9 @@ export default function ResumesPage() {
   };
 
   const handleDownload = (resume) => {
-    if (resume.fileUrl) {
-      window.open(resume.fileUrl, '_blank');
+    const fileUrl = resume.filePath ? (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000') + resume.filePath : null;
+    if (fileUrl) {
+      window.open(fileUrl, '_blank');
     } else {
       toast.error("File URL not found");
     }

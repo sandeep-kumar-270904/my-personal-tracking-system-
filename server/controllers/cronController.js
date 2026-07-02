@@ -7,13 +7,14 @@ const StudentStreak = require('../models/StudentStreak');
 const StudentBadge = require('../models/StudentBadge');
 const User = require('../models/User');
 
-require('@babel/register')({
+const babelRegister = require('@babel/register');
+(babelRegister.default || babelRegister)({
   presets: ['@babel/preset-react'],
   extensions: ['.jsx', '.js']
 });
 
 const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 let WeeklyDigestTemplate;
 try {
   WeeklyDigestTemplate = require('../emails/WeeklyDigest.jsx');

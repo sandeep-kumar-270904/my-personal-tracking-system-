@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { sendWhatsAppMessage } = require('./botController');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -535,6 +536,25 @@ const updateCalendarSettings = async (req, res) => {
   }
 };
 
+const checkWhatsAppActivation = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user || !user.phone) {
+      return res.status(400).json({ message: 'No phone number linked to profile. Please save your phone number first.' });
+    }
+
+    const success = await sendWhatsAppMessage(user.phone, '✅ StudentTracker WhatsApp integration is active and verified! You will now receive important nudges here.');
+    
+    if (success) {
+      res.status(200).json({ message: 'WhatsApp activated successfully!' });
+    } else {
+      res.status(400).json({ message: 'Failed to verify WhatsApp. Did you send the join code to the sandbox?' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -547,5 +567,6 @@ module.exports = {
   githubAuth,
   linkedinAuth,
   updateCalendarSettings,
-  completeOnboarding
+  completeOnboarding,
+  checkWhatsAppActivation
 };

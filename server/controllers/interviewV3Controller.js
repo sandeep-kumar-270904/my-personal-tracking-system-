@@ -229,3 +229,33 @@ exports.generatePortfolio = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.chatSimulation = async (req, res) => {
+  try {
+    const { messages, targetCompany, targetRole, roundType, simulationType } = req.body;
+    
+    let prompt = `You are an interviewer from ${targetCompany} conducting a ${simulationType} ${roundType} interview for the ${targetRole} role. 
+Keep your responses short, concise, and conversational. Ask follow-up questions based on the candidate's answers. If the candidate gives a short or vague answer like 'hi' or 'yeah', ask them to elaborate or ask a specific behavioral/technical question.
+
+Here is the conversation history:
+`;
+    
+    messages.forEach(m => {
+      prompt += `\n${m.role.toUpperCase()}: ${m.text}`;
+    });
+    
+    prompt += `\n\nINTERVIEWER:`;
+
+    const model = getModel();
+    const result = await model.generateContent(prompt);
+    let reply = result.response.text().trim();
+    if (reply.startsWith('INTERVIEWER:')) {
+      reply = reply.replace('INTERVIEWER:', '').trim();
+    }
+    
+    res.json({ reply });
+  } catch (err) {
+    console.error("Simulation Chat Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};

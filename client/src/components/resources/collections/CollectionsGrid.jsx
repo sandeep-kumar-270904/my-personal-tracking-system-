@@ -91,7 +91,7 @@ const CollectionsGrid = () => {
               <div className="w-full h-1.5 bg-[#1a1b26] rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-emerald-500 transition-all duration-500"
-                  style={{ width: \`\${col.progress}%\` }}
+                  style={{ width: `${col.progress}%` }}
                 />
               </div>
             </div>

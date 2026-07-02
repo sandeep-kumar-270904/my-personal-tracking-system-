@@ -27,8 +27,15 @@ const AIRecommender = ({ onPreview }) => {
   const { data: recommendations, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['resources', 'recommend'],
     queryFn: async () => {
-      const res = await api.get('/resources/recommend');
-      return res.data;
+      try {
+        const res = await api.get('/resources/recommend');
+        return res.data;
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          return null;
+        }
+        throw error;
+      }
     },
     retry: 1,
     refetchOnWindowFocus: false,

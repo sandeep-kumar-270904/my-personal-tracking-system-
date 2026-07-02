@@ -353,6 +353,63 @@ const negotiateSalary = async (req, res) => {
   }
 };
 
+// @desc    Pre-flight ATS Resume Check
+// @route   POST /api/ai/preflight-resume
+// @access  Private
+const preflightResume = async (req, res) => {
+  try {
+    const { resumeData } = req.body;
+
+    if (!resumeData) {
+      return res.status(400).json({ message: 'Resume data is required' });
+    }
+
+    const prompt = `
+      You are an expert technical recruiter and an advanced Applicant Tracking System (ATS).
+      I am providing you with the JSON data of a candidate's resume generated from a resume builder.
+      Analyze this resume for structure, keyword optimization, and the "Action-Metric-Impact" formatting in bullet points.
+      
+      Return ONLY a valid JSON object without any markdown block formatting like \`\`\`json.
+      
+      Schema:
+      {
+        "score": <number between 0 and 100>,
+        "feedback": [
+          {
+            "type": "success" | "warning" | "info",
+            "message": "Specific feedback message"
+          }
+        ]
+      }
+      
+      Requirements for high score:
+      - Has contact info (email, linkedin, etc)
+      - Experience bullets contain quantifiable metrics (%, $, numbers).
+      - Skills are well categorized.
+      - Education is present.
+
+      Resume JSON:
+      """
+      ${JSON.stringify(resumeData, null, 2)}
+      """
+    `;
+
+    const aiResponse = await callGemini(prompt);
+    
+    let jsonString = aiResponse;
+    const match = aiResponse.match(/\{[\s\S]*\}/);
+    if (match) {
+      jsonString = match[0];
+    }
+
+    const result = JSON.parse(jsonString);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Pre-flight Error:", error);
+    res.status(500).json({ message: 'Failed to run pre-flight check', error: error.message });
+  }
+};
+
 module.exports = {
   analyzeJD,
   matchResume,
@@ -360,5 +417,6 @@ module.exports = {
   generateCoverLetter,
   evaluateMockAnswer,
   negotiateSalary,
+  preflightResume,
   callGemini,
 };

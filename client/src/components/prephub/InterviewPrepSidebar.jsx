@@ -10,13 +10,7 @@ const InterviewPrepSidebar = () => {
   const { data: prepResources = [], isLoading } = useQuery({
     queryKey: ['interview_prep_checklist'],
     queryFn: async () => {
-      // Fetch resources and completions
-      const [resReq, compReq] = await Promise.all([
-        api.get('/resources'),
-        api.get('/resources/completed/me') // Assuming we have this endpoint, or we can just fetch all resources and map the user's completions. 
-        // Wait, the /resources endpoint actually returns `hasCompleted` boolean directly per resource!
-      ]);
-      
+      const resReq = await api.get('/resources');
       const resources = resReq.data.filter(r => r.category === 'Interview Prep');
       return resources;
     }

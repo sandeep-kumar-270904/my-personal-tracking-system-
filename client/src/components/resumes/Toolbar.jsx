@@ -1,8 +1,10 @@
 import { Search, Filter, Layers, Upload, ArrowUpDown, BarChart2, Layout, Target } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-export default function Toolbar({ tags, setShowUploadModal, setShowLinkedInModal, setShowABTestModal, setShowResumeBuilderModal, setShowBatchScoreModal }) {
+export default function Toolbar({ tags, setShowUploadModal, setShowLinkedInModal, setShowABTestModal, setShowBatchScoreModal }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const currentSearch = searchParams.get('q') || '';
   const currentTag = searchParams.get('tag') || '';
   const currentSort = searchParams.get('sort') || 'lastUsedAt';
@@ -85,7 +87,7 @@ export default function Toolbar({ tags, setShowUploadModal, setShowLinkedInModal
           <span>Batch Score</span>
         </button>
         <button
-          onClick={() => setShowResumeBuilderModal?.(true)}
+          onClick={() => navigate('/resumes/builder')}
           className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
         >
           <Layout className="w-4 h-4" />

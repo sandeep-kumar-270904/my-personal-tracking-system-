@@ -105,7 +105,7 @@ const WhatsAppConnectWidget = () => {
             <p className="text-[10px] text-slate-400 mb-2 uppercase tracking-wider font-semibold">Scan to Chat</p>
             <div className="bg-white p-2.5 rounded-xl">
               <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://wa.me/14155238886?text=join%20purple-moon')}`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://wa.me/' + (import.meta.env.VITE_TWILIO_WHATSAPP_NUMBER || '14155238886').replace(/[^0-9]/g, '') + '?text=join%20purple-moon')}`}
                 alt="WhatsApp QR Code"
                 className="w-32 h-32"
               />

@@ -2,8 +2,13 @@ const StudentInsightCache = require('../models/StudentInsightCache');
 const ResourceCompletion = require('../models/ResourceCompletion');
 const Resource = require('../models/Resource');
 // Prisma client for applications and DSA
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+let prisma = null;
+try {
+  const { PrismaClient } = require('@prisma/client');
+  prisma = new PrismaClient();
+} catch (e) {
+  console.warn("PrismaClient not found. Skipping Prisma queries.");
+}
 
 const getMyStats = async (req, res) => {
   try {
@@ -38,10 +43,12 @@ const getMyStats = async (req, res) => {
       // 2. Gather Applications (Prisma)
       let applicationsSubmitted = 0;
       try {
-        const apps = await prisma.application.count({
-          where: { userId }
-        });
-        applicationsSubmitted = apps;
+        if (prisma) {
+          const apps = await prisma.application.count({
+            where: { userId }
+          });
+          applicationsSubmitted = apps;
+        }
       } catch (err) {
         console.warn("Prisma error counting applications:", err.message);
       }
@@ -49,10 +56,12 @@ const getMyStats = async (req, res) => {
       // 3. Gather DSA Solved (Prisma)
       let dsaSolved = 0;
       try {
-        const dsas = await prisma.userDsaProgress.count({
-          where: { userId, status: 'SOLVED' }
-        });
-        dsaSolved = dsas;
+        if (prisma) {
+          const dsas = await prisma.userDsaProgress.count({
+            where: { userId, status: 'SOLVED' }
+          });
+          dsaSolved = dsas;
+        }
       } catch (err) {
         console.warn("Prisma error counting DSA progress:", err.message);
       }

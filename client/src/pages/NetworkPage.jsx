@@ -174,42 +174,42 @@ const NetworkPage = () => {
             Treat networking as a skill. Build relationships, track outreach, and turn connections into placements.
           </p>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto h-[72px]">
-          <div className="h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-3 w-64 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+        <div className="flex flex-wrap md:flex-nowrap items-stretch gap-3 w-full md:w-auto mt-4 md:mt-0">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-3 w-full md:w-64 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
             <WeeklyGoalsCard goals={goals} onEdit={() => toast.success('Edit goals modal would open here')} />
           </div>
-          <div className="h-full flex flex-col gap-2">
-            <div className="flex gap-2 flex-1">
+          <div className="flex flex-col justify-between gap-2 w-full md:w-auto">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 flex-1">
               <button 
                 onClick={() => setShowImportModal(true)}
-                className="flex-1 px-4 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium rounded-xl transition-colors flex items-center justify-center gap-2 border border-blue-500/20"
+                className="flex-1 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium rounded-xl transition-colors flex items-center justify-center gap-2 border border-blue-500/20"
               >
                 <Users size={16} /> Import LinkedIn
               </button>
               {/* Networking V6: 10-minute active networking sprint mode */}
               <button 
                 onClick={() => toast.success('Sprint mode activated! Timer started for 10 minutes.')}
-                className="flex-1 px-4 bg-gradient-to-r from-rose-500/20 to-orange-500/20 hover:from-rose-500/30 hover:to-orange-500/30 text-orange-400 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-orange-500/30"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-rose-500/20 to-orange-500/20 hover:from-rose-500/30 hover:to-orange-500/30 text-orange-400 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-orange-500/30"
               >
                 ⚡ 10-Min Sprint
               </button>
               <button 
                 onClick={() => setShowDepthAudit(true)}
-                className="flex-1 px-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-purple-500/20"
+                className="flex-1 px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-purple-500/20"
               >
                 Depth Audit
               </button>
             </div>
-            <div className="flex gap-2 flex-1">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 flex-1">
               <button 
                 onClick={() => setShowTemplates(true)}
-                className="flex-1 px-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 border border-white/10"
+                className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 border border-white/10"
               >
                 <MessageSquare size={16} /> Templates
               </button>
               <button 
                 onClick={() => handleCreateDummyContact()}
-                className="flex-1 px-4 bg-[#ff6b00] hover:bg-[#ff8533] text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,107,0,0.4)]"
+                className="flex-1 px-4 py-2 bg-[#ff6b00] hover:bg-[#ff8533] text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,107,0,0.4)]"
               >
                 <Plus size={16} /> Contact
               </button>

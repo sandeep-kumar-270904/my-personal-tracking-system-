@@ -44,10 +44,13 @@ initCronJobs();
 
 const app = express();
 
+// Middleware
+app.use(cors());
+
 // Global Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // limit each IP to 200 requests per windowMs
+  max: process.env.NODE_ENV === 'development' ? 2000 : 200, // higher limit for dev
   message: 'Too many requests from this IP, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
@@ -60,8 +63,6 @@ connectDB();
 // Start Cron Jobs for Reminders
 startCronJobs();
 
-// Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Needed for Twilio Webhooks
 

@@ -46,6 +46,8 @@ import CompanyInsightsPage from './pages/CompanyInsightsPage';
 import ResearchPage from './pages/ResearchPage';
 import CollectionDetail from './pages/CollectionDetail';
 import StudentProfilePage from './pages/StudentProfilePage';
+import MyStatsPage from './pages/MyStatsPage';
+import ResumeBuilderPage from './pages/ResumeBuilderPage';
 
 import { Toaster, toast } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -110,6 +112,38 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Global Theme Sync
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const currentTheme = localStorage.getItem('theme') || 'dark';
+      if (currentTheme === 'light') {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('light-theme'); // Clean up old class
+      } else {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.remove('light-theme');
+      }
+    };
+
+    // Run on initial load
+    handleThemeChange();
+
+    // Optionally listen to changes across tabs
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'theme') {
+        handleThemeChange();
+      }
+    });
+
+    // We can also dispatch custom events when theme changes inside the app
+    window.addEventListener('theme-changed', handleThemeChange);
+
+    return () => {
+      window.removeEventListener('storage', handleThemeChange);
+      window.removeEventListener('theme-changed', handleThemeChange);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster position="top-right" toastOptions={{
@@ -142,6 +176,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="applications" element={<ApplicationsPage />} />
             <Route path="resumes" element={<ResumesPage />} />
+            <Route path="resumes/builder" element={<ResumeBuilderPage />} />
             <Route path="resumes/intelligence" element={<ResumeIntelligenceDashboard />} />
             <Route path="dsa" element={<DSAPage />} />
             <Route path="dsa/command-center" element={<DSACommandCenter />} />

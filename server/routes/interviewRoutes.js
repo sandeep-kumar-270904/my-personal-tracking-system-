@@ -40,7 +40,7 @@ const {
   getEnergyForecast,
   analyzeRejection,
   getCertifications, evaluateCertifications,
-  saveSimulationSession, getSimulations,
+  saveSimulationSession, getSimulations, chatSimulation,
   generatePortfolio
 } = require('../controllers/interviewV3Controller');
 
@@ -80,6 +80,7 @@ router.post('/evaluate-certifications', evaluateCertifications);
 router.route('/simulations')
   .get(getSimulations)
   .post(saveSimulationSession);
+router.post('/simulations/chat', chatSimulation);
 router.post('/generate-portfolio', generatePortfolio);
 
 // V2 Addons: Global routes

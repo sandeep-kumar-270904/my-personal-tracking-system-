@@ -9,6 +9,7 @@ router.get('/me', protect, getMe);
 router.put('/profile', protect, updateUser);
 router.post('/onboarding-complete', protect, completeOnboarding);
 router.put('/calendar-settings', protect, updateCalendarSettings);
+router.post('/check-whatsapp', protect, require('../controllers/authController').checkWhatsAppActivation);
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:token', resetPassword);
 router.get('/verifyemail/:token', verifyEmail);

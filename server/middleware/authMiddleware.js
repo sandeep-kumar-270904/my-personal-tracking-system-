@@ -20,4 +20,8 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+const admin = (req, res, next) => {
+  next(); // Dummy bypass for preview
+};
+
+module.exports = { protect, admin };

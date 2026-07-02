@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Activity, FileText, History, Download, Trash2, CheckCircle2, Sparkles, Target, Search, MessageSquare, BarChart2, FileDown, Users } from 'lucide-react';
 import { useState } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
 import AI_RewriteTab from './AI_RewriteTab';
 import KeywordMatchTab from './KeywordMatchTab';
 import InterviewPredictorTab from './InterviewPredictorTab';
@@ -16,12 +15,8 @@ import InterviewSignalsSection from './InterviewSignalsSection';
 import OutcomeLearningSection from './OutcomeLearningSection';
 import PrepHubGapsSection from './PrepHubGapsSection';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
 export default function PreviewModal({ isOpen, onClose, resume, versions = [], onDownload, onDelete }) {
   const [activeTab, setActiveTab] = useState('analysis');
-  const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
   const [showTailorModal, setShowTailorModal] = useState(false);
 
   if (!isOpen || !resume) return null;
@@ -32,6 +27,8 @@ export default function PreviewModal({ isOpen, onClose, resume, versions = [], o
   const atsScore = analysis.atsScore || 0;
   const atsColor = atsScore >= 80 ? 'text-emerald-400' : atsScore >= 60 ? 'text-amber-400' : 'text-red-400';
   const atsBg = atsScore >= 80 ? 'bg-emerald-500/10 border-emerald-500/20' : atsScore >= 60 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20';
+  
+  const fileUrl = resume.filePath ? (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000') + resume.filePath : null;
 
   return (
     <AnimatePresence>
@@ -62,32 +59,21 @@ export default function PreviewModal({ isOpen, onClose, resume, versions = [], o
                    <button onClick={() => onDownload(resume)} className="p-2 hover:bg-white/10 rounded-xl text-slate-300 transition-colors tooltip" data-tip="Download">
                      <Download className="w-4 h-4" />
                    </button>
-                   <a href={resume.fileUrl} target="_blank" rel="noreferrer" className="p-2 hover:bg-white/10 rounded-xl text-slate-300 transition-colors tooltip" data-tip="Open in new tab">
-                     <ExternalLink className="w-4 h-4" />
-                   </a>
+                   {fileUrl && (
+                     <a href={fileUrl} target="_blank" rel="noreferrer" className="p-2 hover:bg-white/10 rounded-xl text-slate-300 transition-colors tooltip" data-tip="Open in new tab">
+                       <ExternalLink className="w-4 h-4" />
+                     </a>
+                   )}
                  </div>
              </div>
              
-             <div className="flex-1 overflow-auto custom-scrollbar flex items-start justify-center p-4 bg-slate-950 relative">
-               {resume.fileUrl ? (
-                 <Document
-                   file={resume.fileUrl}
-                   onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                   loading={<div className="text-slate-500 animate-pulse">Loading Document...</div>}
-                   className="shadow-2xl"
-                 >
-                   {Array.from(new Array(numPages), (el, index) => (
-                     <div key={`page_${index + 1}`} className="mb-4 last:mb-0">
-                       <Page 
-                         pageNumber={index + 1} 
-                         width={450}
-                         renderTextLayer={false} 
-                         renderAnnotationLayer={false}
-                         className="bg-white rounded overflow-hidden"
-                       />
-                     </div>
-                   ))}
-                 </Document>
+             <div className="flex-1 overflow-auto custom-scrollbar flex items-start justify-center p-0 bg-slate-950 relative h-full w-full">
+               {fileUrl ? (
+                 <iframe 
+                   src={fileUrl + "#toolbar=0&navpanes=0&scrollbar=0"} 
+                   className="w-full h-full border-0"
+                   title="Resume Preview"
+                 />
                ) : (
                  <div className="text-slate-500 m-auto">PDF not available</div>
                )}

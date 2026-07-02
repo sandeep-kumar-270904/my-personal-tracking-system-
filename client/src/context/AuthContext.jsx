@@ -1,7 +1,11 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 
 export const AuthContext = createContext();
+
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -9,27 +13,19 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkLoggedIn = async () => {
-      // PREVIEW MODE BYPASS
-      setUser({
-        _id: 'preview123',
-        name: 'Demo Admin User',
-        email: 'admin@demo.com',
-        role: 'placement_cell_admin',
-        college: 'Preview Institute of Technology',
-        branch: 'Computer Science',
-        gradYear: '2025',
-        phone: '',
-        username: 'demo_admin',
-        googleCalendarSync: { connected: false },
-        calendarSettings: {
-          timezone: 'Asia/Kolkata',
-          preferredView: 'month',
-          disablePrepSuggestions: false,
-          shareToken: null,
-          shareInterviewsOnly: false
-        },
-        targetCompanies: ['Google', 'Microsoft', 'Amazon', 'Atlassian']
-      });
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await api.get('/auth/me');
+          setUser(res.data);
+        } catch (error) {
+          console.error('Auth check failed', error);
+          localStorage.removeItem('token');
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     };
 

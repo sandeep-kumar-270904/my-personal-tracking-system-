@@ -12,7 +12,7 @@ export default defineConfig({
       srcDir: 'public',
       filename: 'sw.js',
       registerType: 'autoUpdate',
-      injectManifest: { maximumFileSizeToCacheInBytes: 5000000 },
+      injectManifest: { maximumFileSizeToCacheInBytes: 10000000 },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'StudentTracker',

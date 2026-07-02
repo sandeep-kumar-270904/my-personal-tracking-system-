@@ -19,7 +19,7 @@ import ResourceChatWidget from '../components/resources/ResourceChatWidget';
 import DSAStrugglingBanner from '../components/prephub/DSAStrugglingBanner';
 import InterviewGapAlert from '../components/prephub/InterviewGapAlert';
 import { useNavigate } from 'react-router-dom';
-const categories = ['All', 'Collections', 'Saved', 'My Submissions', 'DSA', 'Web Dev', 'System Design', 'CS Core', 'Interview Prep'];
+const categories = ['All', 'Collections', 'Saved', 'My Submissions', 'Web Dev', 'App Dev', 'System Design', 'AI/ML', 'CS Core', 'DSA', 'Aptitude', 'Official Docs', 'Interview Prep'];
 const difficulties = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
 const sortOptions = ['Default', 'Most Upvoted', 'Newest First', 'Beginner First'];
 
@@ -80,10 +80,10 @@ const ResourcesPage = () => {
   
   const searchContainerRef = useRef(null);
 
-  // Auto-switch to DSA when Roadmap is selected on All
+  // Auto-switch to Web Dev when Roadmap is selected on All
   useEffect(() => {
     if (viewMode === 'roadmap' && (activeCategory === 'All' || activeCategory === 'Saved' || activeCategory === 'My Submissions')) {
-      setActiveCategory('DSA');
+      setActiveCategory('Web Dev');
     }
   }, [viewMode, activeCategory]);
 
@@ -632,6 +632,7 @@ const ResourcesPage = () => {
                 })}
               </AnimatePresence>
             </div>
+          )}
           </>
         )}
       </div>

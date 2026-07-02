@@ -7,7 +7,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { HelmetProvider } from 'react-helmet-async'
 
-const GOOGLE_CLIENT_ID = '1097724719925-c6a0511g9gblfmoa85kp4b05igvrta9t.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1097724719925-c6a0511g9gblfmoa85kp4b05igvrta9t.apps.googleusercontent.com';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

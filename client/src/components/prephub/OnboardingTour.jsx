@@ -5,16 +5,19 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
 const OnboardingTour = () => {
-  const { user, updateUser } = useAuth();
+  const { user, setUser } = useAuth();
 
   useEffect(() => {
     // Prevent tour if user is not loaded, has completed it, or screen is too small
-    if (!user || user.hasCompletedOnboarding || window.innerWidth < 768) return;
+    if (!user || user.hasCompletedOnboarding || localStorage.getItem('hasCompletedOnboarding') || window.innerWidth < 768) return;
 
     // Small delay to ensure elements are mounted
     const timer = setTimeout(() => {
+      localStorage.setItem('hasCompletedOnboarding', 'true');
       const tour = driver({
         showProgress: true,
+        allowClose: true,
+        popoverClass: 'driverjs-theme',
         steps: [
           {
             popover: {
@@ -69,8 +72,8 @@ const OnboardingTour = () => {
             tour.destroy();
             // Mark complete on backend
             api.post('/auth/onboarding-complete').then(() => {
-              if (updateUser) {
-                updateUser({ ...user, hasCompletedOnboarding: true });
+              if (setUser) {
+                setUser({ ...user, hasCompletedOnboarding: true });
               }
             }).catch(err => console.error('Failed to complete onboarding', err));
           }
@@ -81,7 +84,7 @@ const OnboardingTour = () => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [user, updateUser]);
+  }, [user, setUser]);
 
   return null;
 };

@@ -14,9 +14,10 @@ export default function BehavioralStoryBank() {
   const fetchStories = async () => {
     try {
       const res = await axios.get('/api/interviews/stories');
-      setStories(res.data);
+      setStories(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
+      setStories([]);
     }
   };
 

@@ -26,6 +26,10 @@ const AdminPanel = ({ isOpen, onClose }) => {
 
   const { data: allResources = [], isLoading: resLoading } = useQuery({
     queryKey: ['resources'], // the main resources query fetches all if admin
+    queryFn: async () => {
+      const res = await api.get('/resources');
+      return res.data;
+    },
     enabled: isOpen && (activeTab === 'Resources' || activeTab === 'Spotlight')
   });
 

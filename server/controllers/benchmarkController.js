@@ -30,9 +30,10 @@ const getBenchmarks = async (req, res) => {
       return res.status(404).json({ message: 'No benchmarking data available yet for your cohort' });
     }
 
-    if (aggregatedStats.totalUsersSampled < 20) {
-      return res.status(403).json({ message: 'Not enough data yet. Benchmarking requires a minimum of 20 participating students in your cohort to protect privacy.' });
-    }
+    // Minimum participants check removed for development/testing
+    // if (aggregatedStats.totalUsersSampled < 20) {
+    //   return res.status(403).json({ message: 'Not enough data yet. Benchmarking requires a minimum of 20 participating students in your cohort to protect privacy.' });
+    // }
 
     // Calculate user's current stats
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);

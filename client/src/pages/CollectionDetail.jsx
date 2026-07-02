@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../services/api';
+import api from "../services/api";
 import { ArrowLeft, Play, CheckCircle2, Share2, BookOpen, Clock, Users, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -113,7 +113,7 @@ const CollectionDetail = () => {
             <div className="w-full h-3 bg-[#0f1015] rounded-full overflow-hidden border border-white/5">
               <div 
                 className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-700"
-                style={{ width: \`\${progress}%\` }}
+                style={{ width: `${progress}%` }}
               />
             </div>
           </div>

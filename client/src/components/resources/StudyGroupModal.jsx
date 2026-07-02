@@ -69,6 +69,10 @@ const StudyGroupModal = ({ isOpen, onClose }) => {
   const [challengeData, setChallengeData] = useState({ resourceId: '', requiredCompletions: 1 });
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
+    queryFn: async () => {
+      const res = await api.get('/resources');
+      return res.data;
+    },
     enabled: isOpen
   });
 
@@ -297,7 +301,7 @@ const StudyGroupModal = ({ isOpen, onClose }) => {
                             <div className="h-2 w-full bg-[#13141f] rounded-full overflow-hidden border border-white/5">
                               <div 
                                 className="h-full bg-emerald-500"
-                                style={{ width: \`\${Math.min(100, (groupDetails.activeChallenge.currentCompletions / groupDetails.activeChallenge.requiredCompletions) * 100)}%\` }}
+                                style={{ width: `${Math.min(100, (groupDetails.activeChallenge.currentCompletions / groupDetails.activeChallenge.requiredCompletions) * 100)}%` }}
                               />
                             </div>
                           </div>
