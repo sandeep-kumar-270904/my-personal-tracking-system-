@@ -2,13 +2,18 @@
 
 A comprehensive, full-stack application designed to be the ultimate productivity platform for students and job seekers. Track your internship applications, manage multiple resumes, monitor your Data Structures & Algorithms (DSA) preparation, and organize interviews all in one unified, beautifully designed dashboard.
 
-![Dashboard Preview](client/public/vite.svg) <!-- Replace with actual screenshot later -->
-
-## ✨ Features (MVP 2)
+## ✨ Features
 
 ### 📊 Advanced Analytics Dashboard
 - Visualize your application success rates with dynamic, interactive charts (`Recharts`).
 - Get actionable productivity insights based on your recent activity and upcoming interviews.
+
+### 🤖 AI Pre-flight & ATS Resume Builder
+- Build and customize professional resumes dynamically.
+- Run an AI Pre-flight check (powered by Google Gemini) to ensure your resume is ATS-friendly and tailored for your dream job.
+
+### 💬 WhatsApp Nudges via Twilio
+- Receive real-time WhatsApp alerts for important interview schedules, application deadlines, and goal milestones directly on your phone.
 
 ### 💼 Application Tracker
 - Comprehensive CRUD interface to track job applications.
@@ -27,26 +32,6 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 - Gamify your placement process by setting weekly targets for applications, DSA practice, and networking.
 - Visual progress bars and a dashboard widget keep you accountable and motivated.
 
-### 💰 Offer & Compensation Tracker
-- Compare job offers side-by-side to make the best career decisions.
-- Automatically calculates total CTC from Base Salary, Sign-On Bonus, and RSUs.
-- Visual stacked bar charts breakdown your compensation structure.
-
-### 📄 Resume Manager
-- Version control for your resumes. Track which resume is tailored for which specific industry or role.
-- Add drive links and descriptions for quick access during applications.
-
-### 🧠 DSA Tracker
-- Stay consistent with your technical preparation.
-- Log problems solved across platforms (LeetCode, Codeforces, etc.), categorize by difficulty (Easy, Medium, Hard), and track completion status.
-
-### 🏆 Live Coding Contests
-- Automatically fetches upcoming coding contests from platforms like LeetCode, Codeforces, and CodeChef.
-- Filter contests by platform and view start times, durations, and direct registration links.
-
-### 📅 Interview Planner
-- Never miss a schedule. Track upcoming interview dates, types (Technical, HR, OA), and prep notes.
-
 ## 🛠️ Tech Stack
 
 **Frontend:**
@@ -60,7 +45,8 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 - Node.js & Express.js
 - MongoDB & Mongoose (NoSQL Database)
 - JSON Web Tokens (JWT) for secure authentication
-- bcryptjs for password hashing
+- Google Gemini SDK for AI integrations
+- Twilio API for WhatsApp messaging
 
 ## 🚀 Getting Started
 
@@ -72,8 +58,8 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/sandeep-kumar-270904/Student-Placement-Tracker-.git
-   cd Student-Placement-Tracker-
+   git clone https://github.com/sandeep-kumar-270904/my-personal-tracking-system-.git
+   cd my-personal-tracking-system-
    ```
 
 2. **Setup the Backend**
@@ -81,13 +67,7 @@ A comprehensive, full-stack application designed to be the ultimate productivity
    cd server
    npm install
    ```
-   Create a `.env` file in the `server` directory:
-   ```env
-   PORT=5000
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_super_secret_key
-   NODE_ENV=development
-   ```
+   Create a `.env` file in the `server` directory. Refer to the Deployment section for required keys.
    Start the backend server:
    ```bash
    npm start
@@ -106,8 +86,36 @@ A comprehensive, full-stack application designed to be the ultimate productivity
 4. **Access the App**
    Open your browser and navigate to `http://localhost:5173`.
 
-## 🤝 Contributing
-Contributions, issues, and feature requests are welcome!
+## 🌐 Deployment Environment Variables
+
+When deploying to platforms like Vercel (Frontend) and Render (Backend), ensure you configure the following variables:
+
+### Frontend (`client/.env`)
+```env
+VITE_API_URL=https://your-backend-url.onrender.com/api
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_GITHUB_CLIENT_ID=your_github_client_id
+VITE_LINKEDIN_CLIENT_ID=your_linkedin_client_id
+```
+
+### Backend (`server/.env`)
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_super_secret_key
+NODE_ENV=production
+CLIENT_URL=https://your-frontend-url.vercel.app
+GEMINI_API_KEY=your_gemini_api_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+LINKEDIN_CLIENT_ID=your_linkedin_client_id
+LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_token
+RESEND_API_KEY=your_resend_api_key
+CRON_SECRET=your_cron_secret
+```
 
 ---
 *Built with ❤️ for students striving for their dream placements.*
