@@ -41,16 +41,18 @@ const sendWeeklySummaries = async () => {
     // Find users with weekly email enabled
     const users = await User.find({ 'notificationPreferences.weeklyEmail': true });
 
-    for (const user of users) {
+    const userPromises = users.map(async (user) => {
       try {
         const userId = user._id;
 
-        // Fetch stats for the previous week
-        const applications = await Application.countDocuments({ userId, dateApplied: { $gte: start, $lte: end } });
-        const interviews = await Interview.countDocuments({ userId, scheduledAt: { $gte: start, $lte: end } });
-        const dsa = await DSA.countDocuments({ userId, solvedAt: { $gte: start, $lte: end } });
-        
-        const goal = await Goal.findOne({ user: userId, weekStartDate: { $gte: start, $lte: end } });
+        // Fetch stats for the previous week concurrently
+        const [applications, interviews, dsa, goal] = await Promise.all([
+          Application.countDocuments({ userId, dateApplied: { $gte: start, $lte: end } }),
+          Interview.countDocuments({ userId, scheduledAt: { $gte: start, $lte: end } }),
+          DSA.countDocuments({ userId, solvedAt: { $gte: start, $lte: end } }),
+          Goal.findOne({ user: userId, weekStartDate: { $gte: start, $lte: end } })
+        ]);
+
         let goalCompletion = 0;
         if (goal) {
           const p1 = Math.min(100, goal.applicationsTarget > 0 ? (goal.applicationsCompleted / goal.applicationsTarget) * 100 : 0);
@@ -90,20 +92,28 @@ const sendWeeklySummaries = async () => {
         `;
 
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-          await transporter.sendMail({
-            from: '"StudentTracker" <noreply@studenttracker.com>',
-            to: user.email,
-            subject: 'Your week in review — StudentTracker',
-            html
-          });
+          try {
+            await transporter.sendMail({
+              from: '"StudentTracker" <noreply@studenttracker.com>',
+              to: user.email,
+              subject: 'Your week in review — StudentTracker',
+              html
+            });
+          } catch (emailErr) {
+            console.error(`Email dispatch failed for ${user.email}:`, emailErr);
+          }
         } else {
           // If no email configured, just log it
           console.log(`[Email Job] Would send weekly summary to ${user.email}: ${applications} apps, ${dsa} dsa, ${goalCompletion}% goals`);
         }
       } catch (err) {
-        console.error(`Failed to generate email for user ${user._id}:`, err);
+        console.error(`Failed to process summary for user ${user._id}:`, err);
       }
-    }
+    });
+
+    // Execute all user processing concurrently (batched)
+    await Promise.allSettled(userPromises);
+    
     console.log('Weekly summary email job completed.');
   } catch (error) {
     console.error('Error running weekly summary job:', error);

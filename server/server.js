@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const appRoutes = require('./routes/appRoutes');
@@ -44,7 +46,9 @@ initCronJobs();
 const app = express();
 
 // Middleware
+app.use(helmet());
 app.use(cors());
+app.use(mongoSanitize());
 
 // Global Rate Limiting
 const limiter = rateLimit({

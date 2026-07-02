@@ -26,4 +26,10 @@ We enforce standard code styles across the project.
 
 Please refer to the `README.md` for detailed instructions on how to set up the repository locally. You will need Node.js and MongoDB installed.
 
+### Testing
+We use Jest for automated backend testing.
+1. Navigate to the server folder: `cd server`
+2. Run tests locally: `npm test`
+Ensure that all integration tests pass before submitting a Pull Request.
+
 Thank you for contributing!
