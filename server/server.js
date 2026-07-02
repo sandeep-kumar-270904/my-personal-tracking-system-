@@ -26,7 +26,6 @@ const studyGroupRoutes = require('./routes/studyGroupRoutes');
 const resourceChatRoutes = require('./routes/resourceChatRoutes');
 const studyPlanRoutes = require('./routes/studyPlanRoutes');
 const statsRoutes = require('./routes/statsRoutes');
-const prephubRoutes = require('./routes/prephubRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const campusDriveRoutes = require('./routes/campusDriveRoutes');
