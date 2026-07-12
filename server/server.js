@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
+const compression = require('compression');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const appRoutes = require('./routes/appRoutes');
@@ -43,12 +44,16 @@ const rateLimit = require('express-rate-limit');
 // Initialize Cron Jobs
 initCronJobs();
 
+// Initialize Express Server Architecture
 const app = express();
 
-// Middleware
+// ==========================================
+// SECURITY & PERFORMANCE MIDDLEWARE
+// ==========================================
 app.use(helmet());
 app.use(cors());
 app.use(mongoSanitize());
+app.use(compression()); // Gzip compress all HTTP responses for faster loading
 
 // Global Rate Limiting
 const limiter = rateLimit({
