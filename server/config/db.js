@@ -1,5 +1,14 @@
 const mongoose = require('mongoose');
 
+/**
+ * Initializes the connection to the primary MongoDB database.
+ * If the connection fails in production, the application will forcefully exit
+ * to prevent data corruption or stateless zombie pods.
+ * 
+ * @async
+ * @function connectDB
+ * @throws {Error} If MONGODB_URI is undefined or connection is refused
+ */
 const connectDB = async () => {
   try {
     const uri = process.env.MONGODB_URI;
