@@ -150,8 +150,57 @@ The Application Tier is strictly structured using the Controller-Service-Reposit
 - **Business Logic (`controllers/`)**: Executes deterministic domain rules, orchestrates third-party API interactions, and normalizes JSON response shapes.
 - **Data Access (`models/`)**: Mongoose Object-Document Mappers (ODMs) enforce strict schema validation, type casting, and index utilization before BSON serialization.
 
+```mermaid
+classDiagram
+    class ExpressRouter {
+        +GET /api/applications
+        +POST /api/resumes
+        -rateLimitMiddleware()
+        -verifyJwtSignature()
+    }
+    class AppController {
+        +fetchAllApplications(userId)
+        +updateKanbanState(appId, status)
+    }
+    class GeminiController {
+        +extractPdfBuffer(file)
+        +streamLlmResponse(prompt)
+    }
+    class MongooseModel {
+        +SchemaValidation
+        +BTreeIndex
+        +save()
+        +populate()
+    }
+
+    ExpressRouter --> AppController : HTTP Request
+    ExpressRouter --> GeminiController : HTTP Request
+    AppController --> MongooseModel : BSON Query
+```
+
 ## 11. System Architecture
 The backend is powered by Node.js (V8 JavaScript Engine). Because Node.js is inherently single-threaded, computationally expensive tasks (like bcrypt cryptographic hashing and PDF buffer parsing) are automatically offloaded to the C++ `libuv` worker pool. This architectural decision ensures high concurrency for standard I/O bound operations (database queries).
+
+```mermaid
+graph TD
+    subgraph V8 JavaScript Engine
+        EventLoop[Main Event Loop Thread]
+        CallStack[Execution Call Stack]
+    end
+
+    subgraph libuv C++ Thread Pool
+        Worker1[Crypto Worker Thread]
+        Worker2[File I/O Worker Thread]
+        Worker3[Network Worker Thread]
+    end
+
+    IncomingRequest[HTTP POST /api/auth/register] --> EventLoop
+    EventLoop --> CallStack
+    CallStack -- Offload Bcrypt Hash --> Worker1
+    CallStack -- Offload PDF Parse --> Worker2
+    Worker1 -- Hash Result Callback --> EventLoop
+    EventLoop --> Response[201 Created]
+```
 
 ## 12. Data Flow
 **Asynchronous Background Worker Flow (Weekly Digest):**
