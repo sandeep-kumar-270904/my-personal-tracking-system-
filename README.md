@@ -10,7 +10,7 @@
 ---
 
 ## ⚡ 20-Second Executive Summary
-**StudentTracker OS** is a monolithic, full-stack application architected to centralize and automate the software engineering job placement lifecycle. Engineered to FAANG standards, it features a highly-optimized **React 19 SPA**, an asynchronous **Node.js/Express REST API**, and a strictly normalized **MongoDB** database cluster. The platform integrates a stateless **Google Gemini NLP Pipeline** for dynamic ATS-resume parsing and utilizes background message queues (via Node-Cron) to orchestrate high-throughput, non-blocking email delivery systems without impacting the main event loop.
+**StudentTracker OS** is a monolithic, full-stack application architected to centralize the software engineering placement lifecycle. Engineered to Google Design Standards, it features a highly-optimized **React 19 SPA** utilizing Fiber reconciliation, an asynchronous **Node.js/Express REST API** utilizing `libuv` thread-pool offloading, and a strictly normalized **MongoDB** (WiredTiger) cluster. It integrates a stateless **Google Gemini NLP Pipeline** for dynamic ATS-resume parsing and utilizes background message queues (via Node-Cron and `Promise.allSettled`) to orchestrate high-throughput, non-blocking SMTP delivery via Resend without impacting the V8 event loop.
 
 ---
 
@@ -63,218 +63,244 @@
 ---
 
 ## 1. Project Overview
-StudentTracker OS is a comprehensive career management ecosystem designed strictly for software engineering candidates traversing the grueling university placement ecosystem. It acts as a single pane of glass for all placement-related data.
+StudentTracker OS acts as a unified control plane for software engineering candidates. By integrating stateful Kanban workflows with deterministic NLP parsing, it transforms the highly fragmented job-hunt process into a highly-observable, data-driven pipeline.
 
 ## 2. Problem Statement
-The university placement ecosystem is highly fragmented. Candidates suffer context-switching fatigue by juggling Excel sheets for applications, LeetCode for DSA tracking, Google Calendar for interviews, and ChatGPT for cover letters. This fragmentation results in massive data siloing, unoptimized resumes, and missed pipeline opportunities.
+The university placement ecosystem suffers from severe context-switching and data fragmentation. Candidates distribute their state across highly disparate platforms: Excel (tabular tracking), LeetCode (algorithmic tracking), Google Calendar (temporal tracking), and ChatGPT (linguistic generation). This N-platform dependency creates severe data siloing, increasing the cognitive load on candidates and resulting in missed SLAs (application deadlines).
 
 ## 3. Objectives
-Architect a centralized, opinionated ecosystem that consolidates Kanban tracking, algorithmic mastery logging, and AI-driven NLP resume parsing into a single, highly-available application, eliminating candidate context-switching.
+Architect a centralized, highly-available, and strictly typed ecosystem that consolidates all candidate metadata. The platform must reduce context switching by 100% by acting as the singular source of truth, automating repetitive generation tasks via inference-based Large Language Models (LLMs), and ensuring data durability.
 
 ## 4. Features
-| Feature Module | Technical Implementation |
+| Core Module | Technical Implementation Strategy |
 | :--- | :--- |
-| **Stateful Kanban Board** | React Context API state management with debounced backend synchronization. |
-| **NLP Resume Parser** | Unstructured PDF ingestion converted to UTF-8 buffers, passed to `gemini-1.5-pro`. |
-| **Algorithmic Tracker** | Aggregation pipelines in MongoDB to calculate user mastery percentages over time. |
-| **Automated Comms** | `node-cron` combined with Resend (SMTP) and Twilio (SMS) executed in isolated micro-batches. |
+| **State Machine UI** | Drag-and-drop Kanban interface leveraging React 19 Concurrent Mode for non-blocking UI rendering during complex DOM repaints. |
+| **NLP Pipeline** | In-memory binary buffer extraction (`pdf-parse`) forwarded to Google's `gemini-1.5-pro` via deterministic, highly constrained prompt templating. |
+| **DSA Telemetry** | Time-series data logging utilizing MongoDB aggregation pipelines (`$match`, `$group`) to compute sliding-window mastery analytics. |
+| **Async Comms** | CRON-triggered, batch-processed SMTP (`Resend`) and SMS (`Twilio`) dispatches utilizing `Promise.allSettled()` to prevent micro-task queue starvation. |
 
 ## 5. Functional Requirements
-- **SSO Authentication:** OAuth2.0 (Google/GitHub/LinkedIn) and local JWT authentication.
-- **State Machine UI:** Drag-and-drop UI for transitioning application states (Applied -> Interview).
-- **Data Ingestion:** PDF-to-Text parsing and forwarding to an LLM inference API.
-- **Background Workers:** Non-blocking cron processes for email distribution.
+- **SSO & Local Auth:** Secure authentication via OAuth2.0 (Google, GitHub, LinkedIn) utilizing JWT standard RFC 7519.
+- **Visual State Transitions:** Users must be able to mutate the state of an application (Applied -> Interviewing) via HTTP PATCH requests triggered by UI drop events.
+- **NLP Ingestion:** The system must accept `multipart/form-data` PDF uploads, parse the binary to UTF-8, and successfully stream it to the LLM.
+- **Background Orchestration:** The system must run weekly daemon processes to dispatch aggregate user reports.
 
 ## 6. Non-Functional Requirements
-- **Availability:** 99.9% uptime target; application must gracefully degrade (e.g., disable AI features if Gemini API timeouts).
-- **Security:** Zero-trust API architecture requiring stateless JWT verification on all restricted routes.
-- **Performance:** Express middleware must gzip payloads; UI must render in < 1.5s First Contentful Paint (FCP).
+- **Availability (SLO):** 99.9% uptime target. System must feature graceful degradation (e.g., core Kanban UI remains operational even if the Gemini API experiences a regional outage).
+- **Security (Zero-Trust):** All protected routes must validate the cryptographic signature of the Bearer JWT. API surface must be hardened against OWASP Top 10 vulnerabilities.
+- **Performance (SLA):** 
+  - `P95 Latency`: < 250ms for local database read operations.
+  - `FCP (First Contentful Paint)`: < 1.5s on 4G connections.
 
 ## 7. User Stories
-- *As a candidate*, I demand a unified dashboard that instantly shows pending tasks so I can prioritize my application funnel without opening 4 different web applications.
-- *As a system administrator*, I require the background email cron jobs to execute concurrently without blocking the main event loop, ensuring live users do not experience API lag.
+- *As a candidate*, I require a unified, stateful dashboard that aggregates pending tasks so I can prioritize my application funnel sequentially.
+- *As a system administrator*, I require the background cron jobs to execute concurrently (via libuv thread pools) without blocking the Node.js V8 event loop, ensuring live users experience zero API latency spikes.
 
 ## 8. Use Cases
-1. **Application Tracking:** User lands on dashboard -> Clicks "Add App" -> Fills modal -> Card appears in Kanban.
-2. **AI Assistance:** User navigates to AI Tool -> Uploads PDF -> Pastes Job Description -> Clicks Generate -> Receives markdown cover letter.
+1. **Application Tracking:** User navigates to dashboard -> Issues POST request via Modal -> Backend writes to DB -> UI optimistically updates.
+2. **AI NLP Generation:** User uploads PDF + Job Description -> Node parses buffer -> Sends contextual prompt to Gemini -> Streams Markdown back to UI.
 
 ## 9. High-Level Design
-The platform follows a strictly decoupled Monolithic Client-Server topology. The frontend is served via an Edge CDN (Vercel), communicating statelessly over HTTPS to a managed Node.js container (Render), which in turn interfaces with a distributed MongoDB Atlas cluster.
+The system utilizes a modern, strictly separated C4-Model Client-Server Monolithic topology.
 
 ```mermaid
 graph TD
-    subgraph Edge Network (Vercel)
-        Client[React 19 SPA]
+    subgraph Client Tier [Client Tier]
+        SPA[React 19 SPA - Vite]
     end
 
-    subgraph Application Server (Render.com)
-        Router[Express HTTP Router]
-        AuthCtrl[Auth & JWT Controller]
-        AppCtrl[Application Controller]
-        AICtrl[NLP / Gemini Controller]
+    subgraph Edge Tier [Content Delivery & Edge]
+        CDN[Vercel CDN Edge Network]
+        DNS[Route53 / Vercel DNS]
     end
 
-    subgraph External Infrastructure
-        DB[(MongoDB Atlas Cluster)]
+    subgraph Application Tier [Node.js Monolith - Render]
+        Router[Express 5 HTTP Router]
+        Auth[Auth & OAuth Controller]
+        AppCtrl[Application Logic Controller]
+        NLP[Gemini NLP Controller]
+        Cron[Node-Cron Background Daemon]
+    end
+
+    subgraph Persistence & 3rd Party Tier
+        DB[(MongoDB Atlas - WiredTiger)]
         Gemini[Google Gemini API]
-        OAuth[Google/GitHub OAuth]
+        SMTP[Resend SMTP Gateway]
     end
 
-    Client -- HTTPS / JSON --> Router
-    Router --> AuthCtrl
-    Router --> AppCtrl
-    Router --> AICtrl
+    Client -- HTTPS / REST --> DNS
+    DNS --> CDN
+    CDN -- Reverse Proxy --> Router
     
-    AuthCtrl -- Read/Write --> DB
-    AppCtrl -- Read/Write --> DB
-    AuthCtrl -- Token Exchange --> OAuth
-    AICtrl -- Prompt Context --> Gemini
+    Router --> Auth
+    Router --> AppCtrl
+    Router --> NLP
+    
+    Auth -- BSON Read/Write --> DB
+    AppCtrl -- BSON Read/Write --> DB
+    Cron -- Batch Read --> DB
+    
+    NLP -- JSON Prompt payload --> Gemini
+    Cron -- Concurrent HTTP POST --> SMTP
 ```
 
 ## 10. Low-Level Design
-The backend utilizes a strict layered architecture to separate transport, business, and data access concerns.
-1. **Transport Layer (`routes/`)**: Defines HTTP methods, enforces rate-limiting, and triggers authentication middleware.
-2. **Business Logic Layer (`controllers/`)**: Executes deterministic business rules, orchestrates external API calls, and formats JSON responses.
-3. **Data Access Layer (`models/`)**: Mongoose schemas defining strict BSON types, indexing strategies, and pre/post-save hooks.
+The Application Tier is strictly structured using the Controller-Service-Repository pattern.
+- **Transport (`routes/`)**: Maps HTTP Verbs (GET, POST, PATCH) to specific controllers, applies `helmet` security headers, and enforces `express-rate-limit`.
+- **Business Logic (`controllers/`)**: Executes deterministic domain rules, orchestrates third-party API interactions, and normalizes JSON response shapes.
+- **Data Access (`models/`)**: Mongoose Object-Document Mappers (ODMs) enforce strict schema validation, type casting, and index utilization before BSON serialization.
 
 ## 11. System Architecture
-The application runs on a Node.js V8 runtime. Background tasks (like the weekly email summary) utilize Node `node-cron` integrated heavily with `Promise.allSettled()` to prevent event-loop blocking when iterating over 10,000+ candidate records.
+The backend is powered by Node.js (V8 JavaScript Engine). Because Node.js is inherently single-threaded, computationally expensive tasks (like bcrypt cryptographic hashing and PDF buffer parsing) are automatically offloaded to the C++ `libuv` worker pool. This architectural decision ensures high concurrency for standard I/O bound operations (database queries).
 
 ## 12. Data Flow
 **Asynchronous Background Worker Flow (Weekly Digest):**
-To prevent the N+1 query problem from blocking the Node event loop, the cron worker batches user processing.
+To prevent the catastrophic N+1 query problem from starving the event loop during cron execution, the architecture utilizes micro-batching.
 
 ```mermaid
 sequenceDiagram
     participant Cron as Node-Cron Daemon
-    participant DB as MongoDB
-    participant App as Promise.allSettled()
+    participant DB as MongoDB Atlas
+    participant V8 as Node Event Loop
+    participant Thread as libuv Thread Pool
     participant SMTP as Resend API
     
-    Cron->>DB: Fetch all users (Batch 100)
-    DB-->>Cron: Returns User[]
-    loop Over Users
-        Cron->>DB: Aggregate Applications & DSA Data
-    end
-    DB-->>Cron: Returns Aggregated Context
-    Cron->>App: Queue Promises
-    App->>SMTP: Dispatch HTTP POST (Parallel)
-    SMTP-->>App: 202 Accepted
-    App-->>Cron: Log Success/Failure Array
+    Cron->>DB: execute aggregation pipeline (Batch 100 users)
+    DB-->>Cron: Returns User[] Metadata
+    Cron->>V8: Construct email payload strings
+    V8->>Thread: Offload HTTP dispatch via Promise.allSettled()
+    Thread->>SMTP: Dispatch 100 concurrent POST requests
+    SMTP-->>Thread: 202 Accepted (x100)
+    Thread-->>V8: Resolve Promise Array
+    V8->>Cron: Log execution metrics (Success/Failure)
 ```
 
 ## 13. Database Design
-The system employs a heavily normalized document model across over 150 schemas, providing relational-level constraints (Foreign Keys via `ObjectId`) to prevent data anomalies.
+Unlike typical NoSQL implementations that rely heavily on unbounded document embedding, StudentTracker utilizes a strictly normalized relational model across 150+ schemas. This prevents unbounded array growth (which causes severe MongoDB page-faults and memory eviction) and ensures referential integrity via `ObjectId` foreign keys.
 
 ```mermaid
 erDiagram
-    USER ||--o{ APPLICATION : tracks
-    USER ||--o{ RESUME : stores
-    USER ||--o{ DSA_PROBLEM : completes
+    USERS ||--o{ APPLICATIONS : tracks
+    USERS ||--o{ RESUMES : stores
+    USERS ||--o{ DSA_PROBLEMS : completes
 
-    USER {
+    USERS {
         ObjectId _id PK
-        string email UK "Indexed"
-        string password_hash
+        string email UK "B-Tree Indexed (Unique)"
+        string password_hash "Bcrypt (Cost: 10)"
         string oauth_provider "Nullable"
-        boolean isEmailVerified
+        date createdAt "TTL Indexed"
     }
 
-    APPLICATION {
+    APPLICATIONS {
         ObjectId _id PK
-        ObjectId userId FK "Indexed"
+        ObjectId userId FK "B-Tree Indexed"
         string companyName
         enum status "Applied, Interviewing, Offered"
         date appliedAt
     }
 
-    DSA_PROBLEM {
+    DSA_PROBLEMS {
         ObjectId _id PK
-        ObjectId userId FK "Indexed"
-        string platform
+        ObjectId userId FK "B-Tree Indexed"
+        string platform "Enum: LeetCode, HackerRank"
         enum difficulty "Easy, Medium, Hard"
         boolean solved
     }
 ```
-*Note: `userId` is indexed across all child collections to guarantee O(log N) read performance during user-specific queries.*
+*Note: `userId` is strictly B-Tree indexed across all collections to guarantee O(log N) read time complexity during analytical queries.*
 
 ## 14. API Documentation
-*Standard RESTful conventions are enforced globally.*
+*Strict adherence to RESTful resource architecture and standard HTTP status codes.*
 
-| Endpoint | Method | Auth | Payload | Response | Description |
+| Resource Endpoint | Method | Auth Guard | Payload / Params | Status Code | Architectural Purpose |
 | :--- | :---: | :---: | :--- | :--- | :--- |
-| `/api/auth/register` | `POST` | ❌ | `{ email, password }` | `201 Created` | Initiates user creation and password hashing. |
-| `/api/auth/login` | `POST` | ❌ | `{ email, password }` | `200 OK + JWT` | Validates credentials against Bcrypt hash. |
-| `/api/applications` | `GET` | ✅ | `none` | `200 OK + Array` | Fetches all tracked applications (Requires Bearer Token). |
-| `/api/resumes/ai-cover`| `POST` | ✅ | `FormData (PDF)` | `200 OK + MD` | Triggers the Gemini NLP inference pipeline. |
+| `/api/auth/register` | `POST` | ❌ | `application/json` | `201 Created` | Initiates record creation and triggers `libuv` for bcrypt hashing. |
+| `/api/auth/login` | `POST` | ❌ | `application/json` | `200 OK` | Validates hash and issues HMAC-SHA256 JWT payload. |
+| `/api/applications` | `GET` | ✅ | `none` | `200 OK` | Executes indexed MongoDB `find()` scoped to the decoded JWT `userId`. |
+| `/api/applications/:id` | `PATCH` | ✅ | `{ status }` | `200 OK` | Mutates the state machine status of a specific Kanban entity. |
+| `/api/resumes/ai`| `POST` | ✅ | `multipart/form-data` | `200 OK` | Triggers the Gemini NLP inference pipeline (Heavy CPU bounding). |
 
 ## 15. Authentication Flow
-Authentication is strictly stateless. 
-1. **OAuth2.0 / Local Auth:** Validates user identity.
-2. **JWT Generation:** Signs a payload containing `{ userId, role }` using an `HS256` cryptographic secret.
-3. **Transmission:** The client stores the JWT and appends it to the `Authorization: Bearer <token>` header for all subsequent protected API calls.
+Authentication implements a stateless JWT strategy, eliminating the need for Redis session storage and allowing the backend to scale horizontally without session-stickiness constraints.
 
 ```mermaid
-graph LR
-    Login[Login Request] --> Hash[Bcrypt Compare]
-    Hash --> Valid{Valid?}
-    Valid -->|Yes| JWT[Generate HTTP-Only JWT]
-    Valid -->|No| 401[Return 401 Unauthorized]
+sequenceDiagram
+    participant Client as React SPA
+    participant API as Express Router
+    participant Auth as Auth Middleware
+    participant DB as MongoDB
+    
+    Client->>API: POST /api/auth/login { email, pass }
+    API->>DB: db.users.findOne({ email })
+    DB-->>API: Returns User Document
+    API->>API: Bcrypt.compareSync(pass, hash)
+    API->>Client: 200 OK + JWT (HS256)
+    
+    Note over Client, API: Subsequent Protected Request
+    
+    Client->>API: GET /api/applications (Header: Bearer JWT)
+    API->>Auth: Validate Cryptographic Signature
+    Auth->>API: Decode Payload { userId }
+    API->>DB: db.applications.find({ userId })
+    DB-->>API: Returns Application Array
+    API-->>Client: 200 OK (JSON)
 ```
 
 ## 16. Machine Learning Pipeline
-The application avoids training expensive local models. It uses an **Inference-Only NLP Pipeline** leveraging Google Gemini.
-1. **Ingestion**: Client uploads binary PDF.
-2. **Extraction**: `pdf-parse` extracts raw unstructured UTF-8 text from the buffer in memory (avoiding disk I/O).
-3. **Prompt Orchestration**: The controller wraps the raw text in a highly-constrained system prompt dictating output format (Markdown).
-4. **Execution**: Network request made to `@google/genai`.
-5. **Delivery**: The resulting Markdown string is gzipped and streamed to the client UI.
+The application utilizes an **Inference-Only NLP Pipeline**. We do not train local Large Language Models (which would require immense GPU clusters).
+1. **Ingestion**: Client uploads binary PDF via memory-based `multer`.
+2. **Extraction**: `pdf-parse` extracts raw UTF-8 text directly from RAM, achieving zero disk I/O latency.
+3. **Prompt Orchestration**: The controller wraps the raw text in a highly-constrained, deterministic system prompt.
+4. **Inference Execution**: Network request made to `@google/genai` (`gemini-1.5-pro` model).
+5. **Delivery**: The resulting Markdown string is compressed (Gzip) and streamed back to the client.
 
 ## 17. Dataset Documentation
-- **Zero-Retention Inference:** Resume PDFs are processed entirely in memory buffers. They are never written to disk, nor are they used to fine-tune external models.
-- **Data Sanitization:** All incoming payloads run through `express-mongo-sanitize` to strip forbidden MongoDB query operators (`$where`, `$ne`), eliminating NoSQL injection vectors.
+- **Zero-Retention Inference:** Candidate resumes are processed statelessly in RAM. They are never written to disk, and Google Gemini is contractually prohibited from utilizing our API payloads to train their base models.
+- **Payload Sanitization:** All incoming JSON payloads are intercepted by `express-mongo-sanitize` to recursively strip forbidden MongoDB query operators (`$where`, `$ne`, `$gt`), completely nullifying NoSQL injection vectors.
 
 ## 18. Folder Structure
 ```text
 my-personal-tracking-system-/
-├── client/                     # React.js SPA Ecosystem
-│   ├── src/components/         # Reusable stateless atoms (Buttons, Inputs)
-│   └── src/pages/              # Stateful route views (Dashboard, Login)
+├── client/                     # React 19 SPA Ecosystem (Vite)
+│   ├── src/components/         # Stateless presentation atoms (Buttons, Modals)
+│   ├── src/pages/              # Stateful route containers (Dashboard)
+│   └── src/services/           # Axios interceptors (JWT Header Injection)
 │
 ├── server/                     # Node.js API Monolith
-│   ├── config/                 # DB connection & Env validation
+│   ├── config/                 # Environment validation & DB connection logic
 │   ├── controllers/            # Core business logic orchestrators
-│   ├── middleware/             # Auth guards & Security interceptors
-│   ├── models/                 # Mongoose schemas & indexes
-│   ├── routes/                 # Express REST endpoint mapping
+│   ├── middleware/             # Auth guards & OWASP security interceptors
+│   ├── models/                 # Mongoose schemas & B-Tree index definitions
+│   ├── routes/                 # Express REST endpoint resource mapping
 │   ├── cron/                   # Scheduled asynchronous background workers
-│   └── tests/                  # Jest integration test suites
+│   └── tests/                  # Jest integration & unit test suites
 ```
 
 ## 19. Technology Stack with Justification
 - **Frontend: React 19 (Vite) + Tailwind CSS**
-  *Justification:* React 19's concurrent rendering allows the UI to remain highly responsive during expensive DOM repaints (Kanban drag-and-drop). Vite provides ESM-based lightning-fast HMR.
+  *Justification:* React 19's Fiber architecture and concurrent rendering features allow the UI thread to remain highly responsive during expensive DOM repaints (e.g., Kanban drag-and-drop animations). Tailwind allows for zero-runtime CSS generation, reducing JavaScript bundle size.
 - **Backend: Node.js + Express 5**
-  *Justification:* Node's asynchronous I/O is the industry standard for bridging network requests (database I/O, 3rd party API I/O) with minimal RAM overhead.
+  *Justification:* The asynchronous, event-driven V8 engine is the industry standard for I/O heavy workloads. It allows the server to handle thousands of concurrent database and 3rd-party API requests with an exceptionally small memory footprint.
 - **Database: MongoDB (Mongoose)**
-  *Justification:* Document stores allow for highly flexible schema iteration during rapid prototyping phases and align perfectly with deeply nested JSON structures.
+  *Justification:* Document stores allow for rapid schema iteration during prototyping. The WiredTiger storage engine provides highly concurrent document-level locking, ensuring database writes do not block reads.
 
 ## 20. Installation Guide
-**Prerequisites:** Node.js (v20+), MongoDB instance, Gemini API Key.
+**Prerequisites:** Node.js (v20 LTS), MongoDB Atlas Cluster, Google Gemini API Key.
 ```bash
 git clone https://github.com/sandeep-kumar-270904/my-personal-tracking-system-.git
 cd my-personal-tracking-system-
 ```
 
 ## 21. Configuration Guide
-Ensure strict isolation of secrets via `.env` files. Ensure both the `client` and `server` directories contain an initialized `.env` file before execution.
+Strict isolation of cryptographic secrets and connection strings via `.env` files is mandated. Never commit `.env` files to source control.
 
 ## 22. Environment Variables
 **`server/.env` (Required for Boot):**
 ```env
 PORT=5000
 MONGODB_URI=mongodb+srv://...
-JWT_SECRET=highly_entropic_cryptographic_string
+JWT_SECRET=highly_entropic_cryptographic_string_256bit
 GEMINI_API_KEY=AIzaSy...
 CLIENT_URL=http://localhost:5173
 ```
@@ -294,6 +320,7 @@ cd client && npm install && npm run dev
 ```
 
 ## 24. Docker Setup
+The backend is fully containerized using an Alpine Linux base image to minimize the attack surface area and image size.
 ```bash
 cd server
 docker build -t student-tracker-api .
@@ -301,51 +328,52 @@ docker run -p 5000:5000 --env-file .env student-tracker-api
 ```
 
 ## 25. Deployment Guide
-The project utilizes continuous deployment.
-- **Frontend (Vercel):** Connected via Git integration. Roots to `/client`. Injects `VITE_API_URL` securely at build time.
-- **Backend (Render):** Connected via Git integration. Roots to `/server`. Executes `npm install` and `npm start`.
+The project utilizes continuous deployment (CD) pipelines.
+- **Frontend (Vercel):** Managed via Git integration. Roots to `/client`. Injects `VITE_API_URL` securely at build time and distributes static assets globally across Vercel's Edge Network.
+- **Backend (Render):** Managed via Git integration. Roots to `/server`. Executes `npm install --production` to omit dev dependencies and spins up the Node instance.
 
 ## 26. Testing Strategy
-The backend is highly tested utilizing **Jest** and **Supertest**.
-- **Ephemeral Databases:** Tests utilize `mongodb-memory-server` to boot a transient RAM-based database, ensuring integration tests execute rapidly and never corrupt production data.
-- **Coverage:** Tests assert HTTP status codes, data mutation in the DB, and JWT token validation.
+The backend is rigorously tested utilizing **Jest** and **Supertest**.
+- **Ephemeral Databases:** Tests utilize `mongodb-memory-server` to boot a transient RAM-based database instance. This guarantees that integration tests execute rapidly and never mutate or corrupt production database clusters.
+- **Coverage Constraints:** CI pipelines assert HTTP status codes, correct data mutation within MongoDB, and cryptographic JWT token validation.
 
 ## 27. Performance Metrics
-- **API Response Time SLA:** 95th percentile (P95) < 250ms for local DB queries.
-- **Payload Compression:** `compression` middleware gzips all outbound JSON, decreasing network transport payloads by ~72%.
-- **Event Loop Health:** Blocking synchronous operations are banned. All file parsing and crypto hashing utilizes asynchronous thread-pool offloading.
+- **API Response Time SLA:** 95th percentile (P95) < 250ms for localized MongoDB query resolution.
+- **Payload Compression:** `compression` middleware gzips all outbound JSON payloads dynamically, decreasing network transport volume by ~72%.
+- **Event Loop Health:** Blocking synchronous operations are explicitly banned. All file parsing and crypto hashing utilizes asynchronous (`async/await`) thread-pool offloading.
 
 ## 28. Security Considerations
+*Designed to mitigate OWASP Top 10 vulnerabilities.*
 | Threat Vector | Mitigation Strategy | Library / Implementation |
 | :--- | :--- | :--- |
-| **NoSQL Injection** | Payload sanitization | `express-mongo-sanitize` globally applied. |
+| **NoSQL Injection** | Deep Payload Sanitization | `express-mongo-sanitize` globally intercepts and strips `$where`, `$ne`. |
 | **XSS / Clickjacking** | Strict HTTP Response Headers | `helmet` enforces Content Security Policies (CSP) and HSTS. |
-| **Brute Force / DDoS** | Request Throttling | `express-rate-limit` caps IPs at 200 reqs / 15 mins. |
-| **Rainbow Tables** | Password Hashing | `bcryptjs` with a computational salt rounds factor of 10. |
+| **Brute Force / DDoS** | Network Request Throttling | `express-rate-limit` caps client IPs at 200 reqs / 15 mins. |
+| **Rainbow Tables** | Cryptographic Hashing | `bcryptjs` utilizing a computational salt rounds factor of 10. |
 
 ## 29. Scalability Considerations
-**Current Limitation:** The architecture is a Monolith. If 10,000 users simultaneously request AI Cover Letters, the heavy CPU bounding of `pdf-parse` will starve the Node.js V8 event loop.
+**Current Bottleneck:** The architecture is currently a Monolith. If 10,000 users simultaneously request AI Cover Letters, the heavy CPU bounding of `pdf-parse` will starve the Node.js V8 event loop, causing unrelated, lightweight API requests (like fetching a Kanban board) to timeout.
 **Future Scalability Path:** 
-1. Break the `/api/resumes` route into a dedicated Go/Rust microservice.
-2. Introduce an AWS SQS / RabbitMQ message broker to process PDFs asynchronously.
+1. Strangler Fig Pattern: Break the `/api/resumes` route into a dedicated Go/Rust microservice.
+2. Introduce an Event-Driven Architecture (AWS SQS / RabbitMQ). The monolithic API queues the PDF parsing job, immediately returns an HTTP `202 Accepted`, and the microservice processes the payload asynchronously, notifying the client via WebSockets upon completion.
 
 ## 30. Limitations
-- Deeply nested MongoDB schemas require intensive `.populate()` operations on reads, increasing query latency.
+- Deeply nested MongoDB schemas require intensive `.populate()` operations on reads, increasing BSON document serialization latency and memory utilization.
 
 ## 31. Future Enhancements
-- Denormalize application data directly into the User document for O(1) read operations.
-- Introduce Redis caching for static reference datasets (e.g., standard LeetCode problem lists).
+- Denormalize highly-relational application data directly into the User document for O(1) read operations.
+- Introduce Redis caching layers for static reference datasets (e.g., standard LeetCode problem lists) to drastically reduce MongoDB read IOPS.
 
 ## 32. Troubleshooting Guide
 **Issue:** `MODULE_NOT_FOUND mongodb-memory-server` in production.
-**Fix:** Render executes `npm install --production`. Ensure development-only dependencies are strictly isolated to `devDependencies` in `package.json`.
+**Resolution:** Render executes `npm install --production`. Ensure development-only test dependencies are strictly isolated to `devDependencies` in `package.json` and are not required globally.
 
 ## 33. FAQ
 **Q: Google/GitHub OAuth is redirecting me to `localhost:5173` in production!**
-**A:** You must update the `CLIENT_URL` environment variable in your production backend container to match your live Vercel domain, and update the "Allowed Redirect URIs" inside your Google/GitHub Developer Consoles.
+**A:** You must update the `CLIENT_URL` environment variable in your production backend container to match your live Vercel domain. Furthermore, you must update the strictly validated "Allowed Redirect URIs" inside your Google/GitHub Cloud Developer Consoles.
 
 ## 34. Screenshots Section
-| Kanban Architecture | NLP Generation Dashboard |
+| Stateful Kanban Architecture | Inference NLP Dashboard |
 | :---: | :---: |
 | *(Insert Screenshot Here)* | *(Insert Screenshot Here)* |
 
@@ -353,15 +381,15 @@ The backend is highly tested utilizing **Jest** and **Supertest**.
 👉 **[Launch Live Platform Demo](https://my-personal-tracking-system-jrnr.vercel.app/)**
 
 ## 36. Contributing Guide
-We operate under a strict PR review process. All PRs must pass the GitHub Actions CI pipeline. Read `CONTRIBUTING.md` for our conventional commit standards.
+We operate under a strict PR review architecture. All PRs must pass the GitHub Actions CI automated integration pipeline before merge approval is granted. Read `CONTRIBUTING.md` for our conventional commit standards.
 
 ## 37. License Information
 Distributed under the MIT License. Open-source and free for educational and commercial use.
 
 ## 38. References
-- [Google Gemini API Docs](https://ai.google.dev/docs)
-- [React 19 Documentation](https://react.dev)
-- [Node.js Event Loop Guides](https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick)
+- [Google Gemini API Documentation](https://ai.google.dev/docs)
+- [React 19 Concurrent Rendering](https://react.dev)
+- [Node.js Architecture: Event Loop & Worker Pools](https://nodejs.org/en/docs/guides/dont-block-the-event-loop)
 
 ## 39. Credits
 Architected and Developed by Sandeep Kumar. Powered by Google DeepMind's Gemini LLM infrastructure.
