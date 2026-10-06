@@ -28,8 +28,9 @@
 ---
 
 ## 📖 Table of Contents
+
 <details>
-<summary>Click to expand</summary>
+<summary>1️⃣ Product & Vision</summary>
 
 1. [Project Overview](#1-project-overview)
 2. [Problem Statement](#2-problem-statement)
@@ -39,6 +40,11 @@
 6. [Non-Functional Requirements](#6-non-functional-requirements)
 7. [User Stories](#7-user-stories)
 8. [Use Cases](#8-use-cases)
+</details>
+
+<details>
+<summary>2️⃣ System & Database Architecture</summary>
+
 9. [High-Level Design](#9-high-level-design)
 10. [Low-Level Design](#10-low-level-design)
 11. [System Architecture](#11-system-architecture)
@@ -46,10 +52,20 @@
 13. [Database Design](#13-database-design)
 14. [API Documentation](#14-api-documentation)
 15. [Authentication Flow](#15-authentication-flow)
+</details>
+
+<details>
+<summary>3️⃣ Machine Learning & Technology</summary>
+
 16. [Machine Learning Pipeline](#16-machine-learning-pipeline)
 17. [Dataset Documentation](#17-dataset-documentation)
 18. [Folder Structure](#18-folder-structure)
 19. [Technology Stack with Justification](#19-technology-stack-with-justification)
+</details>
+
+<details>
+<summary>4️⃣ Deployment, Testing & Ops</summary>
+
 20. [Installation Guide](#20-installation-guide)
 21. [Configuration Guide](#21-configuration-guide)
 22. [Environment Variables](#22-environment-variables)
@@ -64,13 +80,17 @@
 31. [Future Enhancements](#31-future-enhancements)
 32. [Troubleshooting Guide](#32-troubleshooting-guide)
 33. [FAQ](#33-faq)
+</details>
+
+<details>
+<summary>5️⃣ Community & Showcase</summary>
+
 34. [Screenshots Section](#34-screenshots-section)
 35. [Demo Instructions](#35-demo-instructions)
 36. [Contributing Guide](#36-contributing-guide)
 37. [License Information](#37-license-information)
 38. [References](#38-references)
 39. [Credits](#39-credits)
-
 </details>
 
 ---
