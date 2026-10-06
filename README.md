@@ -12,6 +12,15 @@
 ## ⚡ 20-Second Executive Summary
 **StudentTracker OS** is a monolithic, full-stack application architected to centralize the software engineering placement lifecycle. Engineered to Google Design Standards, it features a highly-optimized **React 19 SPA** utilizing Fiber reconciliation, an asynchronous **Node.js/Express REST API** utilizing `libuv` thread-pool offloading, and a strictly normalized **MongoDB** (WiredTiger) cluster. It integrates a stateless **Google Gemini NLP Pipeline** for dynamic ATS-resume parsing and utilizes background message queues (via Node-Cron and `Promise.allSettled`) to orchestrate high-throughput, non-blocking SMTP delivery via Resend without impacting the V8 event loop.
 
+## 🛠️ Core Technology Stack
+| Layer | Technology | Primary Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React 19 (Vite), Tailwind CSS | Concurrent DOM rendering, Zero-runtime CSS |
+| **Backend API** | Node.js, Express 5 | Asynchronous I/O, `libuv` thread-pool offloading |
+| **Database** | MongoDB Atlas (Mongoose) | WiredTiger storage, B-Tree indexed document mapping |
+| **AI / NLP** | Google Gemini 1.5 Pro | Inference-based ATS resume buffer parsing |
+| **DevOps** | GitHub Actions, Docker, Jest | CI/CD test automation, Containerization |
+
 ---
 
 ## 📖 Table of Contents
