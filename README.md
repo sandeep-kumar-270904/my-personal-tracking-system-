@@ -257,7 +257,7 @@ sequenceDiagram
 ```
 
 ## 13. Database Design
-Unlike typical NoSQL implementations that rely heavily on unbounded document embedding, StudentTracker utilizes a reference-based document model across its schemas. This prevents unbounded array growth (which causes severe MongoDB page-faults and memory eviction) and ensures referential integrity via `ObjectId` foreign keys.
+Unlike typical NoSQL implementations that rely heavily on unbounded document embedding, StudentTracker utilizes domain-separated MongoDB/Mongoose models with indexed access paths and explicit relationships where required. This prevents unbounded array growth (which causes severe MongoDB page-faults and memory eviction) and ensures referential integrity via `ObjectId` foreign keys.
 
 ```mermaid
 erDiagram
