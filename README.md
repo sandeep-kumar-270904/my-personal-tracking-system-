@@ -14,7 +14,7 @@
 ---
 
 ## ⚡ 20-Second Executive Summary
-**StudentTracker OS** is a monolithic, full-stack application architected to centralize the software engineering placement lifecycle. Engineered to Google Design Standards, it features a highly-optimized **React 19 SPA** utilizing Fiber reconciliation, an asynchronous **Node.js/Express REST API** utilizing `libuv` thread-pool offloading, and a strictly normalized **MongoDB** (WiredTiger) cluster. It integrates a stateless **Google Gemini NLP Pipeline** for dynamic ATS-resume parsing and utilizes background message queues (via Node-Cron and `Promise.allSettled`) to orchestrate high-throughput, non-blocking SMTP delivery via Resend without impacting the V8 event loop.
+**StudentTracker OS** is a monolithic, full-stack application architected to centralize the software engineering placement lifecycle. Engineered to modern system design standards, it features a highly-optimized **React SPA** (Vite), an asynchronous **Node.js/Express REST API** leveraging non-blocking I/O, and a reference-based **MongoDB** cluster. It integrates a stateless **Google Gemini NLP Pipeline** for dynamic ATS-resume parsing and utilizes background cron jobs with batched asynchronous task execution to orchestrate high-throughput SMTP delivery via Resend without starving the V8 event loop.
 
 ## 🛠️ Core Technology Stack
 | Layer | Technology | Primary Purpose |
@@ -107,10 +107,10 @@ Architect a centralized, highly-available, and strictly typed ecosystem that con
 ## 4. Features
 | Core Module | Technical Implementation Strategy |
 | :--- | :--- |
-| **State Machine UI** | Drag-and-drop Kanban interface leveraging React 19 Concurrent Mode for non-blocking UI rendering during complex DOM repaints. |
+| **State Machine UI** | Drag-and-drop Kanban interface leveraging React concurrent rendering features for non-blocking UI rendering during complex DOM repaints. |
 | **NLP Pipeline** | In-memory binary buffer extraction (`pdf-parse`) forwarded to Google's `gemini-1.5-pro` via deterministic, highly constrained prompt templating. |
 | **DSA Telemetry** | Time-series data logging utilizing MongoDB aggregation pipelines (`$match`, `$group`) to compute sliding-window mastery analytics. |
-| **Async Comms** | CRON-triggered, batch-processed SMTP (`Resend`) and SMS (`Twilio`) dispatches utilizing `Promise.allSettled()` to prevent micro-task queue starvation. |
+| **Async Comms** | CRON-triggered, batch-processed SMTP (`Resend`) and SMS (`Twilio`) dispatches utilizing asynchronous batching to prevent event loop starvation. |
 
 ## 5. Functional Requirements
 - **SSO & Local Auth:** Secure authentication via OAuth2.0 (Google, GitHub, LinkedIn) utilizing JWT standard RFC 7519.
@@ -127,7 +127,7 @@ Architect a centralized, highly-available, and strictly typed ecosystem that con
 
 ## 7. User Stories
 - *As a candidate*, I require a unified, stateful dashboard that aggregates pending tasks so I can prioritize my application funnel sequentially.
-- *As a system administrator*, I require the background cron jobs to execute concurrently (via libuv thread pools) without blocking the Node.js V8 event loop, ensuring live users experience zero API latency spikes.
+- *As a system administrator*, I require the background cron jobs to execute via batched asynchronous networking without blocking the Node.js V8 event loop, ensuring live users experience zero API latency spikes.
 
 ## 8. Use Cases
 1. **Application Tracking:** User navigates to dashboard -> Issues POST request via Modal -> Backend writes to DB -> UI optimistically updates.
@@ -212,7 +212,7 @@ classDiagram
 ```
 
 ## 11. System Architecture
-The backend is powered by Node.js (V8 JavaScript Engine). Because Node.js is inherently single-threaded, computationally expensive tasks (like bcrypt cryptographic hashing and PDF buffer parsing) are automatically offloaded to the C++ `libuv` worker pool. This architectural decision ensures high concurrency for standard I/O bound operations (database queries).
+The backend is powered by Node.js (V8 JavaScript Engine). Because Node.js is inherently single-threaded, computationally expensive tasks (like bcrypt cryptographic hashing and PDF buffer parsing) are automatically offloaded to the C++ `libuv` worker pool. Standard asynchronous network operations (like database queries) are handled efficiently by the OS kernel via epoll/kqueue.
 
 ```mermaid
 graph TD
@@ -224,7 +224,6 @@ graph TD
     subgraph libuv C++ Thread Pool
         Worker1[Crypto Worker Thread]
         Worker2[File I/O Worker Thread]
-        Worker3[Network Worker Thread]
     end
 
     IncomingRequest[HTTP POST /api/auth/register] --> EventLoop
@@ -237,28 +236,28 @@ graph TD
 
 ## 12. Data Flow
 **Asynchronous Background Worker Flow (Weekly Digest):**
-To prevent the catastrophic N+1 query problem from starving the event loop during cron execution, the architecture utilizes micro-batching.
+To prevent the N+1 query problem from starving the event loop during cron execution, the architecture utilizes micro-batching and concurrent network requests.
 
 ```mermaid
 sequenceDiagram
     participant Cron as Node-Cron Daemon
     participant DB as MongoDB Atlas
     participant V8 as Node Event Loop
-    participant Thread as libuv Thread Pool
+    participant OS as OS Kernel (epoll/kqueue)
     participant SMTP as Resend API
     
     Cron->>DB: execute aggregation pipeline (Batch 100 users)
     DB-->>Cron: Returns User[] Metadata
     Cron->>V8: Construct email payload strings
-    V8->>Thread: Offload HTTP dispatch via Promise.allSettled()
-    Thread->>SMTP: Dispatch 100 concurrent POST requests
-    SMTP-->>Thread: 202 Accepted (x100)
-    Thread-->>V8: Resolve Promise Array
+    V8->>OS: Initiate Concurrent HTTP POST Requests
+    OS->>SMTP: Dispatch 100 network requests
+    SMTP-->>OS: 202 Accepted (x100)
+    OS-->>V8: Resolve Network Promises
     V8->>Cron: Log execution metrics (Success/Failure)
 ```
 
 ## 13. Database Design
-Unlike typical NoSQL implementations that rely heavily on unbounded document embedding, StudentTracker utilizes a strictly normalized relational model across 150+ schemas. This prevents unbounded array growth (which causes severe MongoDB page-faults and memory eviction) and ensures referential integrity via `ObjectId` foreign keys.
+Unlike typical NoSQL implementations that rely heavily on unbounded document embedding, StudentTracker utilizes a reference-based document model across its schemas. This prevents unbounded array growth (which causes severe MongoDB page-faults and memory eviction) and ensures referential integrity via `ObjectId` foreign keys.
 
 ```mermaid
 erDiagram
@@ -297,7 +296,7 @@ erDiagram
 
 | Resource Endpoint | Method | Auth Guard | Payload / Params | Status Code | Architectural Purpose |
 | :--- | :---: | :---: | :--- | :--- | :--- |
-| `/api/auth/register` | `POST` | ❌ | `application/json` | `201 Created` | Initiates record creation and triggers `libuv` for bcrypt hashing. |
+| `/api/auth/register` | `POST` | ❌ | `application/json` | `201 Created` | Initiates record creation and executes bcrypt hashing (CPU-bound). |
 | `/api/auth/login` | `POST` | ❌ | `application/json` | `200 OK` | Validates hash and issues HMAC-SHA256 JWT payload. |
 | `/api/applications` | `GET` | ✅ | `none` | `200 OK` | Executes indexed MongoDB `find()` scoped to the decoded JWT `userId`. |
 | `/api/applications/:id` | `PATCH` | ✅ | `{ status }` | `200 OK` | Mutates the state machine status of a specific Kanban entity. |
