@@ -1,0 +1,15 @@
+User-agent: *
+
+# Prevent scraping of dynamic or authenticated routes
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /login
+Disallow: /register
+Disallow: /*?*
+
+# Allow indexing of the main landing page
+Allow: /
+
+# (Optional) Tell crawlers where your sitemap is if you generate one
+Sitemap: https://my-personal-tracking-system-jrnr.vercel.app/sitemap.xml
