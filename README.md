@@ -102,7 +102,7 @@ StudentTracker OS acts as a unified control plane for software engineering candi
 The university placement ecosystem suffers from severe context-switching and data fragmentation. Candidates distribute their state across highly disparate platforms: Excel (tabular tracking), LeetCode (algorithmic tracking), Google Calendar (temporal tracking), and ChatGPT (linguistic generation). This N-platform dependency creates severe data siloing, increasing the cognitive load on candidates and resulting in missed SLAs (application deadlines).
 
 ## 3. Objectives
-Architect a centralized, highly-available, and strictly typed ecosystem that consolidates all candidate metadata. The platform must reduce context switching by 100% by acting as the singular source of truth, automating repetitive generation tasks via inference-based Large Language Models (LLMs), and ensuring data durability.
+Architect a centralized, highly-available, and strictly typed ecosystem that consolidates all candidate metadata. The platform aims to significantly reduce context switching by acting as the singular source of truth, automating repetitive generation tasks via inference-based Large Language Models (LLMs), and ensuring data durability.
 
 ## 4. Features
 | Core Module | Technical Implementation Strategy |
@@ -119,7 +119,7 @@ Architect a centralized, highly-available, and strictly typed ecosystem that con
 - **Background Orchestration:** The system must run weekly daemon processes to dispatch aggregate user reports.
 
 ## 6. Non-Functional Requirements
-- **Availability (SLO):** 99.9% uptime target. System must feature graceful degradation (e.g., core Kanban UI remains operational even if the Gemini API experiences a regional outage).
+- **Availability:** Target SLO: 99.9% availability. System must feature graceful degradation (e.g., core Kanban UI remains operational even if the Gemini API experiences a regional outage).
 - **Security (Zero-Trust):** All protected routes must validate the cryptographic signature of the Bearer JWT. API surface must be hardened against OWASP Top 10 vulnerabilities.
 - **Performance (SLA):** 
   - `P95 Latency`: < 250ms for local database read operations.
@@ -289,7 +289,7 @@ erDiagram
         boolean solved
     }
 ```
-*Note: `userId` is strictly B-Tree indexed across all collections to guarantee O(log N) read time complexity during analytical queries.*
+*Note: `userId` is strictly B-Tree indexed across all collections to optimize read performance during analytical queries.*
 
 ## 14. API Documentation
 *Strict adherence to RESTful resource architecture and standard HTTP status codes.*
