@@ -21,9 +21,13 @@ const connectDB = async () => {
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     
   } catch (error) {
-    console.error(`MongoDB Connection Error: ${error.message}`);
     // In production, we MUST exit if we cannot connect to the database
-    process.exit(1);
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    } else {
+      console.warn("⚠️ Running in development mode without active MongoDB Atlas connection.");
+      console.warn("👉 To connect: Go to MongoDB Atlas -> Network Access -> Add IP Address (0.0.0.0/0 or Current IP).");
+    }
   }
 };
 
