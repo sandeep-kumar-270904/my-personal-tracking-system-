@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Header from './Header';
 import BottomNavBar from './BottomNavBar';
 import InstallPWA from './InstallPWA';
-import DailyBriefModal from './dsa/v5/DailyBriefModal';
+import DailyBriefModal from './dsa/DailyBriefModal';
 import Footer from './Footer';
 import OnboardingTour from './prephub/OnboardingTour';
 import KeyboardShortcuts from './KeyboardShortcuts';

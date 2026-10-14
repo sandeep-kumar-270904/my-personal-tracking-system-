@@ -42,7 +42,7 @@ const {
   getCertifications, evaluateCertifications,
   saveSimulationSession, getSimulations, chatSimulation,
   generatePortfolio
-} = require('../controllers/interviewV3Controller');
+} = require('../controllers/interviewController');
 
 const {
   resumeSignalAmplification,
@@ -53,7 +53,7 @@ const {
   extractResourceNeeds,
   intelligenceLoop,
   getCommandCenter
-} = require('../controllers/interviewV4Controller');
+} = require('../controllers/interviewController');
 
 router.use(protect);
 
@@ -133,7 +133,7 @@ const {
   startColdSimulation, answerColdSimulation, evalWrongAnswerRecovery,
   getSignalVocabulary, evalDetailCalibration, getPreInterviewProtocol, generatePreInterviewProtocol,
   getMemoryCaptureQuestions, submitMemoryCapture, getPerformanceDashboard
-} = require('../controllers/interviewV5Controller');
+} = require('../controllers/interviewController');
 
 // V4 Addons: Specific interview routes
 router.post('/v4/intelligence-loop/:id', intelligenceLoop);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, PlayCircle, ShieldAlert } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../services/api';
 
 const MonthlyCalibrationInterview = ({ isOpen, onClose }) => {
   const [started, setStarted] = useState(false);

@@ -30,7 +30,7 @@ const {
   getTimeAnalytics,
   getReadinessAssessment,
   evaluateMockInterview
-} = require('../controllers/dsaV2Controller');
+} = require('../controllers/dsaController');
 
 const {
   analyzeBehavior,
@@ -48,7 +48,7 @@ const {
   generateCurriculum,
   getCurriculum,
   recalibrateCurriculum
-} = require('../controllers/dsaV3Controller');
+} = require('../controllers/dsaController');
 
 const {
   extractResumeSignals,
@@ -59,7 +59,7 @@ const {
   extractNetworkingSignals,
   processPrepHubCompletion,
   getCommandCenterData
-} = require('../controllers/dsaV4Controller');
+} = require('../controllers/dsaController');
 
 const {
   submitDiagnostic,
@@ -92,7 +92,7 @@ const {
   getPlacementSentence,
   getCompanyReadiness,
   activateInterviewEve
-} = require('../controllers/dsaV5Controller');
+} = require('../controllers/dsaController');
 
 const { protect } = require('../middleware/authMiddleware');
 

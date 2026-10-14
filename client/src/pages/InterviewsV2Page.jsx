@@ -4,17 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Filter, Plus, FileText, Brain, Target, BarChart2, BookOpen, Flag, Building, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import LiveStatsBar from '../components/interviews/v2/LiveStatsBar';
-import UpcomingInterviewsStrip from '../components/interviews/v2/UpcomingInterviewsStrip';
-import InterviewPipeline from '../components/interviews/v2/InterviewPipeline';
-import InterviewList from '../components/interviews/v2/InterviewList';
-import InterviewDrawer from '../components/interviews/v2/InterviewDrawer';
-import QuestionBank from '../components/interviews/v2/QuestionBank';
-import InsightsPanel from '../components/interviews/v2/InsightsPanel';
-import PerformanceAnalytics from '../components/interviews/v2/PerformanceAnalytics';
-import MockScheduler from '../components/interviews/v2/MockScheduler';
-import AIMockFlow from '../components/interviews/v2/AIMockFlow';
-import CompanyProcessModal from '../components/interviews/v3/CompanyProcessModal';
+import LiveStatsBar from '../components/interviews/LiveStatsBar';
+import UpcomingInterviewsStrip from '../components/interviews/UpcomingInterviewsStrip';
+import InterviewPipeline from '../components/interviews/InterviewPipeline';
+import InterviewList from '../components/interviews/InterviewList';
+import InterviewDrawer from '../components/interviews/InterviewDrawer';
+import QuestionBank from '../components/interviews/QuestionBank';
+import InsightsPanel from '../components/interviews/InsightsPanel';
+import PerformanceAnalytics from '../components/interviews/PerformanceAnalytics';
+import MockScheduler from '../components/interviews/MockScheduler';
+import AIMockFlow from '../components/interviews/AIMockFlow';
+import CompanyProcessModal from '../components/interviews/CompanyProcessModal';
 import InterviewPrepSidebar from '../components/prephub/InterviewPrepSidebar';
 
 export default function InterviewsV2Page() {

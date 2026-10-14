@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Check, X, RotateCcw } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../services/api';
 
 const MOCK_NOTES = [
   { id: '1', front: 'In binary search, when do you use `left <= right` vs `left < right`?', back: 'Use `<=` when returning from inside the loop. Use `<` when you want the pointers to converge on the target and return after the loop.' },

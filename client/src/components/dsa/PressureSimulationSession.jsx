@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Timer, MessageSquareWarning, X, AlertTriangle, Send } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../services/api';
 
 const PressureSimulationSession = ({ isOpen, onClose, problemTitle }) => {
   const [timeLeft, setTimeLeft] = useState(1200);

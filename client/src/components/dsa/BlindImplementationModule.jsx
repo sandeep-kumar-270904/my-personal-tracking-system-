@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
 import { Play, RotateCcw, X, AlertCircle } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../services/api';
 import SolutionQualityEvaluator from './SolutionQualityEvaluator';
 
 const BlindImplementationModule = ({ isOpen, onClose, problemId, problemTitle }) => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Anchor, X, Save, CheckCircle } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../services/api';
 
 const OrcaSidebar = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({

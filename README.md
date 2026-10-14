@@ -431,6 +431,7 @@ The backend is rigorously tested utilizing **Jest** and **Supertest**.
 | **XSS / Clickjacking** | Strict HTTP Response Headers | `helmet` enforces Content Security Policies (CSP) and HSTS. |
 | **Brute Force / DDoS** | Network Request Throttling | `express-rate-limit` caps client IPs at 200 reqs / 15 mins. |
 | **Rainbow Tables** | Cryptographic Hashing | `bcryptjs` utilizing a computational salt rounds factor of 10. |
+| **IDOR / File Leakage** | Secure Document Handling | Authenticated streaming (`/api/documents/`) enforcing ownership validation, path traversal defense, and signed URL verification; `/uploads` is never publicly exposed statically. |
 
 ## 29. Scalability Considerations
 **Current Bottleneck:** The architecture is currently a Monolith. If 10,000 users simultaneously request AI Cover Letters, the heavy CPU bounding of `pdf-parse` will starve the Node.js V8 event loop, causing unrelated, lightweight API requests (like fetching a Kanban board) to timeout.

@@ -22,9 +22,9 @@ const {
   shareApplications, exportPDF, getTemplates, createTemplate, updateTemplate, deleteTemplate
 } = require('../controllers/applicationAddonsController');
 
-const { recalculateMomentum, checkStatusSignals } = require('../controllers/v3CronController');
-const { predictOutcome, predictionFeedback, negotiationSim, negotiationChat } = require('../controllers/v3IntelligenceController');
-const { patchEffort, archiveApplication, getSuggestions, updateSuggestion, getWeeklyReviewData, saveWeeklyReview, getBattlePlan, saveBattlePlan, getAuditLogs, requestDataDeletion } = require('../controllers/v3TrackingController');
+const { recalculateMomentum, checkStatusSignals } = require('../controllers/cronController');
+const { predictOutcome, predictionFeedback, negotiationSim, negotiationChat } = require('../controllers/intelligenceController');
+const { patchEffort, archiveApplication, getSuggestions, updateSuggestion, getWeeklyReviewData, saveWeeklyReview, getBattlePlan, saveBattlePlan, getAuditLogs, requestDataDeletion } = require('../controllers/trackingController');
 
 const { protect } = require('../middleware/authMiddleware');
 

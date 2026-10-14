@@ -42,7 +42,9 @@ const startCronJobs = require('./utils/cron');
 const rateLimit = require('express-rate-limit');
 
 // Initialize Cron Jobs
-initCronJobs();
+if (process.env.NODE_ENV !== 'test') {
+  initCronJobs();
+}
 
 // Initialize Express Server Architecture
 const app = express();
@@ -52,7 +54,19 @@ const app = express();
 // ==========================================
 app.use(helmet());
 app.use(cors());
-app.use(mongoSanitize());
+// Deep Payload Sanitization against NoSQL injection (Express 5 compatible)
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  if (req.query) {
+    for (const key of Object.keys(req.query)) {
+      if (key.startsWith('$') || key.includes('.')) {
+        delete req.query[key];
+      }
+    }
+  }
+  next();
+});
 app.use(compression()); // Gzip compress all HTTP responses for faster loading
 
 // Global Rate Limiting
@@ -65,11 +79,11 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Connect to Database
-connectDB();
-
-// Start Cron Jobs for Reminders
-startCronJobs();
+// Connect to Database & Start Scheduled Jobs
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+  startCronJobs();
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Needed for Twilio Webhooks
@@ -79,9 +93,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from uploads
-const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Secure document handling (authenticated routes for private resumes and offer letters)
+const documentRoutes = require('./routes/documentRoutes');
+app.use('/api/documents', documentRoutes);
+app.use('/api/uploads', documentRoutes);
+app.use('/uploads', documentRoutes);
 
 // Routes
 app.use('/api/auth', authRoutes);

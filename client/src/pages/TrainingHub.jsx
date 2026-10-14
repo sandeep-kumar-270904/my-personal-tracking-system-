@@ -3,21 +3,21 @@ import axios from 'axios';
 import { Target, Mic, FileQuestion, BookOpen, Brain, Clock, Camera, FileText, Zap, Crosshair, Users, AlignLeft, ShieldAlert, Award, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import OpeningRitualTrainer from '../components/interviews/v5/OpeningRitualTrainer';
-import TalkWhileCodingTrainer from '../components/interviews/v5/TalkWhileCodingTrainer';
-import StuckRecoveryTrainer from '../components/interviews/v5/StuckRecoveryTrainer';
-import QuestionBankBuilder from '../components/interviews/v5/QuestionBankBuilder';
-import FollowUpDepthTrainer from '../components/interviews/v5/FollowUpDepthTrainer';
-import StoryNaturalnessTrainer from '../components/interviews/v5/StoryNaturalnessTrainer';
-import ColdInterviewerSimulator from '../components/interviews/v5/ColdInterviewerSimulator';
-import DetailCalibrationTrainer from '../components/interviews/v5/DetailCalibrationTrainer';
-import SkillCalibrationCoach from '../components/interviews/v5/SkillCalibrationCoach';
-import TimeAllocationCoach from '../components/interviews/v5/TimeAllocationCoach';
-import MemoryCaptureSystem from '../components/interviews/v5/MemoryCaptureSystem';
-import WrongAnswerRecoveryTrainer from '../components/interviews/v5/WrongAnswerRecoveryTrainer';
-import SignalReaderTrainer from '../components/interviews/v5/SignalReaderTrainer';
-import HumanPresenceTrainer from '../components/interviews/v5/HumanPresenceTrainer';
-import PreInterviewProtocolViewer from '../components/interviews/v5/PreInterviewProtocolViewer';
+import OpeningRitualTrainer from '../components/interviews/OpeningRitualTrainer';
+import TalkWhileCodingTrainer from '../components/interviews/TalkWhileCodingTrainer';
+import StuckRecoveryTrainer from '../components/interviews/StuckRecoveryTrainer';
+import QuestionBankBuilder from '../components/interviews/QuestionBankBuilder';
+import FollowUpDepthTrainer from '../components/interviews/FollowUpDepthTrainer';
+import StoryNaturalnessTrainer from '../components/interviews/StoryNaturalnessTrainer';
+import ColdInterviewerSimulator from '../components/interviews/ColdInterviewerSimulator';
+import DetailCalibrationTrainer from '../components/interviews/DetailCalibrationTrainer';
+import SkillCalibrationCoach from '../components/interviews/SkillCalibrationCoach';
+import TimeAllocationCoach from '../components/interviews/TimeAllocationCoach';
+import MemoryCaptureSystem from '../components/interviews/MemoryCaptureSystem';
+import WrongAnswerRecoveryTrainer from '../components/interviews/WrongAnswerRecoveryTrainer';
+import SignalReaderTrainer from '../components/interviews/SignalReaderTrainer';
+import HumanPresenceTrainer from '../components/interviews/HumanPresenceTrainer';
+import PreInterviewProtocolViewer from '../components/interviews/PreInterviewProtocolViewer';
 
 export default function TrainingHub() {
   const [dashboard, setDashboard] = useState(null);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Ghost, EyeOff, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../../../services/api';
+import api from '../../services/api';
 
 const MOCK_DRILL = {
   id: 'd1',

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, CheckCircle, ChevronRight, X, BrainCircuit, PlayCircle, Code } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../services/api';
 
 const MOCK_MODULE_STEPS = [
   {

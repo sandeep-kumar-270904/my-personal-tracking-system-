@@ -40,21 +40,21 @@ import InterviewDSASignals from '../components/dsa/InterviewDSASignals';
 import PersonalizedCurriculumTimeline from '../components/dsa/PersonalizedCurriculumTimeline';
 
 // V5 Addons
-import DiagnosticFlow from '../components/dsa/v5/DiagnosticFlow';
-import PatternMasteryGrid from '../components/dsa/v5/PatternMasteryGrid';
-import ThinkingVelocityChart from '../components/dsa/v5/ThinkingVelocityChart';
-import BlindImplementationModule from '../components/dsa/v5/BlindImplementationModule';
-import PressureSimulationSession from '../components/dsa/v5/PressureSimulationSession';
-import CompanyDifficultyCalibrator from '../components/dsa/v5/CompanyDifficultyCalibrator';
-import PatternDisguiseDrill from '../components/dsa/v5/PatternDisguiseDrill';
-import StuckProtocolModal from '../components/dsa/v5/StuckProtocolModal';
-import OrcaSidebar from '../components/dsa/v5/OrcaSidebar';
-import ActiveRecallNotesCard from '../components/dsa/v5/ActiveRecallNotesCard';
-import WeeklyHonestReport from '../components/dsa/v5/WeeklyHonestReport';
-import PlacementCountdownCalibrator from '../components/dsa/v5/PlacementCountdownCalibrator';
-import AvoidanceLockModal from '../components/dsa/v5/AvoidanceLockModal';
-import MonthlyCalibrationInterview from '../components/dsa/v5/MonthlyCalibrationInterview';
-import InterviewEveProtocolModal from '../components/dsa/v5/InterviewEveProtocolModal';
+import DiagnosticFlow from '../components/dsa/DiagnosticFlow';
+import PatternMasteryGrid from '../components/dsa/PatternMasteryGrid';
+import ThinkingVelocityChart from '../components/dsa/ThinkingVelocityChart';
+import BlindImplementationModule from '../components/dsa/BlindImplementationModule';
+import PressureSimulationSession from '../components/dsa/PressureSimulationSession';
+import CompanyDifficultyCalibrator from '../components/dsa/CompanyDifficultyCalibrator';
+import PatternDisguiseDrill from '../components/dsa/PatternDisguiseDrill';
+import StuckProtocolModal from '../components/dsa/StuckProtocolModal';
+import OrcaSidebar from '../components/dsa/OrcaSidebar';
+import ActiveRecallNotesCard from '../components/dsa/ActiveRecallNotesCard';
+import WeeklyHonestReport from '../components/dsa/WeeklyHonestReport';
+import PlacementCountdownCalibrator from '../components/dsa/PlacementCountdownCalibrator';
+import AvoidanceLockModal from '../components/dsa/AvoidanceLockModal';
+import MonthlyCalibrationInterview from '../components/dsa/MonthlyCalibrationInterview';
+import InterviewEveProtocolModal from '../components/dsa/InterviewEveProtocolModal';
 import DSATrackerWidget from '../components/prephub/DSATrackerWidget';
 
 const DSAPage = () => {

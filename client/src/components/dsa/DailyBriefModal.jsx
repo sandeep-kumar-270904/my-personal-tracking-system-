@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../../../services/api';
+import api from '../../services/api';
 import { Target, Briefcase, FileText, CheckCircle, X } from 'lucide-react';
 
 const DailyBriefModal = () => {
