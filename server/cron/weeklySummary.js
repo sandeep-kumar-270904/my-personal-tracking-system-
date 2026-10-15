@@ -120,9 +120,12 @@ const sendWeeklySummaries = async () => {
   }
 };
 
+const mongoose = require('mongoose');
+
 const initCronJobs = () => {
   // Run every Monday at 8:00 AM
   cron.schedule('0 8 * * 1', () => {
+    if (mongoose.connection.readyState !== 1) return;
     sendWeeklySummaries();
   }, {
     timezone: "Asia/Kolkata"

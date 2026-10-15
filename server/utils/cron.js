@@ -6,11 +6,13 @@ const Network = require('../models/Network');
 const User = require('../models/User');
 const Goal = require('../models/Goal');
 const GoalProgressEntry = require('../models/GoalProgressEntry');
+const mongoose = require('mongoose');
 const GoalPeriodSnapshot = require('../models/GoalPeriodSnapshot');
 
 const startCronJobs = () => {
   // Run everyday at 8:00 AM
   cron.schedule('0 8 * * *', async () => {
+    if (mongoose.connection.readyState !== 1) return;
     try {
       console.log('Running daily reminder check...');
       
@@ -304,6 +306,7 @@ const startCronJobs = () => {
 
   // 1-minute cron job for Event Reminders
   cron.schedule('* * * * *', async () => {
+    if (mongoose.connection.readyState !== 1) return;
     try {
       const now = new Date();
       // Find events that have active reminders and haven't sent yet
@@ -490,6 +493,7 @@ const startCronJobs = () => {
 
   // Daily status tracker (marks past events as missed at 12:01 AM everyday)
   cron.schedule('1 0 * * *', async () => {
+    if (mongoose.connection.readyState !== 1) return;
     try {
       console.log('Running daily missed status updater...');
       const today = new Date();
@@ -511,6 +515,7 @@ const startCronJobs = () => {
 
   // 15-minute cron job to pull Google Calendar events for connected users
   cron.schedule('*/15 * * * *', async () => {
+    if (mongoose.connection.readyState !== 1) return;
     try {
       console.log('Running 15-minute Google Calendar pull worker...');
       const User = require('../models/User');
@@ -527,6 +532,7 @@ const startCronJobs = () => {
 
   // Daily at 00:05 to take Goal Snapshots
   cron.schedule('5 0 * * *', async () => {
+    if (mongoose.connection.readyState !== 1) return;
     try {
       console.log('Running daily goal snapshot worker...');
       const today = new Date();
