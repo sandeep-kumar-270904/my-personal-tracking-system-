@@ -1,4 +1,13 @@
 require('dotenv').config();
+
+// Process resilience: prevent unhandled promise rejections from crashing the process
+process.on('unhandledRejection', (reason) => {
+  console.warn('Unhandled Rejection (caught):', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.warn('Uncaught Exception (caught):', err?.message || err);
+});
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');

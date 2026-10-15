@@ -1,5 +1,15 @@
 const mongoose = require('mongoose');
 
+mongoose.connection.on('error', (err) => {
+  console.warn(`MongoDB runtime connection event warning: ${err.message}`);
+});
+
+mongoose.connection.on('disconnected', () => {
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn('MongoDB connection lost. Awaiting automatic reconnection...');
+  }
+});
+
 /**
  * Initializes the connection to the primary MongoDB database.
  * If the connection fails in production, the application will forcefully exit
